@@ -1,3 +1,22 @@
-<p>
-  games works!
-</p>
+<div class="shared-container relative">
+  <app-particles></app-particles>
+
+  <header class="logo-container">
+    <span class="text-format menu-logo" role="button" routerLink="/">Menu</span>
+  </header>
+
+
+  <main class="games-container">
+
+    <div *ngFor="let game of [1, 1, 1]">
+      <article class="game" routerLink="/tetris">
+        <picture>
+          <img src="../../../../assets/images/tetris-frontpage.webp" alt="Gamer Front page" role="img" itemprop="images">
+        </picture>
+      </article>
+      <h2 class="game-caption">Tetris</h2>
+    </div>
+  </main>
+
+  
+</div>

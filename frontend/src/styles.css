@@ -14,3 +14,35 @@ body {
     overscroll-behavior-x: none;
     touch-action: manipulation;
 }
+
+
+.shared-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    min-height: 100dvh;
+
+    background-color: #13102D;
+}
+
+.text-format {
+    color: #5EE8EA;
+    font-weight: bold;
+}
+
+.logo-container{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-inline-start: 3rem;
+    margin-inline-end: auto;
+    margin-block: 1rem;
+}
+.menu-logo {
+    text-shadow: 1px 2px 0 #3e7b9a, 2px 4px 0 #1f2556, 8px 2px 0 #2b2a64,
+      6px 1px 0 #2b2a64, 4px -1px 0 #2b2a64, 2px -3px 0 #2b2a64,
+      -4px -3px 0 #2b2a64, -1px -2px 0 #1f2556, -4px 0px 0 #2b2a64,
+      -3px 1px 0 #2b2a64, -2px 2px 0 #2b2a64, -1px 3px 0 #2b2a64,
+      0px 4px 0 #2b2a64, 1px 5px 0 #2b2a64, 2px 6px 0 #2b2a64, 3px 7px 0 #2b2a64;
+  }

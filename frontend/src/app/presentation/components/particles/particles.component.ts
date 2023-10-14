@@ -33,7 +33,7 @@ export class ParticlesComponent {
                     mode: ClickMode.repulse,
                 },
                 onHover: {
-                    enable: true,
+                    enable: false,
                     mode: HoverMode.bubble,
                 },
                 resize: true,
@@ -49,7 +49,7 @@ export class ParticlesComponent {
                 buble: {
                   distance: 200,
                   size: 0,
-                  duration: 2,
+                  duration: 4,
                   opacity: 0,
                   speed: 3,
                 },
@@ -61,7 +61,7 @@ export class ParticlesComponent {
             },
             links: {
                 color: this.currenteColor,
-                distance: 150,
+                distance: 250,
                 enable: false,
                 opacity: 0.4,
                 width: 1,
@@ -71,7 +71,7 @@ export class ParticlesComponent {
             },
             move: {
               enable: true,
-              speed: 0.8,
+              speed: 0.9,
               direction: MoveDirection.bottomLeft,
               random: false,
               straight: false,
@@ -85,7 +85,7 @@ export class ParticlesComponent {
                     enable: true,
                     area: 800,
                 },
-                value: 100,
+                value: 50,
             },
             opacity: {
                 value: 0.9,

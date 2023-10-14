@@ -6,7 +6,9 @@
     "paths": {
       "@app/*": ["app/*"],
       "@app-pages/*": ["app/presentation/pages/*"],
-      "@app-components/*": ["app/presentation/components/*"]
+      "@app-components/*": ["app/presentation/components/*"],
+      "@app-services/*": ["app/data/services/*"],
+      "@app-models/*": ["app/data/models/*"]
     },
     "outDir": "./dist/out-tsc",
     "forceConsistentCasingInFileNames": true,

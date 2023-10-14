@@ -1,11 +1,86 @@
-.start-container {
+.menu-content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 100dvh;
-        
-    background-color: #13102D;
+
+    gap: 6rem;
 }
+
+.menu-content .menu-title {
+    text-transform: uppercase;
+    font-size: 7rem;
+    text-shadow: 
+    1px  2px 0 #3E7B9A,
+    2px  4px 0 #1F2556,
+
+
+    4px 8px 0 #2b2a64,
+    14px 8px 0 #2b2a64,
+    12px 6px 0 #2b2a64,
+    10px 4px 0 #2b2a64,
+    8px 2px 0 #2b2a64,
+    6px 1px 0 #2b2a64,
+    4px -1px 0 #2b2a64,
+    2px -3px 0 #2b2a64,
+    -4px -3px 0 #2b2a64,
+    -1px  -2px 0 #1F2556,
+
+    -4px 0px 0 #2b2a64,
+    -3px 1px 0 #2b2a64,
+    -2px 2px 0 #2b2a64,
+    -1px 3px 0 #2b2a64,
+    0px 4px 0 #2b2a64,
+    1px 5px 0 #2b2a64,
+    2px 6px 0 #2b2a64,
+    3px 7px 0 #2b2a64;
+}
+
+.menu-content .menu-buttons {
+    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.menu-content .menu-buttons .option{
+    font-size: 1.5rem;
+
+    text-shadow: 
+    1px  2px 0 #3E7B9A,
+    2px  4px 0 #1F2556,
+    0  5px 0 #2b2a64,
+
+    0 6px 0 #2b2a64,
+    0 7px 0 #201E4A;
+
+    outline: none;
+}
+
+
+.highlight {
+    animation-name: left-right;
+    animation-duration: 1s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: normal;
+
+    transition: transform .5s ease;
+}
+
+@keyframes left-right {
+  0% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(10px); /* Desplazamiento hacia la derecha */
+  }
+  100% {
+    transform: translateX(0px); /* Regreso a la posición inicial */
+  }
+}
+
+  
+
 

@@ -1,0 +1,73 @@
+<section class="shared-container relative" [ngClass]="{'opacity-95': this.controller.gameOver}">
+    <app-particles></app-particles>
+
+  
+    <div class="shared-wrapper">
+        <div class="game-container">
+            <canvas #tetris class="border-radial"></canvas>
+        </div>
+
+        <div class="info-container">
+            <ul>
+                <li class="mb-8 flex justify-end items-center text-3xl pause">
+                    <button class="text-format menu-logo" role="button" (click)="pause()">||</button>
+                </li>
+                <li class="next">
+                    <h2 class="point-title menu-logo ">Next</h2>
+                    <canvas #nextPiece class="border-radial"></canvas>
+                </li>
+                <li class="score">
+                    <h2 class="point-title menu-logo">Score</h2>
+                    <span class="point">{{ this.point.score }}</span>
+                </li>
+                <li class="lines">
+                    <h2 class="point-title menu-logo">Lines</h2>
+                    <span class="point">{{ this.point.countLines }}</span>
+                </li>
+                <li class="times">
+                    <h2 class="point-title menu-logo">Time</h2>
+                    <chronometer class="point"></chronometer>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+</section>
+
+<div class="modal" *ngIf="this.controller.gameOver">
+    <h3 class="message-modal text-format menu-logo">Game Over</h3>
+    <ul>
+        <li>
+            <p class="point">Current Score {{ this.point.score }}</p>
+            <p class="point">Max Score {{ this.point.maxScore }}</p>
+        </li>
+        <li>
+            <p class="point">Current Line {{ this.point.countLines }}</p>
+            <p class="point">Max line {{ this.point.maxCountLine }}</p>
+        </li>
+        <li>
+            <p class="point">Current Time {{ this.point.time }}</p>
+            <p class="point">Max time {{ this.point.maxTime }}</p>
+        </li>
+    </ul>
+    <div class="w-full flex justify-center items-center mt-4 buttons">
+        <button class="exit-game" (click)="close()">Exit Game</button>
+        <button class="play-again" (click)="restart()">Play Game</button>
+    </div>
+</div>
+
+<div class="modal" *ngIf="this.controller.isPaused">
+    <h3 class="message-modal text-format menu-logo">Welcome</h3>
+
+    <h4 class="text-format text-center font-semibold text-2xl mb-2">How to play</h4>
+    <p>Left: <strong>a</strong> y <strong>&larr;</strong></p>
+    <p>Right: <strong>d</strong> y <strong>&rarr;</strong></p>
+    <p>Down: <strong>s</strong> y <strong>&darr;</strong></p>
+    <p>Rotate Piece: <strong>w</strong> y <strong>&uarr;</strong></p>
+    <p>Pause/Resume: <strong>p</strong> y <strong>escape</strong></p>
+
+    <div class="w-full flex justify-center items-center mt-4 buttons">
+        <button class="exit-game" (click)="close()">Exit Game</button>
+        <button class="play-again" (click)="playGame()">Play Game</button>
+    </div>
+</div>
