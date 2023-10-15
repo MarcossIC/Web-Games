@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { Title } from '@angular/platform-browser';
+import { SeoService } from '@app/data/services/seo.service';
 
 @Component({
   selector: 'app-options',
@@ -9,7 +11,8 @@ export class OptionsComponent implements OnInit {
 
   constructor() { }
 
-  ngOnInit() {
+  ngOnInit(): void {
+
   }
 
 }

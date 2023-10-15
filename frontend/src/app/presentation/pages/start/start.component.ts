@@ -1,4 +1,6 @@
 import { Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { Title } from '@angular/platform-browser';
+import { SeoService } from '@app/data/services/seo.service';
 
 @Component({
   selector: 'app-start',
@@ -10,9 +12,15 @@ export class StartComponent implements OnInit {
   
   isHovered: boolean[] = [false, false];
 
-  constructor() { }
+  constructor(private seo: SeoService, private title: Title) { }
 
   ngOnInit(): void {
+    this.title.setTitle("Start");
+    this.seo.generateTags({
+      title: "Start",
+      description: "Start page, before games",
+      slug: ""
+    });
   }
 
   onHover(index: number): void{
