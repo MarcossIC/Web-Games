@@ -63,7 +63,7 @@ export class BoardService {
 
   verifyLines(){
     this._board.forEach((row, rowX)=>{
-      if(row.every(cell => cell === 1)){
+      if(row.every(cell => cell !== 0)){
         this.removeLine(rowX);
         this.addNewEmptyLine();
         this.points.updatePoints();

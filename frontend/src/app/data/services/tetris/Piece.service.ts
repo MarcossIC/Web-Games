@@ -43,27 +43,19 @@ export class PieceService {
   }
 
   moveToLeft(){
-    let updateAxisX = this._current.position.x - 1;
-    //La cordenada anterior de la pieza, debe de ser mayor o igual a la cordenada 0
-    if(updateAxisX >= 0){
+
       this._current.position.x--;
-    }
+
   }
 
   moveToRight(){
-    //La siguiente cordenada + el tamaño de la pieza, debe de ser menor al ancho del tablero
-    let updateAxisX = (this._current.position.x+1)+this._current.shape.length-1;
-    if(updateAxisX < BOARD_WIDTH_SCREEN){
+
       this._current.position.x++;
-    }
+
   }
 
   moveToDown(){
-    //La siguiente cordenada + el tamaño de la pieza  a lo largo, debe de ser menor al largo del tablero
-    let updateAxisY = (this._current.position.y+1)+this._current.shape[0].length-1;
-    if(updateAxisY < BOARD_HEIGHT_SCREEN){
       this._current.position.y++;
-    }
   }
 
   solidify(){

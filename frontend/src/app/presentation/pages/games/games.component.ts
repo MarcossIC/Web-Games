@@ -15,7 +15,7 @@ export class GamesComponent implements OnInit {
     this.title.setTitle("Games Option");
     this.seo.generateTags({
       title: "Games Option",
-      description: "Start page, before games",
+      description: "Page to preview and choose a game",
       slug: "games"
     });
   }
