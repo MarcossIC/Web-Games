@@ -1,4 +1,4 @@
 export const environment = {
-    production: false,
+    production: true,
     apiUrl: 'https://subtle-biscotti-007cf5.netlify.app/' // URL de la API para desarrollo
   };
