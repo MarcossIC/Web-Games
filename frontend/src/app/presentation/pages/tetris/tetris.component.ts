@@ -1,8 +1,11 @@
-import { Component, ElementRef, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, OnDestroy, OnInit, Renderer2, ViewChild, inject } from '@angular/core';
 import { BLOCK_SIZE, BOARD_WIDTH, BOARD_HEIGHT, NEXT_PIECE_WIDTH, NEXT_PIECE_HEIGHT, NEXT_PIECE_SIZE, BLOCK_MOBILE_SIZE, BOARD_MOBILE_WIDTH, BOARD_MOBILE_HEIGHT, BLOCK_SIZE_SCREEN, BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN } from "./tetrisConstanst";
 import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
 import { PointsService } from '@app/data/services/tetris/Points.service';
 import { Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
+import { SeoService } from '@app/data/services/seo.service';
+import { Title } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-tetris',
@@ -20,15 +23,25 @@ export class TetrisComponent implements OnInit, OnDestroy {
   private nextPieceContext: any;
   private moveListener = () => {};
 
-  constructor(
-    public controller: TetrisControllerService, 
-    private renderer: Renderer2, 
-    protected point: PointsService,
-    private router: Router
-    ) { 
+  protected controller = inject(TetrisControllerService);
+  protected seo = inject(SeoService);
+  protected title = inject(Title);
+  private renderer = inject(Renderer2);
+  protected point = inject(PointsService);
+  private router = inject(Router);
+
+
+  constructor() { 
   }
 
   ngOnInit(): void {
+    this.title.setTitle("Tetris");
+    this.seo.generateTags({
+      title: "Tetris",
+      description: "Page to play tetris",
+      slug: "tetris"
+    });
+
     //Board
     this.board = this.canvasRef.nativeElement;
     this.boardContext = this.board.getContext('2d');
@@ -53,6 +66,11 @@ export class TetrisComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.moveListener();
+    cancelAnimationFrame(this.controller.animationFrameId);
+  }
+
+  onPress(key: string){
+    this.isMobile() && this.controller.executeAction(key);
   }
 
   get boardWidth(){
@@ -67,24 +85,23 @@ export class TetrisComponent implements OnInit, OnDestroy {
     this.point.resetCountLine();
     this.controller.reset();
 
-    this.controller.closeGame();
     this.point.resetScore();
     this.point.resetCountLine();
     this.router.navigate(['/games']);
   }
 
-  restart(){
+  restart(): void{
     this.controller.reset();
     this.controller.playAgain();
     this.point.resetCountLine();
     this.point.resetScore();
   }
 
-  pause(){
+  pause(): void{
     this.controller.pause();
   }
 
-  playGame(){
+  playGame(): void{
     this.controller.resume();
   }
 
@@ -94,3 +111,5 @@ export class TetrisComponent implements OnInit, OnDestroy {
   }
 
 }
+
+

@@ -2,10 +2,10 @@ import { ACTION } from "@app/data/models/tetris/MoveDirections.enum";
 import { PieceColor } from "@app/data/models/tetris/PieceColor";
 
 export const BLOCK_SIZE: number = 25;
-export const BLOCK_MOBILE_SIZE: number = 22;
+export const BLOCK_MOBILE_SIZE: number = 20;
 
 export const BOARD_WIDTH: number = 12;
-export const BOARD_MOBILE_WIDTH: number = 12;
+export const BOARD_MOBILE_WIDTH: number = 10;
 
 export const BOARD_HEIGHT: number = 22;
 export const BOARD_MOBILE_HEIGHT: number = 20;

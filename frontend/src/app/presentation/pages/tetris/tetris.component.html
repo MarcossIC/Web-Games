@@ -10,7 +10,7 @@
         <div class="info-container">
             <ul>
                 <li class="mb-8 flex justify-end items-center text-3xl pause">
-                    <button class="text-format menu-logo" role="button" (click)="pause()">||</button>
+                    <button class="text-format menu-logo" role="button" (click)="pause()" (press)="onPress('p')">||</button>
                 </li>
                 <li class="next">
                     <h2 class="point-title menu-logo ">Next</h2>
@@ -27,6 +27,14 @@
                 <li class="times">
                     <h2 class="point-title menu-logo">Time</h2>
                     <chronometer class="point"></chronometer>
+                </li>
+                <li class="controllers">
+                    <div class="display-buttons">
+                        <button class="button action-rotate" (press)="onPress('w')">w</button>
+                        <button class="button action-left" (press)="onPress('a')">a</button>
+                        <button class="button action-down" (press)="onPress('s')">s</button>
+                        <button class="button action-right" (press)="onPress('d')">d</button>
+                    </div>
                 </li>
             </ul>
         </div>

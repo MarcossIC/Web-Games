@@ -1,4 +1,4 @@
-import { Injectable, NgZone, inject } from '@angular/core';
+import { DestroyRef, Injectable, NgZone, inject } from '@angular/core';
 import { BoardService } from '@app/data/services/tetris/Board.service';
 import { BagOfPiecesService } from './BagOfPieces.service';
 import { Piece } from '@app/data/models/tetris/Piece';
@@ -13,16 +13,17 @@ import {
   SHADOW_BLUR_SCALE,
 } from '@app/presentation/pages/tetris/tetrisConstanst';
 import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
-import { Subject } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import { NextPieceBoardService } from './NextPieceBoard.service';
 import { Axis } from '@app/data/models/tetris/Axis';
+import { PieceType } from '@app/data/models/tetris/PieceType.enum';
 
 @Injectable({
   providedIn: 'root',
 })
 export class TetrisControllerService {
   public gameOver: boolean;
-  public isGammingRunning: boolean;
+
   public isPaused: boolean;
   public nextPiece: Subject<Piece>;
 
@@ -30,16 +31,18 @@ export class TetrisControllerService {
   private bagOfPieces = inject(BagOfPiecesService);
   private nextPieceBoard = inject(NextPieceBoardService);
   private ngZone = inject(NgZone);
+  private destroy$ = destroy();
+  public animationFrameId: number = 0;
 
   constructor() {
     this.gameOver = false;
-    this.isGammingRunning = true;
+
     this.isPaused = true;
     this.nextPiece = new Subject<Piece>(); 
   }
 
   updateNextPiece = (context: CanvasRenderingContext2D, width: number, height: number)=>
-    this.nextPiece.subscribe((nextPiece: Piece)=>{
+    this.nextPiece.pipe(this.destroy$()).subscribe((nextPiece: any)=>{
       context.lineWidth = LINE_WIDTH_SCALE;
       context.shadowBlur = SHADOW_BLUR_SCALE;
       context.fillStyle = '#000';
@@ -51,7 +54,6 @@ export class TetrisControllerService {
 
   //Game Loop
   runGame(context: CanvasRenderingContext2D, width: number, height: number): void {
-    this.isGammingRunning = true;
     this.gameOver = false;
     this.isPaused = true;
     this.nextPiece.next(this.bagOfPieces.nextPiece());
@@ -61,7 +63,7 @@ export class TetrisControllerService {
     let lastTime: number = 0;
 
     const update = (time:number = 0) => {
-      if(this.isGammingRunning){
+
         //Mueve la pieza automaticamente
         if(!this.gameOver && !this.isPaused){
           const { newDropCounter, newLastTime } = this.movePieceAuto(time, dropCounter, lastTime);
@@ -71,13 +73,13 @@ export class TetrisControllerService {
    
           this.draw(context);
         }
-        this.ngZone.runOutsideAngular(() => requestAnimationFrame(update));
-      }
+        this.ngZone.runOutsideAngular(() => {
+          this.animationFrameId = requestAnimationFrame(update);
+        });
     };
 
     update();
   }
-
 
   movePieceAuto(time: number, dropCounter: number, lastTime: number){
     const deltaTime = time - lastTime;
@@ -163,9 +165,9 @@ export class TetrisControllerService {
 
     return (
       x >= 0 &&
-      x + numRows < BOARD_WIDTH &&
+      x + numRows < BOARD_WIDTH_SCREEN &&
       y >= 0 &&
-      y + numCols < BOARD_HEIGHT
+      y + numCols < BOARD_HEIGHT_SCREEN
     );
   }
 
@@ -177,12 +179,9 @@ export class TetrisControllerService {
   
     for (let col = numCols - 1; col >= 0; col--) {
       const newRow = [];
-  
       for (let row = 0; row < numRows; row++) newRow.push(shape[row][col]);
-      
       rotated.push(newRow);
     }
-  
     return rotated;
   }
 
@@ -245,12 +244,7 @@ export class TetrisControllerService {
     }
   }
 
-  public closeGame(): void{
-    this.isGammingRunning = false;
-  }
-
   public playAgain(): void{
-
     this.gameOver = false;
     this.isPaused = false;
   }
@@ -267,6 +261,16 @@ export class TetrisControllerService {
 
   public resume(): void{
     this.isPaused = false;
-    this.isGammingRunning = true;
   }
+}
+
+export function destroy(){
+  const subject = new Subject();
+
+  inject(DestroyRef).onDestroy(()=>{
+    subject.next(true);
+    subject.complete();
+  });
+
+  return ()=> takeUntil(subject.asObservable());
 }

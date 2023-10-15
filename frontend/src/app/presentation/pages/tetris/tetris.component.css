@@ -137,6 +137,9 @@
     align-items: center;
     column-gap: 1.25rem;
 }
+.controllers{
+    display: none;
+}
 
 @media screen and (max-width: 500px) {
     .modal {
@@ -166,28 +169,16 @@
     .info-container  ul{
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        grid-template-rows: repeat(3, 1fr);
-        grid-column-gap: 0px;
-        grid-row-gap: 0px;
+        grid-template-rows: 1fr 2fr;
+        grid-column-gap: 10px;
+        grid-row-gap: 5px;
         width: 100%;
+        margin-inline: 5px;
 
-    }
-
-    .next{
-        grid-area: 1 / 2 / 4 / 3;
-    }
-    .score{
-        grid-area: 1 / 3 / 2 / 4;
-    }
-    .lines{
-        grid-area: 2 / 3 / 3 / 4;
-    }
-    .times{
-        grid-area: 3 / 3 / 4 / 4;
     }
 
     .pause{
-        grid-area: 1 / 1 / 4 / 2;
+        grid-area: 1 / 1 / 2 / 2;
         font-size: 1.5rem;
         width: 100%;
         display: flex;
@@ -195,6 +186,59 @@
         align-items: center;
         margin-inline-start: 15px;
     }
+
+    .next{
+        grid-area: 2 / 1 / 3 / 2;
+    }
+    .score{
+        grid-area: 2 / 2 / 3 / 3;
+        justify-self: center;
+        align-self: center;
+        width: 100%;
+    }
+    .lines{
+        grid-area: 2 / 3 / 3 / 4;
+        justify-self: center;
+        align-self: center;
+        width: 100%;
+    }
+    .times{
+        grid-area: 2 / 4 / 3 / 5;
+        justify-self: center;
+        align-self: center;
+        width: 100%;
+    }
+
+    .controllers{
+        display: block;
+        grid-area: 1 / 2 / 2 / 5;
+        justify-self: center;
+        align-self: center;
+        width: 100%;
+    }
+
+    .display-buttons{
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        grid-column-gap: 5px;
+        grid-row-gap: 10px;
+    }
+
+    .button{
+        border-radius: 0.3rem;
+        background-color: #1c157a;
+        width: 45px;
+        aspect-ratio: 1/1;
+        padding: 5px;
+        justify-self: center;
+        align-self: center;
+    }
+
+    .action-rotate{ grid-area: 1 / 1 / 2 / 4;}
+    .action-left{ grid-area: 2 / 1 / 3 / 2; }
+    .action-down{ grid-area: 2 / 2 / 3 / 3; }
+    .action-right{ grid-area: 2 / 3 / 3 / 4;}
 
     .point-title{
         font-size: 1.2rem;
