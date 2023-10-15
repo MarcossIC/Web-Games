@@ -30,10 +30,10 @@
                 </li>
                 <li class="controllers">
                     <div class="display-buttons">
-                        <button class="button action-rotate" (mousedown)="onPress('w')">w</button>
-                        <button class="button action-left" (mousedown)="onPress('w')">a</button>
-                        <button class="button action-down" (mousedown)="onPress('w')">s</button>
-                        <button class="button action-right" (mousedown)="onPress('w')">d</button>
+                        <button class="button action-rotate" (mousedown)="onPress('w')" (mouseover)="onPress('w')">w</button>
+                        <button class="button action-left" (mousedown)="onPress('a')" (mouseover)="onPress('a')">a</button>
+                        <button class="button action-down" (mousedown)="onPress('s')" (mouseover)="onPress('s')">s</button>
+                        <button class="button action-right" (mousedown)="onPress('d')" (mouseover)="onPress('d')">d</button>
                     </div>
                 </li>
             </ul>
