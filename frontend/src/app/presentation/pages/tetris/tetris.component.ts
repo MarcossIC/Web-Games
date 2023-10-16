@@ -55,7 +55,7 @@ export class TetrisComponent implements OnInit, OnDestroy {
     this.nextPiece.width = NEXT_PIECE_SIZE * NEXT_PIECE_WIDTH;
     this.nextPiece.height = NEXT_PIECE_SIZE * NEXT_PIECE_HEIGHT;
     this.nextPieceContext.scale(NEXT_PIECE_SIZE, NEXT_PIECE_SIZE);
-
+    
     this.controller.updateNextPiece(this.nextPieceContext, this.nextPiece.width, this.nextPiece.height);
     this.controller.runGame(this.boardContext, this.boardWidth, this.boardHeight);
     

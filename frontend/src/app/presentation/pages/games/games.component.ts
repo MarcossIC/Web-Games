@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { SeoService } from '@app/data/services/seo.service';
+import { GAMES, iGAMES } from './games';
 
 @Component({
   selector: 'app-games',
@@ -8,8 +9,10 @@ import { SeoService } from '@app/data/services/seo.service';
   styleUrls: ['./games.component.css']
 })
 export class GamesComponent implements OnInit {
-
-  constructor(private seo: SeoService, private title: Title) { }
+  protected GAMES: iGAMES[] = GAMES;
+  private seo = inject(SeoService);
+  private title = inject(Title);
+  constructor() { }
 
   ngOnInit(): void {
     this.title.setTitle("Games Option");

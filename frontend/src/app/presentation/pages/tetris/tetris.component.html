@@ -10,7 +10,7 @@
         <div class="info-container">
             <ul>
                 <li class="mb-8 flex justify-end items-center text-3xl pause">
-                    <button class="text-format menu-logo" role="button" (click)="pause()" (press)="onPress('p')">||</button>
+                    <button class="text-format menu-logo" role="button" (click)="pause()">||</button>
                 </li>
                 <li class="next">
                     <h2 class="point-title menu-logo ">Next</h2>
@@ -21,8 +21,8 @@
                     <span class="point">{{ this.point.score }}</span>
                 </li>
                 <li class="lines">
-                    <h2 class="point-title menu-logo">Lines</h2>
-                    <span class="point">{{ this.point.countLines }}</span>
+                    <h2 class="point-title menu-logo">Level</h2>
+                    <span class="point">{{ this.controller.level }}</span>
                 </li>
                 <li class="times">
                     <h2 class="point-title menu-logo">Time</h2>
@@ -30,10 +30,10 @@
                 </li>
                 <li class="controllers">
                     <div class="display-buttons">
-                        <button class="button action-rotate" (mousedown)="onPress('w')" (mouseover)="onPress('w')">w</button>
-                        <button class="button action-left" (mousedown)="onPress('a')" (mouseover)="onPress('a')">a</button>
-                        <button class="button action-down" (mousedown)="onPress('s')" (mouseover)="onPress('s')">s</button>
-                        <button class="button action-right" (mousedown)="onPress('d')" (mouseover)="onPress('d')">d</button>
+                        <button class="button action-rotate" (mousedown)="onPress('w')" >w</button>
+                        <button class="button action-left" (mousedown)="onPress('a')" >a</button>
+                        <button class="button action-down" (mousedown)="onPress('s')" >s</button>
+                        <button class="button action-right" (mousedown)="onPress('d')" >d</button>
                     </div>
                 </li>
             </ul>

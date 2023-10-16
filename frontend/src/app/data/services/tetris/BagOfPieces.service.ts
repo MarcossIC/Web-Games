@@ -5,6 +5,7 @@ import { PieceType } from '@app/data/models/tetris/PieceType.enum';
 import {
   BOARD_WIDTH,
   BOARD_WIDTH_SCREEN,
+  ramdomNumber,
 } from '@app/presentation/pages/tetris/tetrisConstanst';
 import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
 
@@ -26,7 +27,7 @@ export class BagOfPiecesService {
   //Recupero una tipo ramdom y lo elimina del array
   get ramdomPieceType(): PieceType {
     return this.allPieceType.splice(
-      Math.floor(Math.random() * this.allPieceType.length - 1),
+      ramdomNumber(true, this.allPieceType.length-1),
       1
     )[0];
   }
@@ -105,18 +106,17 @@ export class BagOfPiecesService {
 
   generatePiece(pieceType: PieceType): Piece {
     const shape = this.piece.generateShapePiece(pieceType);
-    let ramsomPositionX = Math.floor(Math.random() * BOARD_WIDTH_SCREEN - 1);
+    let ramsomPositionX = ramdomNumber(true, BOARD_WIDTH_SCREEN-1);
 
     if (ramsomPositionX <= 0) ramsomPositionX += 2;
-    if (ramsomPositionX + shape.length > BOARD_WIDTH_SCREEN - 1)
-      ramsomPositionX -= 2;
+    if (ramsomPositionX + shape.length > BOARD_WIDTH_SCREEN - 1) ramsomPositionX -= 2;
 
     return {
       shape: shape,
       type: pieceType,
       isMovable: true,
       color: this.piece.defineColorPiece(),
-      position: { x: ramsomPositionX, y: 0 },
+      position: { x: ramsomPositionX, y: 0 }
     };
   }
 }

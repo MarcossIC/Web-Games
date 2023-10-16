@@ -1,5 +1,6 @@
 import { Axis } from "./Axis";
 import { PieceColor } from "./PieceColor";
+import { PieceImage } from "./PieceImage";
 import { PieceType } from "./PieceType.enum";
 
 export interface Piece {

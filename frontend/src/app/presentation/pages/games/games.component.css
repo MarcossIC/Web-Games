@@ -25,8 +25,9 @@
 
     border-radius: 2rem;
     border: 5px solid #5EE8EA;
-    padding: .4rem;
+    padding: .3rem;
     opacity: 0.9;
+    position: relative;
 }
 
 .game:hover {
@@ -37,6 +38,7 @@
 
 .game img {
     border-radius: 2rem;
+    padding: .4rem;
 }
 
 .game-caption {

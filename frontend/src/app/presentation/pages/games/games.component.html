@@ -8,15 +8,17 @@
 
   <main class="games-container">
 
-    <div *ngFor="let game of [1, 1, 1]">
-      <article class="game" routerLink="/tetris">
+    <article *ngFor="let GAME of GAMES; let i = index" >
+      <div class="game" [routerLink]="GAME.PATH" [tabindex]="i">
         <picture>
-          <img src="../../../../assets/images/tetris-frontpage.webp" alt="Gamer Front page" role="img" itemprop="images">
-        </picture>
-      </article>
-      <h2 class="game-caption">Tetris</h2>
-    </div>
-  </main>
+          <img [ngSrc]="GAME.IMG" [alt]="GAME.ALT" role="img" fill>
 
-  
+        </picture>
+      </div>
+
+      <h2 class="game-caption">{{ GAME.NAME }}</h2>
+    </article>
+
+
+  </main>
 </div>

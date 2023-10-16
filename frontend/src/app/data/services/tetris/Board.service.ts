@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BOARD_WIDTH, BOARD_HEIGHT, DEFAULT_COLOR, BOARD_HEIGHT_SCREEN, BOARD_WIDTH_SCREEN } from "../../../presentation/pages/tetris/tetrisConstanst";
+import { BOARD_HEIGHT_SCREEN, BOARD_WIDTH_SCREEN, DEFAULT_COLOR, SIZE_SQUARE_IN_BOARD } from "../../../presentation/pages/tetris/tetrisConstanst";
 import { Piece } from '@app/data/models/tetris/Piece';
 import { PointsService } from './Points.service';
 
@@ -9,8 +9,11 @@ import { PointsService } from './Points.service';
 export class BoardService {
 
   private _board: number[][];
+  private image: HTMLImageElement;
+
   constructor(private points: PointsService) { 
     this._board = this.loadBoard(BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN);
+    this.image = new Image();
   }
 
   loadBoard(boardWidth: number, boardHeight: number): number[][]{
@@ -36,7 +39,7 @@ export class BoardService {
 
     this._board.forEach((row, x) => {
       row.forEach((value, y) => {
-        if (value === 1) {
+        if (value > 0) {
           //Configuracion
           context.fillStyle = DEFAULT_COLOR.fill;
           context.strokeStyle = DEFAULT_COLOR.stroke;
@@ -54,31 +57,34 @@ export class BoardService {
   solidifyPieceInBoard(piece: Piece){
     piece.shape.forEach((row, x) => {
       row.forEach((value, y) => {
-        if (value === 1) {
+        if (value > 0) {
           this._board[y+piece.position.y+1][x + piece.position.x] = 1;
         }
       })
     })
   }
 
-  verifyLines(){
+  verifyLines(): number {
     this._board.forEach((row, rowX)=>{
-      if(row.every(cell => cell !== 0)){
+      if(row.every(cell => cell > 0)){
         this.removeLine(rowX);
         this.addNewEmptyLine();
         this.points.updatePoints();
       }
     });
+    let score = this.points.score;
+    if(score < 500) return 1;
+    else if(score >= 500 && score < 1000) return 2;
+    else if(score >= 1000 && score < 1500) return 3;
+    else return 4;
   }
 
   removeLine(line: number){
     this._board.splice(line, 1);
-    this._board.unshift(Array(BOARD_WIDTH).fill(0));
+    this._board.unshift(Array(BOARD_WIDTH_SCREEN).fill(0));
   }
 
   addNewEmptyLine(){
-    this._board.unshift(Array(BOARD_WIDTH).fill(0));
+    this._board.unshift(Array(BOARD_WIDTH_SCREEN).fill(0));
   }
-  
-
 }

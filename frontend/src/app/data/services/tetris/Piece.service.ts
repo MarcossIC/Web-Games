@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Piece } from '@app/data/models/tetris/Piece';
 import { PieceColor } from '@app/data/models/tetris/PieceColor';
+import { PieceImage } from '@app/data/models/tetris/PieceImage';
 import { PieceType } from '@app/data/models/tetris/PieceType.enum';
-import { BOARD_HEIGHT, BOARD_HEIGHT_SCREEN, BOARD_WIDTH, BOARD_WIDTH_SCREEN } from '@app/presentation/pages/tetris/tetrisConstanst';
+import { ALL_COLOR_PIECE, ALL_SQUARE_IMG, BOARD_HEIGHT, BOARD_HEIGHT_SCREEN, BOARD_WIDTH, BOARD_WIDTH_SCREEN, ramdomNumber } from '@app/presentation/pages/tetris/tetrisConstanst';
 
 @Injectable({
   providedIn: 'root'
@@ -17,16 +18,6 @@ export class PieceService {
     [PieceType.ELE]: this.generateEle.bind(this),
     [PieceType.INVERTED_STAIRCASE]: this.generateInvertedStaircase.bind(this),
     [PieceType.INVERTED_ELE]: this.generateInvertedEle.bind(this)
-  };
-  //Mapa que: Define la paleta de coloresde las piezas
-  private allColorPiece: Record<number, PieceColor> = {
-    1: {fill: "#FEEA67", stroke: "#6E5E20"},
-    2: {fill: "#79FEFF", stroke: "#40666E"},
-    3: {fill: "#FC7382", stroke: "#6E3D42"},
-    4: {fill: "#6FFC73", stroke: "#345C3D"},
-    5: {fill: "#6699FE", stroke: "#384066"},
-    6: {fill: "#E99D2A", stroke: "#A06A34"},
-    7: {fill: "#9257C8", stroke: "#38294A"}
   };
 
   private _current: Piece;
@@ -43,15 +34,11 @@ export class PieceService {
   }
 
   moveToLeft(){
-
       this._current.position.x--;
-
   }
 
   moveToRight(){
-
       this._current.position.x++;
-
   }
 
   moveToDown(){
@@ -70,11 +57,10 @@ export class PieceService {
   }
 
   public defineColorPiece(): PieceColor{
-    const number = Math.floor(Math.random() * 7) + 1;
+    const colorIndex = ramdomNumber(false, 7);
     //Retorna una color ramdom de entre la paleta de colores definida
-    return this.allColorPiece[number];
+    return ALL_COLOR_PIECE[colorIndex];
   }
-
 
   private generateSquare(): number[][]{
     return [ 
