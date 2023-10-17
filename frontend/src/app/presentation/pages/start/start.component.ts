@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import { Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { SeoService } from '@app/data/services/seo.service';
 
@@ -12,7 +12,10 @@ export class StartComponent implements OnInit {
   
   isHovered: boolean[] = [false, false];
 
-  constructor(private seo: SeoService, private title: Title) { }
+  private seo = inject(SeoService);
+  private title = inject(Title);
+
+  constructor() { }
 
   ngOnInit(): void {
     this.title.setTitle("Start");

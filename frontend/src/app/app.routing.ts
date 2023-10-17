@@ -12,6 +12,10 @@ const routes: Routes = [
   {
     path: 'tetris',
     loadChildren: () => import("@app-pages/tetris/tetris.module").then(m => m.TetrisModule)
+  },
+  {
+    path: '**',
+    loadChildren: () => import("@app-pages/notfound/notfound.module").then(m => m.NotfoundModule)
   }
 ];
 

@@ -2,17 +2,16 @@
   <app-particles></app-particles>
 
   <header class="logo-container">
-    <span class="text-format menu-logo" role="button" routerLink="/">Menu</span>
+    <span class="text-format menu-logo" role="button" routerLink="/" tabindex="0">Menu</span>
   </header>
 
 
   <main class="games-container">
 
     <article *ngFor="let GAME of GAMES; let i = index" >
-      <div class="game" [routerLink]="GAME.PATH" [tabindex]="i">
+      <div class="game" [routerLink]="GAME.PATH" [tabindex]="i+1">
         <picture>
           <img [ngSrc]="GAME.IMG" [alt]="GAME.ALT" role="img" fill>
-
         </picture>
       </div>
 
