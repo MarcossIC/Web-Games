@@ -23,7 +23,6 @@ export class ChronometerComponent implements OnInit, OnDestroy {
     this.cronometro$ = interval(1000);
   }
 
-
   ngOnInit(): void {
     this.timer$ = this.cronometro$.subscribe(() => {
       if(!this.controller.gameOver && !this.controller.isPaused){
@@ -46,6 +45,7 @@ export class ChronometerComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.timer$.unsubscribe();
+    this.cronometro$.pipe();
   }
 
   private updateTime() {

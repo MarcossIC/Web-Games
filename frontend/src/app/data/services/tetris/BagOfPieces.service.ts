@@ -3,11 +3,10 @@ import { PieceService } from './Piece.service';
 import { Piece } from '@app/data/models/tetris/Piece';
 import { PieceType } from '@app/data/models/tetris/PieceType.enum';
 import {
-  BOARD_WIDTH,
-  BOARD_WIDTH_SCREEN,
-  ramdomNumber,
-} from '@app/presentation/pages/tetris/tetrisConstanst';
+  BOARD_WIDTH_SCREEN
+} from 'assets/constants/tetrisConstanst';
 import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
+import { ramdomNumber } from '../util.service';
 
 @Injectable({
   providedIn: 'root',
@@ -19,20 +18,12 @@ export class BagOfPiecesService {
   public piece = inject(PieceService);
 
   constructor() {
-    this.allPieceType = this.loadPieceType();
+    this.allPieceType = this.loadAllPieceType();
     this.loadPieceBag();
     this.recoverNextPiece();
   }
 
-  //Recupero una tipo ramdom y lo elimina del array
-  get ramdomPieceType(): PieceType {
-    return this.allPieceType.splice(
-      ramdomNumber(true, this.allPieceType.length-1),
-      1
-    )[0];
-  }
-
-  private loadPieceType() {
+  loadAllPieceType(): PieceType[] {
     return [
       PieceType.BAR,
       PieceType.ELE,
@@ -44,17 +35,28 @@ export class BagOfPiecesService {
     ];
   }
 
+  //Recupero una tipo ramdom y lo elimina del array
+  get ramdomPieceType(): PieceType {
+    return this.allPieceType.splice(
+      ramdomNumber(true, this.allPieceType.length-1),
+      1
+    )[0];
+  }
+
   //Carga la bolsa de piezas de manera aleatoria
   loadPieceBag(): void {
-    this.pieceBag.push(this.generatePiece(this.ramdomPieceType));
-    this.pieceBag.push(this.generatePiece(this.ramdomPieceType));
-    this.pieceBag.push(this.generatePiece(this.ramdomPieceType));
-    this.pieceBag.push(this.generatePiece(this.ramdomPieceType));
-    this.pieceBag.push(this.generatePiece(this.ramdomPieceType));
-    this.pieceBag.push(this.generatePiece(this.ramdomPieceType));
-    this.pieceBag.push(this.generatePiece(this.ramdomPieceType));
+    const totalPiece = this.allPieceType.length;
+    console.log("total is: "+totalPiece);
+    for(let i = 0; i < totalPiece; i++) {
+      console.log("i: "+i+" total: "+totalPiece);
+      this.addPieceToBag();
+    }
 
-    this.allPieceType = this.loadPieceType();
+    this.allPieceType = this.loadAllPieceType();
+  }
+
+  addPieceToBag(){
+    this.pieceBag.push(this.generatePiece(this.ramdomPieceType));
   }
 
   reset() {
@@ -76,11 +78,13 @@ export class BagOfPiecesService {
     }
   }
 
-  //"Saca" una pieza de la bolsa
+  //Recupera la siguiente pieza, si no esta vacia la bolsa
   recoverNextPiece(): void {
-    if (!this.bagIsEmpty) {
+    const isEmpty = this.bagIsEmpty;
+    if (!isEmpty) {
       this.updateCurrent();
-    } else {
+    } 
+    if(isEmpty){
       this.loadPieceBag();
       this.updateCurrent();
     }

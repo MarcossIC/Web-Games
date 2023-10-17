@@ -1,24 +1,19 @@
 import { Injectable } from '@angular/core';
-import { BOARD_HEIGHT_SCREEN, BOARD_WIDTH_SCREEN, DEFAULT_COLOR, SIZE_SQUARE_IN_BOARD } from "../../../presentation/pages/tetris/tetrisConstanst";
+import { BOARD_HEIGHT_SCREEN, BOARD_WIDTH_SCREEN, DEFAULT_COLOR, SIZE_SQUARE_IN_BOARD } from "../../../../assets/constants/tetrisConstanst";
 import { Piece } from '@app/data/models/tetris/Piece';
 import { PointsService } from './Points.service';
+import { fillArray, fillMatrix, ramdomNumber } from '../util.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BoardService {
-
   private _board: number[][];
-  private image: HTMLImageElement;
 
   constructor(private points: PointsService) { 
-    this._board = this.loadBoard(BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN);
-    this.image = new Image();
+    this._board = fillMatrix(BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN, 0);
   }
 
-  loadBoard(boardWidth: number, boardHeight: number): number[][]{
-    return Array(boardHeight).fill(0).map(() => Array(boardWidth).fill(0));
-  }
   //Exponer el tablero
   get board(){
     return this._board;
@@ -26,7 +21,7 @@ export class BoardService {
 
   //Rieniciar el tablero
   reset(){
-    this._board = this.loadBoard(BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN);
+    this._board = fillMatrix(BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN, 0);
   }
 
   drawBoard(
@@ -52,14 +47,10 @@ export class BoardService {
     });
   }
 
-
-
   solidifyPieceInBoard(piece: Piece){
     piece.shape.forEach((row, x) => {
       row.forEach((value, y) => {
-        if (value > 0) {
-          this._board[y+piece.position.y+1][x + piece.position.x] = 1;
-        }
+        if (value > 0) this._board[y+piece.position.y][x + piece.position.x] = 1;
       })
     })
   }
@@ -69,22 +60,26 @@ export class BoardService {
       if(row.every(cell => cell > 0)){
         this.removeLine(rowX);
         this.addNewEmptyLine();
-        this.points.updatePoints();
+        this.points.addScore();
       }
     });
     let score = this.points.score;
-    if(score < 500) return 1;
-    else if(score >= 500 && score < 1000) return 2;
-    else if(score >= 1000 && score < 1500) return 3;
-    else return 4;
+    let level;
+    if(score < 500) level = 1;
+    else if(score >= 500 && score < 1000) level =  2;
+    else if(score >= 1000 && score < 1500) level =  3;
+    else level =  4;
+    this.points.updateLevel(level);
+    this.points.updateMaxPoints();
+    return level;
   }
 
   removeLine(line: number){
     this._board.splice(line, 1);
-    this._board.unshift(Array(BOARD_WIDTH_SCREEN).fill(0));
+    this._board.unshift(fillArray(BOARD_WIDTH_SCREEN, 0));
   }
 
   addNewEmptyLine(){
-    this._board.unshift(Array(BOARD_WIDTH_SCREEN).fill(0));
+    this._board.unshift(fillArray(BOARD_WIDTH_SCREEN, 0));
   }
 }

@@ -10,6 +10,7 @@ import { PointsService } from '@app/data/services/tetris/Points.service';
 import { NextPieceBoardService } from '@app/data/services/tetris/NextPieceBoard.service';
 import { ParticlesComponent } from '@app-components/particles/particles.component';
 import { ChronometerComponent } from '@app/presentation/components/chronometer/chronometer.component';
+import { UtilService } from '@app/data/services/util.service';
 @NgModule({
   imports: [
     CommonModule, TetrisRoutes, ParticlesComponent
@@ -26,7 +27,8 @@ import { ChronometerComponent } from '@app/presentation/components/chronometer/c
     PieceService, 
     BagOfPiecesService, 
     PointsService, 
-    NextPieceBoardService
+    NextPieceBoardService,
+    UtilService
   ],
   bootstrap: [TetrisComponent]
 })

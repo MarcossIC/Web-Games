@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Piece } from '@app/data/models/tetris/Piece';
 import { PieceType } from '@app/data/models/tetris/PieceType.enum';
-import { NEXT_PIECE_HEIGHT, NEXT_PIECE_WIDTH, SIZE_SQUARE_IN_BOARD } from '@app/presentation/pages/tetris/tetrisConstanst';
+import { NEXT_PIECE_HEIGHT, NEXT_PIECE_WIDTH, SIZE_SQUARE_IN_BOARD } from 'assets/constants/tetrisConstanst';
+import { fillMatrix } from '../util.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,50 +12,30 @@ export class NextPieceBoardService {
   nextPiece!: Piece;
   nextPieceBoard: number[][];
 
-
-  
   constructor() {
-    this.nextPieceBoard = this.loadBoard(NEXT_PIECE_HEIGHT, NEXT_PIECE_WIDTH);
-  }
-
-  private loadBoard(boardHeight: number, boardWidth: number): number[][] {
-    return Array(boardHeight).fill(0).map(() => Array(boardWidth).fill(0));
+    this.nextPieceBoard = fillMatrix(NEXT_PIECE_HEIGHT, NEXT_PIECE_WIDTH, 0);
   }
 
   public reset(): void{
-    this.nextPieceBoard = this.loadBoard(NEXT_PIECE_HEIGHT, NEXT_PIECE_WIDTH);
+    this.nextPieceBoard = fillMatrix(NEXT_PIECE_HEIGHT, NEXT_PIECE_WIDTH, 0);
   }
 
   public drawNextPiece(context: CanvasRenderingContext2D, nextPiece: Piece): void{
     context.fillStyle = nextPiece.color.fill;
     context.strokeStyle = nextPiece.color.stroke;
-    if(nextPiece.type === PieceType.SQUARE){
-      this.printSquare(context);
-      return;
-    }
-    if(nextPiece.type === PieceType.TRIANGLE){
-      this.printTriangle(context);
-      return;
-    }
-    if(nextPiece.type === PieceType.ELE){
-      this.printEle(context);
-      return;
-    }
-    if(nextPiece.type === PieceType.STAIRCASE){
-      this.printStaircase(context);
-      return;
-    }
-    if(nextPiece.type === PieceType.INVERTED_STAIRCASE){
-      this.printInvertedStaircase(context);
-      return;
-    }
-    if(nextPiece.type === PieceType.INVERTED_ELE){
-      this.printInvertedEle(context);
-      return;
-    }
-    if(nextPiece.type === PieceType.BAR){
-      this.printBar(context);
-      return;
+ 
+    this.executeIfTypesMatch((nextPiece.type === PieceType.SQUARE), ()=>this.printSquare(context));
+    this.executeIfTypesMatch((nextPiece.type === PieceType.TRIANGLE), ()=>this.printTriangle(context));
+    this.executeIfTypesMatch((nextPiece.type === PieceType.ELE), ()=>this.printEle(context));
+    this.executeIfTypesMatch((nextPiece.type === PieceType.STAIRCASE), ()=>this.printStaircase(context));
+    this.executeIfTypesMatch((nextPiece.type === PieceType.INVERTED_STAIRCASE), ()=>this.printInvertedStaircase(context));
+    this.executeIfTypesMatch((nextPiece.type === PieceType.INVERTED_ELE), ()=>this.printInvertedEle(context));
+    this.executeIfTypesMatch((nextPiece.type === PieceType.BAR), ()=>this.printBar(context));
+  }
+
+  executeIfTypesMatch(typesMatch: boolean, printShape: ()=> void){
+    if(typesMatch){
+      printShape();
     }
   }
 

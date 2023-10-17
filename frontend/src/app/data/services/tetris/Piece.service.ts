@@ -3,7 +3,8 @@ import { Piece } from '@app/data/models/tetris/Piece';
 import { PieceColor } from '@app/data/models/tetris/PieceColor';
 import { PieceImage } from '@app/data/models/tetris/PieceImage';
 import { PieceType } from '@app/data/models/tetris/PieceType.enum';
-import { ALL_COLOR_PIECE, ALL_SQUARE_IMG, BOARD_HEIGHT, BOARD_HEIGHT_SCREEN, BOARD_WIDTH, BOARD_WIDTH_SCREEN, ramdomNumber } from '@app/presentation/pages/tetris/tetrisConstanst';
+import { ALL_COLOR_PIECE, DEFAULT_PIECE } from 'assets/constants/tetrisConstanst';
+import { ramdomNumber } from '../util.service';
 
 @Injectable({
   providedIn: 'root'
@@ -23,7 +24,7 @@ export class PieceService {
   private _current: Piece;
 
   constructor() { 
-    this._current = {shape: [[]], type: PieceType.SQUARE, position: {x: 0, y: 0}, color: {fill: "", stroke: ""}, isMovable: true};
+    this._current = DEFAULT_PIECE;
   }
 
   get current(): Piece{
@@ -58,6 +59,7 @@ export class PieceService {
 
   public defineColorPiece(): PieceColor{
     const colorIndex = ramdomNumber(false, 7);
+    console.log("COLORi: "+colorIndex);
     //Retorna una color ramdom de entre la paleta de colores definida
     return ALL_COLOR_PIECE[colorIndex];
   }

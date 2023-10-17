@@ -1,9 +1,8 @@
-import { Component, DestroyRef, ElementRef, OnDestroy, OnInit, Renderer2, ViewChild, inject } from '@angular/core';
-import { BLOCK_SIZE, BOARD_WIDTH, BOARD_HEIGHT, NEXT_PIECE_WIDTH, NEXT_PIECE_HEIGHT, NEXT_PIECE_SIZE, BLOCK_MOBILE_SIZE, BOARD_MOBILE_WIDTH, BOARD_MOBILE_HEIGHT, BLOCK_SIZE_SCREEN, BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN } from "./tetrisConstanst";
+import { Component,  ElementRef, OnDestroy, OnInit, Renderer2, ViewChild, inject } from '@angular/core';
+import { NEXT_PIECE_WIDTH, NEXT_PIECE_HEIGHT, NEXT_PIECE_SIZE, BLOCK_SIZE_SCREEN, BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN } from "../../../../assets/constants/tetrisConstanst";
 import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
 import { PointsService } from '@app/data/services/tetris/Points.service';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
 import { SeoService } from '@app/data/services/seo.service';
 import { Title } from '@angular/platform-browser';
 
@@ -82,18 +81,16 @@ export class TetrisComponent implements OnInit, OnDestroy {
 
   close(){
     this.point.resetScore();
-    this.point.resetCountLine();
+    this.point.resetLevel();
     this.controller.reset();
 
-    this.point.resetScore();
-    this.point.resetCountLine();
     this.router.navigate(['/games']);
   }
 
   restart(): void{
     this.controller.reset();
     this.controller.playAgain();
-    this.point.resetCountLine();
+    this.point.resetLevel();
     this.point.resetScore();
   }
 

@@ -1,5 +1,7 @@
 import { ACTION } from "@app/data/models/tetris/MoveDirections.enum";
+import { Piece } from "@app/data/models/tetris/Piece";
 import { PieceColor } from "@app/data/models/tetris/PieceColor";
+import { PieceType } from "@app/data/models/tetris/PieceType.enum";
 
 export const BLOCK_SIZE: number = 25;
 export const BLOCK_MOBILE_SIZE: number = 20;
@@ -15,8 +17,6 @@ export const NEXT_PIECE_SIZE: number = 18;
 export const NEXT_PIECE_WIDTH: number = 5;
 export const NEXT_PIECE_HEIGHT: number = 5;
 
-
-
 export const LINE_WIDTH_SCALE = 0.01;
 export const SHADOW_BLUR_SCALE = 1;
 export const NEXT_POSITION = 1;
@@ -24,9 +24,6 @@ export const NEXT_POSITION = 1;
 export const BLOCK_SIZE_SCREEN = (window.innerWidth <= 500) ? BLOCK_MOBILE_SIZE : BLOCK_SIZE;
 export const BOARD_WIDTH_SCREEN = (window.innerWidth <= 500) ? BOARD_MOBILE_WIDTH : BOARD_WIDTH;
 export const BOARD_HEIGHT_SCREEN = (window.innerWidth <= 500) ? BOARD_MOBILE_HEIGHT : BOARD_HEIGHT;
-
-
-console.log(BOARD_WIDTH_SCREEN);
 
 export const ACTIONS: Record<string, ACTION> = {
     "ArrowLeft": ACTION.LEFT,
@@ -47,7 +44,6 @@ export const DEFAULT_COLOR: PieceColor = {
     stroke: "#6E5E20"
 };
 
-
   //Mapa que: Define la paleta de coloresde las piezas
   export const ALL_COLOR_PIECE: Record<number, PieceColor> = {
     1: {fill: "#FEEA67", stroke: "#6E5E20"},
@@ -59,29 +55,14 @@ export const DEFAULT_COLOR: PieceColor = {
     7: {fill: "#9257C8", stroke: "#38294A"}
   };
 
-  export const ALL_SQUARE_IMG: Record<number, string> = {
-    1: '../../../../assets/images/tetris/yellow_square.webp',
-    2: '../../../../assets/images/tetris/skyblue_square.webp',
-    3: '../../../../assets/images/tetris/red_square.webp',
-    4: '../../../../assets/images/tetris/green_square.webp',
-    5: '../../../../assets/images/tetris/blue_square.webp',
-    6: '../../../../assets/images/tetris/orange_square.webp',
-    7: '../../../../assets/images/tetris/violet_square.webp'
-  };
-
-
-
-  export function ramdomNumber(includeZero: boolean, maxNumber: number){
-    const num = includeZero ? 0 : 1;
-    return Math.floor(Math.random() * maxNumber) + num;
-  }
 
 export const SIZE_SQUARE_IN_BOARD: number = 1;
 
-
-export const LEVELS: Record<number, number> = {
+export const SPEED_PER_LEVEL: Record<number, number> = {
   1: 900,
-  2: 700,
-  3: 500,
-  4: 300
+  2: 500,
+  3: 300,
+  4: 100
 };
+
+export const DEFAULT_PIECE: Piece = {shape: [[]], type: PieceType.SQUARE, position: {x: 0, y: 0}, color: {fill: "", stroke: ""}, isMovable: true};
