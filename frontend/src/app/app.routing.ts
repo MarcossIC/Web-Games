@@ -14,6 +14,10 @@ const routes: Routes = [
     loadChildren: () => import("@app-pages/tetris/tetris.module").then(m => m.TetrisModule)
   },
   {
+    path: 'snakeling',
+    loadChildren: () => import("@app-pages/snakeling/snakeling.module").then(m => m.SnakelingModule)
+  },
+  {
     path: '**',
     loadChildren: () => import("@app-pages/notfound/notfound.module").then(m => m.NotfoundModule)
   }

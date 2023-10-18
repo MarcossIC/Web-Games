@@ -7,7 +7,7 @@ import {
 import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
 import { Subject } from 'rxjs';
 import { NextPieceBoardService } from './NextPieceBoard.service';
-import { Axis } from '@app/data/models/tetris/Axis';
+import { Axis } from '@app/data/models/Axis';
 import { destroy } from '../util.service';
 
 @Injectable({

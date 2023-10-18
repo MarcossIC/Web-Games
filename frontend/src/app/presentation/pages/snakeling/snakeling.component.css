@@ -1,0 +1,156 @@
+
+.header-snake{
+    width: 100%;
+    height: 100px;
+    background-color: #4B752C;
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.snake-wrapper{
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    column-gap: 15px;
+}
+
+.pause{
+    background-color: #000;
+    width: 30px;
+    aspect-ratio: 3/3;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 900;
+    display: flex;
+    margin-block-end: auto;
+    margin-block-start: 25px;
+    justify-content: center;
+    margin-inline-start: 1.5rem;
+}
+
+.scores{
+    width: 100%;
+    display: flex;
+    margin-block-end: 20px;
+    justify-content: flex-end;
+    align-items: center;
+    column-gap: 2rem;
+    margin-inline-end: 2.5rem;
+}
+
+.board {
+    grid-template-columns: repeat(22, 1fr);
+    grid-template-rows: repeat(15, 1fr);
+    grid-auto-columns: 13px; /* Tamaño de celda en columnas */
+    grid-auto-rows: 13px;    /* Tamaño de celda en filas */
+    width: 286px;
+    height: 195px;
+    display: grid;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    border: 6px dashed #151D00;
+}
+
+.odd-cell {
+    background-color: #ABD653;
+}
+
+.even-cell {
+    background-color: #A3D04A;
+}
+
+.food {
+    animation-timing-function: linear;
+    animation-name: light-food;
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+    animation-fill-mode: backwards;
+    animation-direction: normal;
+    animation-play-state: running;
+    animation-timeline: auto;
+    transition: background-color .3s ease;
+}
+
+.head{
+    background-color: #0659a7 !important;
+}
+
+.text-score{
+    color: #141B00;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    font-weight: 500;
+}
+
+.modal{
+    position: absolute;
+    background-color: #588A34;
+    color: #141B00;
+    left: 50%;
+    top: 50%;
+    width: 450px;
+    aspect-ratio: 2/1;
+    z-index: 20;
+    transform: translate(-50%, -50%);
+    padding: 12px;
+    padding-block-start: 8px;
+    font-family: 'Nunito', sans-serif;
+}
+
+.modal-title{
+    display: flex;
+    justify-content: center;
+    font-size: 3rem;
+    margin-block-end: .5rem;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.modal-sub{
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+
+@media screen and (min-width: 600px){
+    .board {
+        grid-template-columns: repeat(26, 1fr);
+        grid-template-rows: repeat(15, 1fr);
+        grid-auto-columns: 20px; /* Tamaño de celda en columnas */
+        grid-auto-rows: 20px;    /* Tamaño de celda en filas */
+        width: 520px;
+        height: 300px;
+    }
+}
+
+@media screen and (min-width: 900px){
+    .board {
+        grid-template-columns: repeat(29, 1fr);
+        grid-template-rows: repeat(15, 1fr);
+        grid-auto-columns: 30px; /* Tamaño de celda en columnas */
+        grid-auto-rows: 30px;    /* Tamaño de celda en filas */
+        width: 870px;
+        height: 450px;
+    }
+}
+
+@media screen and (min-width: 1500px){
+    .board {
+        grid-template-columns: repeat(32, 1fr);
+        grid-template-rows: repeat(18, 1fr);
+        grid-auto-columns: 45px; /* Tamaño de celda en columnas */
+        grid-auto-rows: 45px;    /* Tamaño de celda en filas */
+        width: 1440px;
+        height: 810px;
+    }
+}
+
+@keyframes light-food {
+    from {
+        background-color: #a70606;
+    }
+    to {
+        background-color: #c70f0f
+    }
+}

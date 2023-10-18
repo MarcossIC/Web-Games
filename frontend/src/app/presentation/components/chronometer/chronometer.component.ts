@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { PointsService } from '@app/data/services/tetris/Points.service';
 import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
+import { destroy } from '@app/data/services/util.service';
 import { Observable, Subscription, interval } from 'rxjs';
 
 @Component({
@@ -18,13 +19,14 @@ export class ChronometerComponent implements OnInit, OnDestroy {
   protected maxSecond: number = 0;
   public maxMinute: number = 0;
   public isUpdated: boolean = true;
+  private destroy$ = destroy();
 
   constructor(private point: PointsService, private controller: TetrisControllerService) {
     this.cronometro$ = interval(1000);
   }
 
   ngOnInit(): void {
-    this.timer$ = this.cronometro$.subscribe(() => {
+    this.timer$ = this.cronometro$.pipe(this.destroy$()).subscribe(() => {
       if(!this.controller.gameOver && !this.controller.isPaused){
         this.isUpdated = true;
         this.seconds++;

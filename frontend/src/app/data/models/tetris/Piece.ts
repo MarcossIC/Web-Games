@@ -1,4 +1,4 @@
-import { Axis } from "./Axis";
+import { Axis } from "../Axis";
 import { PieceColor } from "./PieceColor";
 import { PieceImage } from "./PieceImage";
 import { PieceType } from "./PieceType.enum";

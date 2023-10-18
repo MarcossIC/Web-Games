@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { SeoService } from '@app/data/services/seo.service';
-import { GAMES, iGAMES } from './games';
+import { GAMES, iGAMES } from 'assets/constants/games';
 
 @Component({
   selector: 'app-games',

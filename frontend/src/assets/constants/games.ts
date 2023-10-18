@@ -13,15 +13,15 @@ export const GAMES: iGAMES[] = [
         PATH: '/tetris'
     },
     {
-        IMG: '../../../../assets/images/dino-frontpage.webp',
-        NAME: 'Ajedrez',
-        ALT: 'Ajedrez front page image',
-        PATH: '/notfound'
+        IMG: '../../../../assets/images/snake-frontpage.webp',
+        NAME: 'Snake Clasic',
+        ALT: 'Snake Clasic front page image',
+        PATH: '/snakeling'
     },
     {
         IMG: '../../../../assets/images/ajedrez-frontpage.webp',
-        NAME: 'Dino Rush',
-        ALT: 'Dino Rush front page image',
+        NAME: 'Ajedrez',
+        ALT: 'Ajedrez front page image',
         PATH: '/notfound'
     },
 ];

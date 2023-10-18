@@ -1,0 +1,54 @@
+<div class="header-snake">
+    <div class="flex justify-start">
+        <button class="pause" (click)="onPause()">
+            ||
+        </button>
+    </div>
+    <div class="scores">
+        <div class="flex gap-x-2 text-score">
+            <h3 class="uppercase">Score: </h3>
+            <span>{{ this.controller.scoreService.score }}</span>
+        </div>
+        <div class="flex gap-x-2 text-score">
+            <h3 class="uppercase">High Score: </h3>
+            <span>{{ this.controller.scoreService.maxScore  }}</span>
+        </div>
+    </div>
+</div>
+<section class="snake-container relative justify-center">
+
+    <main class="snake-wrapper">
+
+        <div #board class="board">
+        </div>
+
+
+    </main>
+
+</section>
+
+
+<div class="modal" *ngIf="this.controller.isPaused">
+    <h3 class="modal-title">Welcome</h3>
+
+    <h4 class="modal-sub text-center font-semibold text-2xl mb-2">How to play</h4>
+    <p class="text-lg">Left: <strong>a</strong> y <strong>&larr;</strong></p>
+    <p class="text-lg">Right: <strong>d</strong> y <strong>&rarr;</strong></p>
+    <p class="text-lg">Down: <strong>s</strong> y <strong>&darr;</strong></p>
+    <p class="text-lg">Up: <strong>w</strong> y <strong>&uarr;</strong></p>
+    <p class="text-lg">Pause/Resume: <strong>p</strong> y <strong>escape</strong></p>
+
+    <div class="w-full flex justify-center items-center mt-4 buttons">
+        <button class="abstract-button exit-game" (click)="close()">Exit Game</button>
+        <button class="abstract-button play-again" (click)="playGame()">Play Game</button>
+    </div>
+</div>
+
+<div class="modal" *ngIf="this.controller.isGameOver">
+    <h3 class="modal-title">Game Over</h3>
+
+    <div class="w-full flex justify-center items-center mt-4 gap-x-2">
+        <button class="abstract-button exit-game" (click)="close()">Exit Game</button>
+        <button class="abstract-button play-again" (click)="playAgain()">Play Again</button>
+    </div>
+</div>
