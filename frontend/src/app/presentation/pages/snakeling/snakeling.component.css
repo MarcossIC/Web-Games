@@ -18,15 +18,14 @@
 
 .pause{
     background-color: #000;
-    aspect-ratio: 3/3;
+    aspect-ratio: 7/7;
     color: #fff;
     font-weight: 900;
     display: flex;
     margin-block-end: auto;
     justify-content: center;
-
-    width: 25px;
-    font-size: 1rem;
+    width: 30px;
+    font-size: 1.2rem;
     font-weight: 900;
     margin-block-start: 2rem;
     margin-inline-start: 1.2rem;
