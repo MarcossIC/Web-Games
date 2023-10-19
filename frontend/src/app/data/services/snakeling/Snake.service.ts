@@ -67,8 +67,6 @@ export class SnakeService {
     const snakeBodyLenght = this.snakeBody.length;
 
     for(let i = 0; i < snakeBodyLenght; i++){
-      console.log(this.snakeBody[i][i]+"-"+this.snakeBody[i][0]);
-
       const div = boardDiv.querySelector(`.cell-${this.snakeBody[i][0]}-${this.snakeBody[i][1]}`); 
 
       renderer.addClass(div, 'head');

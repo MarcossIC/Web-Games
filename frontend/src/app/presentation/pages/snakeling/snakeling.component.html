@@ -1,4 +1,4 @@
-<div class="header-snake" [ngClass]="{'opacity-95': this.controller.isGameOver}">
+<div class="header-snake">
     <div class="flex justify-start">
         <button class="pause" (click)="onPress('p')" tabindex="1" role="button">
             ||
@@ -15,7 +15,7 @@
         </div>
     </div>
 </div>
-<section class="snake-container relative justify-center" [ngClass]="{'opacity-95': this.controller.isGameOver}">
+<section class="snake-container relative justify-center">
 
     <main class="snake-wrapper">
 
@@ -66,6 +66,6 @@
     </div>
     <div class="w-full flex justify-center items-center mt-4 gap-x-2">
         <button class="abstract-button exit-game" (click)="close()" role="button">Exit Game</button>
-        <button class="abstract-button play-again" (click)="playAgain()" role="button">Play Again</button>
+        <button class="abstract-button play-again" (click)="playAgain()">Play Again</button>
     </div>
 </div>

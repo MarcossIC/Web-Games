@@ -47,7 +47,7 @@ export class SnakelingComponent implements OnInit, OnDestroy {
     this.controller.initGame(boardDiv, this.renderer);
 
     const keyboardEvents$ = fromEvent<KeyboardEvent>(window, 'keydown');
-    const throttleDuration = 75;
+    const throttleDuration = 81;
 
     this.moveListener$ = keyboardEvents$
       .pipe(throttleTime(throttleDuration))

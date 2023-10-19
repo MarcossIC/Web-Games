@@ -67,6 +67,7 @@ export class SnakelingControllerService {
   foodCollisionInSnakeBody(): boolean{
     return this.snakeService.verifyCollision(this.foodService.foodX, this.foodService.foodY);
   }
+
   public executeAction(key: string): void{
     const action = ACTIONS[key];
 
@@ -83,14 +84,13 @@ export class SnakelingControllerService {
     this.scoreService.resetScore();
     this.snakeService.resetSnake();
     this.foodService.foodChangePosition();
+
+    this.snakeService.rePaintSnake(this.boardDiv, this.renderer);
     this.foodService.rePaintFood(this.boardDiv, this.renderer);
-
-
+    this._isPaused = false;
     this._isGameOver = false;
-    
-  
-    
   }
+
   public changePause(): void{
     this._isPaused = !this._isPaused;
   }
