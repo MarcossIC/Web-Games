@@ -90,6 +90,20 @@
     display: flex;
     margin-inline: auto;
   }
+
+  .menu-content .menu-buttons .option{
+    font-size: 1.5rem;
+  }
+}
+
+@media screen and (min-width: 1500px){
+  .menu-content .menu-title{
+    font-size: 8rem;
+  }
+
+  .menu-content .menu-buttons .option{
+    font-size: 2.5rem;
+  }
 }
   
 

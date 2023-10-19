@@ -5,9 +5,9 @@
 .games-container {
     width: 100%;
     height: 100%;
-    margin-block-start: 8rem;
-    margin-inline: 2rem;
-    row-gap: 2rem;
+    margin-block-start: 3rem;
+    margin-inline: 1rem;
+    row-gap: 3rem;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     justify-items: center;
@@ -44,4 +44,49 @@
 
     font-weight: 500;
     font-size: 1.5rem;
+}
+
+.logo-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-block: 1rem;
+}
+
+.text-menu{
+    font-size: 1.5rem;
+}
+
+@media screen and (min-width: 600px) {
+    .games-container {
+        margin-block-start: 8rem;
+        margin-inline: 2rem;
+        row-gap: 2rem;
+    }
+    .logo-container{
+        justify-content: flex-start;
+        margin-inline-start: 3rem;
+        margin-inline-end: auto;
+
+    }
+}
+
+@media screen and (min-width: 1500px) {
+    .game{
+        width: 300px;
+        aspect-ratio: 1/1;
+        padding: .5rem;
+    }
+    .game-caption {
+        width: 300px;
+        margin-block-start: 1rem;
+        font-size: 2.5rem;
+    }
+    .game img {
+        padding: .6rem;
+    }
+
+    .text-menu{
+        font-size: 2.5rem;
+    }
 }

@@ -154,13 +154,25 @@
         width: 520px;
         height: 300px;
     }
-
+    .modal{
+        width: 450px;
+        padding: 12px;
+        padding-block-start: 8px;
+    }
+    .modal-title{
+        font-size: 3rem;
+        margin-block-end: .5rem;
+    }
+    .modal-sub{
+        font-size: 1.5rem;
+    }
     .pause{
         width: 30px;
         font-size: 1.1rem;
         font-weight: 900;
         margin-block-start: 25px;
         margin-inline-start: 1.5rem;
+        
     }
     .scores{
         margin-block-end: 20px;
@@ -176,6 +188,11 @@
     .controllers{
         display: none;
     }
+
+    .text-intro {
+        font-size: 1.125rem/* 18px */;
+        line-height: 1.75rem/* 28px */;
+    }
 }
 
 @media screen and (min-width: 900px){
@@ -187,19 +204,6 @@
         width: 870px;
         height: 450px;
     }
-
-    .modal{
-        width: 450px;
-        padding: 12px;
-        padding-block-start: 8px;
-    }
-    .modal-title{
-        font-size: 3rem;
-        margin-block-end: .5rem;
-    }
-    .modal-sub{
-        font-size: 1.5rem;
-    }
 }
 
 @media screen and (min-width: 1500px){
@@ -210,6 +214,42 @@
         grid-auto-rows: 45px;    /* Tamaño de celda en filas */
         width: 1440px;
         height: 810px;
+    }
+    .modal{
+        width: 650px;
+        padding: 15px;
+    }
+    .modal-title{
+        font-size: 4.5rem;
+        margin-block-end: .5rem;
+    }
+    .modal-sub{
+        font-size: 2.5rem;
+    }
+
+    .pause{
+        width: 55px;
+        font-size: 2rem;
+        font-weight: 900;
+        margin-block-start: 25px;
+        margin-inline-start: 2.5rem;
+        aspect-ratio: 15/16;
+    }
+    .scores{
+        margin-block-end: 20px;
+        column-gap: 2rem;
+        margin-inline-end: 3rem;
+    }
+
+    .text-score{
+        font-size: 2rem;
+        line-height: 1.75rem;
+        font-weight: 500;
+    }
+
+    .text-intro {
+        font-size: 2.3rem;
+        line-height: 4rem;
     }
 }
 
