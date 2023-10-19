@@ -132,9 +132,9 @@
 .button{
     border-radius: 0.3rem;
     background-color: #1c157a;
-    width: 45px;
+    width: 50px;
     aspect-ratio: 1/1;
-    padding: 5px;
+    padding: 6px;
     justify-self: center;
     align-self: center;
 }
