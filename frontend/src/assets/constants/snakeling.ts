@@ -1,11 +1,12 @@
 import { ACTION } from "@app/data/models/snakeling/Actions";
 
 
-export const BOARD_WIDTH_MOBILE = 22;
+export const BOARD_WIDTH_MOBILE = 14;
 export const BOARD_WIDTH = 26;
 export const BOARD_WIDTH_MEDIUM = 29;
 export const BOARD_WIDTH_LARGE = 32;
 
+export const BOARD_HEIGHT_MOBILE = 22;
 export const BOARD_HEIGHT = 15;
 export const BOARD_HEIGHT_LARGE = 18;
 
@@ -17,7 +18,10 @@ export const BOARD_WIDTH_SCREEN = (window.innerWidth > 1500)
                 BOARD_WIDTH : 
                 BOARD_WIDTH_MOBILE;
 
-export const BOARD_HEIGHT_SCREEN = (window.innerWidth > 1500 ) ? BOARD_HEIGHT_LARGE : BOARD_HEIGHT;
+export const BOARD_HEIGHT_SCREEN = (window.innerWidth > 1500 ) 
+                                    ? BOARD_HEIGHT_LARGE : 
+                                    (window.innerWidth > 600) 
+                                            ? BOARD_HEIGHT : BOARD_HEIGHT_MOBILE;
 
 
 export const NOT_MOVE = 0;

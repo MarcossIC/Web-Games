@@ -1,15 +1,15 @@
 <div class="header-snake">
     <div class="flex justify-start">
-        <button class="pause" (click)="onPause()">
+        <button class="pause" (click)="onPress('p')" tabindex="1" role="button">
             ||
         </button>
     </div>
     <div class="scores">
-        <div class="flex gap-x-2 text-score">
+        <div class="flex gap-x-2 text-score" tabindex="2">
             <h3 class="uppercase">Score: </h3>
             <span>{{ this.controller.scoreService.score }}</span>
         </div>
-        <div class="flex gap-x-2 text-score">
+        <div class="flex gap-x-2 text-score" tabindex="3">
             <h3 class="uppercase">High Score: </h3>
             <span>{{ this.controller.scoreService.maxScore  }}</span>
         </div>
@@ -19,10 +19,17 @@
 
     <main class="snake-wrapper">
 
-        <div #board class="board">
+        <div #board class="board" tabindex="4">
         </div>
 
-
+        <div class="controllers mt-2">
+            <div class="display-buttons">
+                <button class="button action-rotate" (mousedown)="onPress('w')" tabindex="5" role="button">w</button>
+                <button class="button action-left" (mousedown)="onPress('a')" tabindex="6" role="button">a</button>
+                <button class="button action-down" (mousedown)="onPress('s')" tabindex="7" role="button">s</button>
+                <button class="button action-right" (mousedown)="onPress('d')" tabindex="8" role="button">d</button>
+            </div>
+        </div>
     </main>
 
 </section>
@@ -32,15 +39,15 @@
     <h3 class="modal-title">Welcome</h3>
 
     <h4 class="modal-sub text-center font-semibold text-2xl mb-2">How to play</h4>
-    <p class="text-lg">Left: <strong>a</strong> y <strong>&larr;</strong></p>
-    <p class="text-lg">Right: <strong>d</strong> y <strong>&rarr;</strong></p>
-    <p class="text-lg">Down: <strong>s</strong> y <strong>&darr;</strong></p>
-    <p class="text-lg">Up: <strong>w</strong> y <strong>&uarr;</strong></p>
-    <p class="text-lg">Pause/Resume: <strong>p</strong> y <strong>escape</strong></p>
+    <p class="text-sm min-[60ppx]:text-lg">Left: <strong>a</strong> y <strong>&larr;</strong></p>
+    <p class="text-sm min-[60ppx]:text-lg">Right: <strong>d</strong> y <strong>&rarr;</strong></p>
+    <p class="text-sm min-[60ppx]:text-lg">Down: <strong>s</strong> y <strong>&darr;</strong></p>
+    <p class="text-sm min-[60ppx]:text-lg">Up: <strong>w</strong> y <strong>&uarr;</strong></p>
+    <p class="text-sm min-[60ppx]:text-lg">Pause/Resume: <strong>p</strong> y <strong>escape</strong></p>
 
     <div class="w-full flex justify-center items-center mt-4 buttons">
-        <button class="abstract-button exit-game" (click)="close()">Exit Game</button>
-        <button class="abstract-button play-again" (click)="playGame()">Play Game</button>
+        <button class="abstract-button exit-game" (click)="close()" role="button">Exit Game</button>
+        <button class="abstract-button play-again" (click)="playGame()" role="button">Play Game</button>
     </div>
 </div>
 
@@ -48,7 +55,7 @@
     <h3 class="modal-title">Game Over</h3>
 
     <div class="w-full flex justify-center items-center mt-4 gap-x-2">
-        <button class="abstract-button exit-game" (click)="close()">Exit Game</button>
-        <button class="abstract-button play-again" (click)="playAgain()">Play Again</button>
+        <button class="abstract-button exit-game" (click)="close()" role="button">Exit Game</button>
+        <button class="abstract-button play-again" (click)="playAgain()" role="button">Play Again</button>
     </div>
 </div>

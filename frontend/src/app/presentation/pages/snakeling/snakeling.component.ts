@@ -34,12 +34,11 @@ export class SnakelingComponent implements OnInit, OnDestroy {
     this.cronometro$ = interval(180);
   }
 
-
   ngOnInit(): void {
     this.title.setTitle("Snake Game");
     this.seo.generateTags({
       title: "Snake Game",
-      description: "Page to play snake Game",
+      description: "Page to play a clasic snake Game",
       slug: "snakeling"
     });
 
@@ -66,8 +65,9 @@ export class SnakelingComponent implements OnInit, OnDestroy {
     this.moveListener$.unsubscribe();
     this.timer$.unsubscribe();
   }
-  onPause(): void {
-    this.controller.executeAction('p');
+
+  onPress(key: string){
+    this.controller.executeAction(key);
   }
 
   close(): void {
