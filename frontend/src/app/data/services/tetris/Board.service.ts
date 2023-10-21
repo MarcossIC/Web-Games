@@ -11,7 +11,7 @@ export class BoardService {
   private _board: number[][];
 
   constructor(private points: PointsService) { 
-    this._board = fillMatrix(BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN, 0);
+    this._board = fillMatrix(BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN, 0) as number[][];
   }
 
   //Exponer el tablero
@@ -21,7 +21,7 @@ export class BoardService {
 
   //Rieniciar el tablero
   reset(){
-    this._board = fillMatrix(BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN, 0);
+    this._board = fillMatrix(BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN, 0) as number[][];
   }
 
   drawBoard(

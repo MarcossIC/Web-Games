@@ -1,0 +1,45 @@
+<div class="modal modal-bg">
+  <p class="option-text">Select wich you want to be?</p>
+
+  <div class=" toggle-container">
+    <div class="toggle-wrapper">
+      <input type="checkbox" id="select-player" [checked]="this.controller.mainPlayerPlaysWithO()" (change)="updatePlayer($event)">
+      <label for="select-player" class="toggle select-player">
+          <span class="toggle-handler select-player-handler">
+          </span>
+      </label>
+    </div>
+  </div>
+
+  <p class="option-text mt-14">Will the bot play?</p>
+  <div class=" toggle-container">
+    <div class="toggle-wrapper">
+      <input type="checkbox" id="second-player" [checked]="this.controller.isBotPlaying()" (change)="activateSecondPlayer($event)">
+      <label for="second-player" class="toggle second-player">
+          <span class="toggle-handler second-player-handler">
+          </span>
+      </label>
+    </div>
+  </div>
+
+  <p class="option-text mt-14" [ngClass]="{'opacity-75': !this.controller.isBotPlaying()}">Bot Level</p>
+  <div class="radio-inputs mt-4 mx-auto">
+    <label class="radio">
+      <input type="radio" name="radio" [checked]="this.controller.botIsRockie()" (change)="selectBotLevel(1)" [disabled]="!this.controller.isBotPlaying()">
+      <span class="name">Rookie</span>
+    </label>
+    <label class="radio">
+      <input type="radio" name="radio" [checked]="this.controller.botIsNovice()" (change)="selectBotLevel(2)" [disabled]="!this.controller.isBotPlaying()">
+      <span class="name">Normal</span>
+    </label>
+    <label class="radio">
+      <input type="radio" name="radio" [checked]="this.controller.botIsMaster()" (change)="selectBotLevel(3)" [disabled]="!this.controller.isBotPlaying()">
+      <span class="name">Master</span>
+    </label>
+  </div>
+
+  <div class="w-full flex justify-center items-center mt-4 buttons">
+    <button class="abstract-button exit-button" role="button" (click)="close()">Exit Game</button>
+    <button class="abstract-button play-button" role="button" (click)="playGame()">Play Game</button>
+  </div>
+</div>

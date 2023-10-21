@@ -18,6 +18,10 @@ const routes: Routes = [
     loadChildren: () => import("@app-pages/snakeling/snakeling.module").then(m => m.SnakelingModule)
   },
   {
+    path: 'tictactoe',
+    loadChildren: () => import("@app-pages/tictactoe/tictactoe.module").then(m => m.TictactoeModule)
+  },
+  {
     path: '**',
     loadChildren: () => import("@app-pages/notfound/notfound.module").then(m => m.NotfoundModule)
   }

@@ -10,7 +10,7 @@ export class BoardServiceService {
   private board: number[][];
 
   constructor() { 
-    this.board = fillMatrix(BOARD_HEIGHT_SCREEN, BOARD_WIDTH_SCREEN, 0);
+    this.board = fillMatrix(BOARD_HEIGHT_SCREEN, BOARD_WIDTH_SCREEN, 0) as number[][];
   }
 
   rePaintBoard(boardDiv: any, renderer: Renderer2): void{

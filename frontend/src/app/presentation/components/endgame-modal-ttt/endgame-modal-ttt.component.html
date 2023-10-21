@@ -1,0 +1,30 @@
+<div class="modal modal-bg">
+  <h2 class="modal-title">Round finished</h2>
+
+  <div *ngIf="this.controller.isXPlayerWinner()">
+    <p class="text-winner x-winner">X's Player's Won</p>
+  </div>
+  <div *ngIf="this.controller.isOPlayerWinner()">
+    <p class="text-winner o-winner">O's Player's Won</p>
+  </div>
+  <div *ngIf="this.controller.isDraw()">
+    <p class="text-winner draw">Draw</p>
+  </div>
+
+  <h3 class="modal-subtitle">Score</h3>
+  <div class="flex w-32 mx-auto">
+    <span class="x-winner font-semibold mr-6 text-2xl">X</span>
+    <span class="x-winner text-3xl">V</span>
+    <span class="o-winner text-4xl">S</span>
+    <span class="o-winner font-semibold ml-6 text-2xl">O</span>
+  </div>
+  <div class="flex w-32 mx-auto gap-x-24">
+    <strong class="x-winner">{{ this.controller.scorePlayerX }}</strong>
+    <strong class="o-winner">{{ this.controller.scorePlayerO }}</strong>
+  </div>
+
+  <div class="w-full flex justify-center items-center mt-4 buttons">
+    <button class="abstract-button exit-button" role="button" (click)="close()">Exit Game</button>
+    <button class="abstract-button play-button" role="button" (click)="playAgain()">Play Game</button>
+  </div>
+</div>

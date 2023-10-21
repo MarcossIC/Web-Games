@@ -1,0 +1,4 @@
+<div class="display-info" [ngClass]="this.displayClass.join(' ')">
+  <div class="info-x info-transition " [ngClass]="{'current-x': this.xCurrent,'info-x-complete': this.xCurrent && this.oCurrent}">{{ this.captionX }}</div>
+  <div class="info-o info-transition " [ngClass]="{'current-o': this.oCurrent,'info-o-complete': this.xCurrent && this.oCurrent}">{{ this.captionO }}</div>
+</div>

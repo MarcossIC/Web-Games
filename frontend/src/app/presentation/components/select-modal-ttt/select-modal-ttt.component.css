@@ -1,0 +1,197 @@
+.modal-bg {
+  background-color: var(--ttt-bg);
+}
+
+.option-text{
+    color: #171818;
+    font-size: 1.5rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.toggle-container{
+    position: relative;
+    margin-block-start: 2rem;
+}
+
+.toggle-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    overflow: hidden;
+    padding: 0 200px;
+    transform: translate3d(-50%, -50%, 0);
+}
+  
+  .toggle-wrapper input {
+    position: absolute;
+    left: -99em;
+  }
+  
+  .toggle {
+    cursor: pointer;
+    display: inline-block;
+    position: relative;
+    width: 96px;
+    height: 41px;
+    border-radius: 84px;
+    transition: background-color 200ms cubic-bezier(0.445, 0.05, 0.55, 0.95);
+  }
+  
+  .toggle-handler {
+    display: inline-block;
+    position: relative;
+    z-index: 1;
+    top: 3px;
+    left: 3px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .3);
+    transition: all 400ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform: rotate(-45deg);
+  }
+
+  .radio-inputs {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    border-radius: 0.5rem;
+    background-color: var(--ttt-bg-200);
+    box-sizing: border-box;
+    box-shadow: 0 0 0px 1px rgba(0, 0, 0, 0.06);
+    padding: 0.25rem;
+    width: 300px;
+    font-size: 14px;
+  }
+  
+  .radio-inputs .radio {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+  
+  .radio-inputs .radio input {
+    display: none;
+  }
+  
+  .radio-inputs .radio .name {
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    border: none;
+    padding: .5rem 0;
+    color: var(--ttt-text);
+    transition: background-color .15s ease-in-out;
+  }
+  
+  .radio-inputs .radio input:not(:disabled):checked + .name {
+    background-color: var(--ttt-primary);
+    font-weight: 600;
+  }
+
+  .select-player {
+    background-color: var(--ttt-select-x);
+  }
+
+  .select-player:before {
+    content: 'Player (X)';
+    position: absolute;
+    left: -85px;
+    top: 5px;
+    font-size: 1.1rem;
+    color: var(--ttt-select-x-200);
+    font-weight: 500;
+    opacity: 1;
+    transition-property: opacity, background-color;
+    transition-duration: 500ms;
+    transition-timing-function: ease;
+  }
+  
+  .select-player:after {
+    content: 'Player (O)';
+    position: absolute;
+    right: -85px;
+    top: 5px;
+    font-size: 1.1rem;
+    color: var(--ttt-text);
+    opacity: .85;
+    font-weight: 500;
+    transition-property: opacity, background-color;
+    transition-duration: 500ms;
+    transition-timing-function: ease;
+  }
+
+  .select-player-handler {
+    background-color: var(--ttt-select-x-200);
+  }
+
+  input:checked + .select-player {
+    background-color: var(--ttt-select-o);
+  }
+  
+  input:checked + .select-player:before {
+    color: var(--ttt-text);
+    opacity: .85;
+  }
+  
+  input:checked + .select-player:after {
+    color: var(--ttt-select-o-200);
+    opacity: 1;
+  }
+  
+  input:checked + .select-player .select-player-handler {
+    background-color: var(--ttt-select-o-200);
+    transform: translate3d(55px, 0, 0) rotate(0);
+  }
+
+  .second-player {
+    background-color: var(--ttt-primary);
+}
+
+ .second-player:before {
+    content: 'Not';
+    position: absolute;
+    left: -45px;
+    top: 5px;
+    font-size: 1.1rem;
+    color: var(--ttt-accent-200);
+    font-weight: 500;
+    opacity: 1;
+    transition-property: opacity, background-color;
+    transition-duration: 500ms;
+    transition-timing-function: ease;
+  }
+  
+  .second-player:after {
+    content: 'Yes';
+    position: absolute;
+    right: -45px;
+    top: 5px;
+    font-size: 1.1rem;
+    color: var(--ttt-text);
+    opacity: .85;
+    font-weight: 500;
+    transition-property: opacity, background-color;
+    transition-duration: 500ms;
+    transition-timing-function: ease;
+  }
+
+  .second-player-handler {
+    background-color: var(--ttt-accent-200);
+  }
+
+  input:checked + .second-player:before {
+    color: var(--ttt-text);
+    opacity: .85;
+  }
+  
+  input:checked + .second-player:after {
+    color: var(--ttt-accent-200);
+    opacity: 1;
+  }
+  
+  input:checked + .second-player .second-player-handler {
+    transform: translate3d(55px, 0, 0) rotate(0);
+  }

@@ -13,11 +13,11 @@ export class NextPieceBoardService {
   nextPieceBoard: number[][];
 
   constructor() {
-    this.nextPieceBoard = fillMatrix(NEXT_PIECE_HEIGHT, NEXT_PIECE_WIDTH, 0);
+    this.nextPieceBoard = fillMatrix(NEXT_PIECE_HEIGHT, NEXT_PIECE_WIDTH, 0) as number[][];
   }
 
   public reset(): void{
-    this.nextPieceBoard = fillMatrix(NEXT_PIECE_HEIGHT, NEXT_PIECE_WIDTH, 0);
+    this.nextPieceBoard = fillMatrix(NEXT_PIECE_HEIGHT, NEXT_PIECE_WIDTH, 0) as number[][];
   }
 
   public drawNextPiece(context: CanvasRenderingContext2D, nextPiece: Piece): void{

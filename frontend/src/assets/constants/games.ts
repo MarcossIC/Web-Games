@@ -20,8 +20,8 @@ export const GAMES: iGAMES[] = [
     },
     {
         IMG: '../../../../assets/images/ajedrez-frontpage.webp',
-        NAME: 'Ajedrez',
-        ALT: 'Ajedrez front page image',
-        PATH: '/notfound'
+        NAME: 'Tic Tac Toe',
+        ALT: 'Tic Tac Toe front page image',
+        PATH: '/tictactoe'
     },
 ];
