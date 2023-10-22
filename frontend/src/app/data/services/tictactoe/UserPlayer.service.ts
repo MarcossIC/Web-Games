@@ -14,25 +14,25 @@ export class UserPlayerService {
     this.countWins = 0;
   }
 
-  win(){
+  public win(): void{
     this.countWins++;
   }
   
-  getCountWins(){
+  public getCountWins(): number{
     return this.countWins;
   }
 
-  reset(){
+  public reset(): void {
     this.player = Player.X;
     this.countWins = 0;
   } 
 
 
-  changePlayer(updatePlayer: Player) {
+  public changePlayer(updatePlayer: Player): void {
     this.player = updatePlayer;
   }
 
-  getPlayer(): Player {
+  public getPlayer(): Player {
     return this.player;
   }
 }

@@ -7,13 +7,18 @@ import { Subject } from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
-export class GameStatusService {
+export class BoardStateService {
   public updateGameState: Subject<GameStatus> = new Subject<GameStatus>();
 
-  private gameStatus: GameStatus = GameStatus.WAITING;
-  constructor() { }
+  private gameStatus: GameStatus;
+  constructor() { 
+    this.gameStatus = GameStatus.WAITING;
+  }
 
-  private countEmptyCell(board: string[][]): number {
+  get gameResult(){
+    return this.gameStatus;
+  }
+  public countEmptyCell(board: string[][]): number {
     return board.flat().filter(cell => cell === '0').length;
   }
 
@@ -80,7 +85,7 @@ export class GameStatusService {
     return false;
   }
 
-  private checkBoard(board: string[][]){
+  public checkBoard(board: string[][]): boolean{
     return this.checkBoardColumns(board) || this.checkBoardDiagonals(board) || this.checkBoardRows(board);
   }
 

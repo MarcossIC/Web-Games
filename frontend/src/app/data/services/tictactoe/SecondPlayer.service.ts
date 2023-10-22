@@ -6,7 +6,7 @@ import { StateScreen } from '@app/data/models/tictactoe/stateScreen';
 import { arrayToMatrix, calcArrayPositionToMatrixCords, findEmptyBoardCells, findEmptyBoardCellsForArray, ramdomNumber } from '../util.service';
 import { ActionsAI } from '@app/data/models/tictactoe/ActionsAI';
 import { GameStateService } from './GameState.service';
-import { GameStatusService } from './GameStatusService.service';
+import { BoardStateService } from './BoardStateService.service';
 import { FIRST_PRIOTIY, SECOND_PRIOTIY, TIE } from 'assets/constants/tictactoe';
 
 @Injectable({
@@ -17,7 +17,7 @@ export class SecondPlayerService {
   private _isBotPlaying: boolean;
   private countWins: number;
   private botLevel: BotLevel;
-  private gameStatus: GameStatusService = inject(GameStatusService);
+  private boardStateService: BoardStateService = inject(BoardStateService);
 
   constructor() { 
     this.player = Player.O;
@@ -26,23 +26,23 @@ export class SecondPlayerService {
     this.botLevel = BotLevel.ROCKIE;
   }
 
-  win(){
+  public win(): void{
     this.countWins++;
   }
 
-  getCountWins(){
+  public getCountWins(): number{
     return this.countWins;
   }
 
-  reset(){
+  public reset(): void{
     this.player = Player.O;
     this._isBotPlaying = false;
     this.countWins = 0;
     this.botLevel = BotLevel.ROCKIE;
   } 
 
-  minimax(board: string[][], depth: number, isMaximizingPlayer: boolean, alpha: number, beta: number): number {
-    const score = this.gameStatus.evaluate(board, this.player);
+  protected minimax(board: string[][], depth: number, isMaximizingPlayer: boolean, alpha: number, beta: number): number {
+    const score: number = this.boardStateService.evaluate(board, this.player);
 
     if (score === 10) {
         return score - depth;
@@ -88,9 +88,9 @@ export class SecondPlayerService {
     }
   }
 
-  takeAMasterMove(state: StateScreen): number{
-    let avalaible = state.emptyCells;
-    let board = state.boardScreen;
+  public takeAMasterMove(state: StateScreen): number{
+    let avalaible: number[] = state.emptyCells;
+    let board: string[][] = state.boardScreen;
 
     let availableActions = avalaible.map((position) => {
       let action = this.AIAction(position);
@@ -101,16 +101,17 @@ export class SecondPlayerService {
 
     availableActions.sort((a, b) => b.minMaxValue - a.minMaxValue);
 
+    console.log("avalaible action sorted: ", availableActions);
     return availableActions[0].movePosition;
   }
 
-  takeANoviceMove(state: StateScreen): number{
-    let avalaible = state.emptyCells;
+  public takeANoviceMove(state: StateScreen): number{
+    let avalaible: number[]  = state.emptyCells;
 
     let availableActions = avalaible.map((position) => {
       let action = this.AIAction(position);
       var nextState = this.applyTo(state, action);
-      action.minMaxValue = this.minimax(nextState.boardScreen, 0, nextState.turn === this.player ? true : false, -Infinity, Infinity);
+      action.minMaxValue = this.minimax(nextState.boardScreen, 0, true, -Infinity, Infinity);
       return action;
     });
 
@@ -124,17 +125,17 @@ export class SecondPlayerService {
     return availableActions[0].movePosition;
   }
 
-  takeABlindMove(state: StateScreen): number{  
-    let randomCell = state.emptyCells[ramdomNumber(true, state.emptyCells.length-1)];
+  public takeABlindMove(state: StateScreen): number{  
+    let randomCell: number = state.emptyCells[ramdomNumber(true, state.emptyCells.length-1)];
     const action = this.AIAction(randomCell);
     return action.movePosition;
   }
 
-  AIAction(positionInBoard: number): ActionsAI{
+  private AIAction(positionInBoard: number): ActionsAI{
     return {movePosition: positionInBoard, minMaxValue: 0};
   }
 
-  applyTo(state: StateScreen, action: ActionsAI){
+  private applyTo(state: StateScreen, action: ActionsAI): StateScreen{
     const {x, y} = calcArrayPositionToMatrixCords(action.movePosition, 3, 3);  
     state.boardScreen[y][x] = state.turn === Player.X ? 'X': 'O';
     state.turn = state.turn === Player.X ? Player.O : Player.X;
@@ -143,28 +144,28 @@ export class SecondPlayerService {
     return state;
   }
 
-  changePlayer(updatePlayer: Player) {
+  public changePlayer(updatePlayer: Player): void {
     this.player = updatePlayer;
   }
 
-  changeBotLevel(updateLevel: BotLevel){
+  public changeBotLevel(updateLevel: BotLevel): void {
     if(this._isBotPlaying){ 
       this.botLevel = updateLevel;
     }
   }
 
-  getPlayer(){
+  public getPlayer(): Player{
     return this.player;
   }
 
-  set isBotPlaying(value: boolean) {
+  public set isBotPlaying(value: boolean) {
     this._isBotPlaying = value;
   }
 
-  get botAI(){
+  public get botAI(): BotLevel{
     return this.botLevel;
   }
-  get isBotPlaying(){
+  public get isBotPlaying(): boolean{
     return this._isBotPlaying;
   }
 }

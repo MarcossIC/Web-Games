@@ -6,8 +6,7 @@ import { Player } from '@app/data/models/tictactoe/Player.enum';
 import { GameStatus } from '@app/data/models/tictactoe/GameStatus.enum';
 import { PartyStatus } from '@app/data/models/tictactoe/PartyStatus.enum';
 import { BotLevel } from '@app/data/models/tictactoe/BotLevel.enum';
-import { Axis } from '@app/data/models/Axis';
-import { arrayToMatrix, calcArrayPositionToMatrixCords, destroy, findEmptyBoardCells } from '../util.service';
+import { arrayToMatrix, calcArrayPositionToMatrixCords, findEmptyBoardCells } from '../util.service';
 import { Subject } from 'rxjs';
 
 @Injectable({
@@ -17,9 +16,7 @@ export class TicTacToeControllerService {
   private gameState: GameStateService = inject(GameStateService);
   private secondPlayer: SecondPlayerService = inject(SecondPlayerService);
   private userPlayer: UserPlayerService = inject(UserPlayerService);
-  
   public _notifyBot: Subject<boolean> = new Subject<boolean>();
-
 
   constructor() { 
   }
@@ -74,13 +71,13 @@ export class TicTacToeControllerService {
     }
   }
 
-  private notifyBot(){
+  private notifyBot(): void {
     this._notifyBot.next(true);
   }
 
-  public playBot(){
+  public playBot(): void{
     const currentBoard = arrayToMatrix( this.gameState.getBoard().flat(), 3, 3 );
-    const currentPositons = findEmptyBoardCells(this.gameState.board);
+    const currentPositons = findEmptyBoardCells(this.gameState.getBoard());
     const currentTurn = this.gameState.turn; 
 
     let rowX = 0;
@@ -140,7 +137,7 @@ export class TicTacToeControllerService {
   }
   
   public retrieveBoard(): string[][] {
-    return this.gameState.board;
+    return this.gameState.getBoard();
   }
   public updateMainPlayer(player: Player): void{
     this.userPlayer.changePlayer(player);
@@ -151,13 +148,14 @@ export class TicTacToeControllerService {
   }
 
   public isOccupied(rowX: number, cellY: number): boolean {
-    return this.gameState.board[rowX][cellY] !== '0';
+    return this.gameState.getBoard()[rowX][cellY] !== '0';
   }
 
-  public changeBotState(){
+  public changeBotState(): void{
     this.secondPlayer.isBotPlaying = !this.secondPlayer.isBotPlaying; 
   }
-  public updateBotLevel(botLevel: BotLevel){
+
+  public updateBotLevel(botLevel: BotLevel): void{
     this.secondPlayer.changeBotLevel(botLevel);
   }
 
