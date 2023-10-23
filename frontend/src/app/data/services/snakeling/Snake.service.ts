@@ -15,113 +15,96 @@ export class SnakeService {
 
   private snakeBody: number[][] = [];
   constructor() { 
-  
     this.snakeX = ramdomNumber(false, BOARD_WIDTH_SCREEN);
     this.snakeY = ramdomNumber(false, BOARD_HEIGHT_SCREEN);
 
-    this.snakeBody[0] = [this.snakeX,  this.snakeY];
-    this.snakeBody[1] = [this.snakeX-1,  this.snakeY];
-    this.snakeBody[2] = [this.snakeX-2,  this.snakeY];
+    this.initSnakeBody();
   }
 
-  resetSnake(){
+  private initSnakeBody(): void{
+    this.snakeBody.splice(0);
+    for (let i = 0; i < 3; i++) {
+      let xValue = this.snakeX - i;
+
+      if (this.snakeX === BOARD_WIDTH_SCREEN && xValue <= 0) { xValue = BOARD_WIDTH_SCREEN + i + 1; }
+
+      else if (this.snakeX === 1 && xValue > BOARD_WIDTH_SCREEN) { xValue = i; } 
+      
+      else { xValue = xValue <= 0 ? BOARD_WIDTH_SCREEN + 1 - i : xValue > BOARD_WIDTH_SCREEN ? 1 - i : xValue; }
+
+      this.snakeBody.push([xValue, this.snakeY]);
+    }
+  }
+
+  public resetSnake(): void{
+    this.speedSnakeX = 1;
+    this.speedSnakeY = 0;
     this.snakeX = ramdomNumber(false, BOARD_WIDTH_SCREEN);
     this.snakeY = ramdomNumber(false, BOARD_HEIGHT_SCREEN);  
 
-    this.snakeBody.splice(0);
-    
-    this.snakeBody[0] = [this.snakeX,  this.snakeY];
-    this.snakeBody[1] = [this.snakeX-1,  this.snakeY];
-    this.snakeBody[2] = [this.snakeX-2,  this.snakeY];
+    this.initSnakeBody();
   }
 
-  addToSnakeBody(axis: Axis){
+  public addToSnakeBody(axis: Axis): void{
     this.snakeBody.push([axis.x, axis.y]);
   }
 
-  verifyCollision(x: number, y: number): boolean{
-    const snakeBodyLenght = this.snakeBody.length;
-    for(let i = 0; i < snakeBodyLenght; i++){
-     if(this.snakeBody[i][0] === x && this.snakeBody[i][1] === y) return true;
-    }
-    return false;
+  public verifyCollision(x: number, y: number): boolean{
+    return this.snakeBody.some(([snakeX, snakeY]) => snakeX === x && snakeY === y);
   }
 
-  removeSnake(boardDiv: any, renderer: Renderer2){
-    const snakeBodyLenght = this.snakeBody.length;
-    for(let i = 0; i < snakeBodyLenght; i++){
-      const div = boardDiv.querySelector(`.cell-${this.snakeBody[i][0]}-${this.snakeBody[i][1]}`); 
-      
-      renderer.removeClass(div, 'head');
-    }
+  removeSnake(boardDiv: HTMLDivElement, renderer: Renderer2){
+    this.snakeBody.forEach(([x, y]) => 
+      renderer.removeClass(boardDiv.querySelector(`.cell-${x}-${y}`), 'head')
+    );
   }
 
-  moveBody(){
-    const snakeBodyLenght = this.snakeBody.length;
-    for(let i = snakeBodyLenght-1; i > 0; i--){
-      this.snakeBody[i] = this.snakeBody[i-1];
-    }
+  public moveBody(): void{
+    this.snakeBody = this.snakeBody.map((_, i) => (i > 0 ? this.snakeBody[i - 1] : this.snakeBody[i]));
   }
 
-  rePaintSnake(boardDiv: any, renderer: Renderer2): boolean{
-    const snakeBodyLenght = this.snakeBody.length;
-
-    for(let i = 0; i < snakeBodyLenght; i++){
-      const div = boardDiv.querySelector(`.cell-${this.snakeBody[i][0]}-${this.snakeBody[i][1]}`); 
-
-      renderer.addClass(div, 'head');
-
-      if(
-        i !== 0 && 
-        this.snakeBody[0][1] === this.snakeBody[i][1] && 
-        this.snakeBody[0][0] === this.snakeBody[i][0]){
-        return true;
-      } 
-    }
-    return false;
+  public rePaintSnake(boardDiv: HTMLDivElement, renderer: Renderer2): boolean{
+    return this.snakeBody.some(([x, y], i) => {
+      renderer.addClass(boardDiv.querySelector(`.cell-${x}-${y}`), 'head');
+      return i !== 0 && this.snakeBody[0][1] === y && this.snakeBody[0][0] === x;
+    });
   }
 
-  moveSnake(){
+  public moveSnake(): void{
     this.snakeX+=this.speedSnakeX;
     this.snakeY+=this.speedSnakeY;
 
-    if(this.snakeX === BOARD_WIDTH_SCREEN+NEXT_POSITION){
-        this.snakeX = 1;
-    } else if(this.snakeX === 0){
-        this.snakeX = BOARD_WIDTH_SCREEN;
-    }
-    if(this.snakeY === BOARD_HEIGHT_SCREEN+NEXT_POSITION){
-        this.snakeY = 1;
-    } else if(this.snakeY === 0){
-        this.snakeY = BOARD_HEIGHT_SCREEN;
-    }
+    if(this.snakeX === BOARD_WIDTH_SCREEN+NEXT_POSITION) this.snakeX = 1;
+    else if(this.snakeX === 0) this.snakeX = BOARD_WIDTH_SCREEN;
+
+    if(this.snakeY === BOARD_HEIGHT_SCREEN+NEXT_POSITION) this.snakeY = 1;
+    else if(this.snakeY === 0) this.snakeY = BOARD_HEIGHT_SCREEN;
 
     this.snakeBody[0] = [this.snakeX, this.snakeY];
   }
 
-  moveUp(){
+  public moveUp(): void{
     if(this.speedSnakeY !== NEXT_POSITION){
       this.speedSnakeY = PREVIOUS_POSITION;
       this.speedSnakeX = NOT_MOVE;
     }
   }
 
-  moveDown(){
+  public moveDown(): void{
     if(this.speedSnakeY !== PREVIOUS_POSITION){
       this.speedSnakeY = NEXT_POSITION;
       this.speedSnakeX = NOT_MOVE;
     }
   }
 
-  moveLeft(){
+  public moveLeft(): void{
     if(this.speedSnakeX !== NEXT_POSITION){
       this.speedSnakeX = PREVIOUS_POSITION;
       this.speedSnakeY = NOT_MOVE;
     }
-    
   }
 
-  moveRight(){
+  public moveRight(): void{
     if(this.speedSnakeX !== PREVIOUS_POSITION){
       this.speedSnakeX = NEXT_POSITION;
       this.speedSnakeY = NOT_MOVE;

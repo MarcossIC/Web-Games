@@ -10,19 +10,22 @@ export class ScoreService {
 
   constructor() { 
     this.score = 0;
-    this.maxScore = 0;
+    let max = localStorage.getItem('snakeling-maxScore');
+    this.maxScore = max ? parseInt(max) : 0;
   }
 
-  updateMaxScore(){
-    this.maxScore = this.score > this.maxScore ? this.score : this.maxScore;
+  public updateMaxScore(): void{
+    if(this.score > this.maxScore){
+      this.maxScore = this.score;
+      localStorage.setItem('snakeling-maxScore', JSON.stringify(this.maxScore));
+    }
   }
 
-  updateScore(){
+  public updateScore(): void{
     this.score += 8;
   }
 
-  resetScore(){
+  public resetScore(): void{
     this.score = 0;
   }
-
 }

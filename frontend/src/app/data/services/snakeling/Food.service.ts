@@ -6,7 +6,6 @@ import { BOARD_HEIGHT_SCREEN, BOARD_WIDTH_SCREEN } from 'assets/constants/snakel
   providedIn: 'root'
 })
 export class FoodService {
-
   public foodX: number;
   public foodY: number;
 
@@ -15,17 +14,17 @@ export class FoodService {
     this.foodY = ramdomNumber(false, BOARD_HEIGHT_SCREEN);
   }
 
-  foodChangePosition(){
+  public foodChangePosition(): void{
     this.foodX = ramdomNumber(false, BOARD_WIDTH_SCREEN);
     this.foodY = ramdomNumber(false, BOARD_HEIGHT_SCREEN);
   }
 
-  removeFood(boardDiv: any, renderer: Renderer2){
+  public removeFood(boardDiv: HTMLDivElement, renderer: Renderer2): void{
     const div = boardDiv.querySelector(`.cell-${this.foodX}-${this.foodY}`); // Ajusta el formato
     renderer.removeClass(div, 'food');
   }
 
-  rePaintFood(boardDiv: any, renderer: Renderer2){
+  public rePaintFood(boardDiv: HTMLDivElement, renderer: Renderer2): void{
     const div = boardDiv.querySelector(`.cell-${this.foodX}-${this.foodY}`); // Ajusta el formato
 
     if (div) {

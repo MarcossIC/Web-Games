@@ -37,7 +37,7 @@ export class SnakelingComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.title.setTitle("Snake Game");
     this.seo.generateTags({
-      title: "Snake Game",
+      title: "Games Galaxy -Snake Game",
       description: "Page to play a clasic snake Game",
       slug: "snakeling"
     });
@@ -47,7 +47,7 @@ export class SnakelingComponent implements OnInit, OnDestroy {
     this.controller.initGame(boardDiv, this.renderer);
 
     const keyboardEvents$ = fromEvent<KeyboardEvent>(window, 'keydown');
-    const throttleDuration = 81;
+    const throttleDuration = 90;
 
     this.moveListener$ = keyboardEvents$
       .pipe(throttleTime(throttleDuration))

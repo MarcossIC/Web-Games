@@ -5,13 +5,12 @@ import { Meta } from '@angular/platform-browser';
   providedIn: 'root'
 })
 export class SeoService {
-
   constructor(private meta: Meta) { }
 
   generateTags(config: any){
     config = {
-      title: "Marcos Lopez Web Portfolio",
-      description: "Marcos Lopez Portfolio Web, site to show my projects and experiences",
+      title: "Game Glaxy",
+      description: "Angular website to play classic games like tetris, tic-tac-toe, snake game",
       image: "",
       slug: "",
       ...config
@@ -24,7 +23,7 @@ export class SeoService {
     this.meta.updateTag({ name: 'twitter:image', content: config.image });
 
     this.meta.updateTag({ property: 'og:type', content: 'article' });
-    this.meta.updateTag({ property: 'og:site_name', content: 'Marcos Lopez Web Portfolio' });
+    this.meta.updateTag({ property: 'og:site_name', content: 'Game Glaxy' });
     this.meta.updateTag({ property: 'og:title', content: config.title });
     this.meta.updateTag({ property: 'og:description', content: config.description });
     this.meta.updateTag({ property: 'og:image', content: config.image });

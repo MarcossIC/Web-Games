@@ -10,7 +10,6 @@ import { ScoreService } from './Score.service';
   providedIn: 'root'
 })
 export class SnakelingControllerService {
-
   private _isPaused: boolean = true;
   public _isGameOver: boolean = false;
 
@@ -20,19 +19,22 @@ export class SnakelingControllerService {
   private foodService: FoodService = inject(FoodService);
   public scoreService: ScoreService = inject(ScoreService);
 
-  private boardDiv: any;
+  private boardDiv!: HTMLDivElement;
 
   constructor() { }
 
-  public initGame(boardDiv: any, renderer: Renderer2): void{
+  private initSnakeAndFood(): void{
+    this.snakeService.rePaintSnake(this.boardDiv, this.renderer);
+    this.foodService.rePaintFood(this.boardDiv, this.renderer);
+    this._isPaused = false;
+    this._isGameOver = false;
+  }
+
+  public initGame(boardDiv: HTMLDivElement, renderer: Renderer2): void{
     this.renderer = renderer;
     this.boardDiv = boardDiv;
     this.boardService.rePaintBoard(this.boardDiv, this.renderer);
-    this.snakeService.rePaintSnake(this.boardDiv, this.renderer);
-    this.foodService.rePaintFood(this.boardDiv, this.renderer);
-
-    this._isPaused = true;
-    this._isGameOver = false;
+    this.initSnakeAndFood();
   }
 
   public runGame(): void{
@@ -40,7 +42,7 @@ export class SnakelingControllerService {
       this.snakeService.removeSnake(this.boardDiv, this.renderer);
       this.snakeService.moveBody();
       this.snakeService.moveSnake();
-      const isCollision =this.snakeService.rePaintSnake(this.boardDiv, this.renderer);
+      const isCollision = this.snakeService.rePaintSnake(this.boardDiv, this.renderer);
   
       if(isCollision) this._isGameOver = true;
       
@@ -59,18 +61,8 @@ export class SnakelingControllerService {
     }
   }
 
-  snakeAndFoodCollision(): boolean{
-    return this.snakeService.snakeX === this.foodService.foodX && 
-           this.snakeService.snakeY === this.foodService.foodY;
-  }
-
-  foodCollisionInSnakeBody(): boolean{
-    return this.snakeService.verifyCollision(this.foodService.foodX, this.foodService.foodY);
-  }
-
   public executeAction(key: string): void{
     const action = ACTIONS[key];
-
     if(action === ACTION.UP)this.snakeService.moveUp();
     if(action === ACTION.DOWN) this.snakeService.moveDown();
     if(action === ACTION.LEFT)this.snakeService.moveLeft();
@@ -78,28 +70,35 @@ export class SnakelingControllerService {
     if(action === ACTION.PAUSE) this.changePause();
   }
 
-  reset(): void{
+  public reset(): void{
     this.snakeService.removeSnake(this.boardDiv, this.renderer);
     this.foodService.removeFood(this.boardDiv, this.renderer);
+
     this.scoreService.resetScore();
     this.snakeService.resetSnake();
-    this.foodService.foodChangePosition();
 
-    this.snakeService.rePaintSnake(this.boardDiv, this.renderer);
-    this.foodService.rePaintFood(this.boardDiv, this.renderer);
-    this._isPaused = false;
-    this._isGameOver = false;
+    this.foodService.foodChangePosition();
+    this.initSnakeAndFood();
   }
 
   public changePause(): void{
     this._isPaused = !this._isPaused;
   }
 
-  get isPaused(){
+  public snakeAndFoodCollision(): boolean{
+    return this.snakeService.snakeX === this.foodService.foodX && 
+           this.snakeService.snakeY === this.foodService.foodY;
+  }
+
+  public foodCollisionInSnakeBody(): boolean{
+    return this.snakeService.verifyCollision(this.foodService.foodX, this.foodService.foodY);
+  }
+
+  public get isPaused(): boolean{
     return this._isPaused;
   }
 
-  get isGameOver(){
+  public get isGameOver(): boolean{
     return this._isGameOver;
   }
 }
