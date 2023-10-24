@@ -24,12 +24,12 @@
   }
 
   .exit-button:hover {
-    background-color: var(--ttt-accent-200);
+    background-color: var(--ttt-select-o-200);
     color: var(--ttt-text);
   }
 
   .play-button:hover{
-    background-color: var(--ttt-primary);
+    background-color: var(--ttt-primary-100);
     color: var(--ttt-text);
   }
 
@@ -56,6 +56,9 @@
 }
 
 @media screen and (min-width: 600px){
+  .buttons{
+    column-gap: 5px;
+}
   .text-intro {
     font-size: 1.5em;
     line-height: normal;

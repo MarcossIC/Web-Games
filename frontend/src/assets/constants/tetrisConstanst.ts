@@ -67,7 +67,8 @@ export const DEFAULT_COLOR: PieceColor = {
   };
 
 
-export const SIZE_SQUARE_IN_BOARD: number = 1;
+export const FULL_SQUARE_SIZE: number = 1;
+export const SHORT_SUQUARE_SIZE: number = 0.68;
 
 export const SPEED_PER_LEVEL: Record<number, number> = {
   1: 900,

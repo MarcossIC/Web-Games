@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BOARD_HEIGHT_SCREEN, BOARD_WIDTH_SCREEN, DEFAULT_COLOR, SIZE_SQUARE_IN_BOARD } from "../../../../assets/constants/tetrisConstanst";
+import { BOARD_HEIGHT_SCREEN, BOARD_WIDTH_SCREEN, DEFAULT_COLOR } from "../../../../assets/constants/tetrisConstanst";
 import { Piece } from '@app/data/models/tetris/Piece';
 import { PointsService } from './Points.service';
 import { fillArray, fillMatrix, ramdomNumber } from '../util.service';
@@ -58,6 +58,7 @@ export class BoardService {
         this.points.addScore();
       }
     });
+
     let score = this.points.score;
     let level;
     if(score < 500) level = 1;

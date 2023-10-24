@@ -53,9 +53,7 @@ export class BagOfPiecesService {
 
   private loadPieceBag(): void {
     const totalPiece = this.allPieceType.length;
-    console.log("total is: "+totalPiece);
     for(let i = 0; i < totalPiece; i++) {
-      console.log("i: "+i+" total: "+totalPiece);
       this.addPieceToBag();
     }
 
@@ -87,13 +85,12 @@ export class BagOfPiecesService {
 
   //Recupera la siguiente pieza, si no esta vacia la bolsa
   public recoverNextPiece(): void {
-    const isEmpty = this.bagIsEmpty;
-    if (!isEmpty) {
+    const numberPieceInBag = this.numberPieceInBag;
+    if (numberPieceInBag >= 1) {
       this.updateCurrent();
     } 
-    if(isEmpty){
+    if(numberPieceInBag === 1){
       this.loadPieceBag();
-      this.updateCurrent();
     }
   }
 
@@ -120,5 +117,9 @@ export class BagOfPiecesService {
   //Verifica si la bolsa esta vacia
   public get bagIsEmpty(): boolean {
     return this.pieceBag.length <= 1;
+  }
+
+  private get numberPieceInBag(): number {
+    return this.pieceBag.length;
   }
 }

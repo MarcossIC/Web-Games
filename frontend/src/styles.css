@@ -11,7 +11,7 @@
   
     
     --ttt-primary: #d4eaf7;
-    --tt-primary-100: #aed8fd;
+    --ttt-primary-100: #aed8fd;
     --ttt-primary-200: #b6ccd8;
     --ttt-primary-300: #3b3c3d;
     --ttt-accent: #71c4ef;
@@ -61,7 +61,7 @@ body {
 }
 
 .text-format {
-    color: var(--tt-primary-100);
+    color: var(--ttt-primary-100);
     font-weight: bold;
 }
 
@@ -82,7 +82,7 @@ body {
     display: flex;
     margin-inline: auto;
     margin-block-start: 20px;
-    aspect-ratio: 3/1;
+    aspect-ratio: 7/2;
     width: 110px;
     justify-content: center;
     border-radius: 0.5rem;
@@ -92,8 +92,9 @@ body {
 @media screen and (min-width: 600px){
     .abstract-button{
         font-size: 1.1rem;
-        padding: 5px;
-        width: 120px;
+        width: 165px;
+        display: flex;
+        align-items: center;
     }
 }
 
@@ -101,6 +102,6 @@ body {
     .abstract-button{
         font-size: 2rem;
         padding: 10px;
-        width: 200px;
+        width: 230px;
     }
 }

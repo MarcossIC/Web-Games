@@ -22,7 +22,7 @@ export class PointsService {
     let maxLevelS = localStorage.getItem('tetris-maxLevel'); 
     let maxTimeS = localStorage.getItem('tetris-maxTime');
     this.maxScore = maxScoreS ? parseInt(maxScoreS) : 0;
-    this.maxLevel = maxLevelS ? parseInt(maxLevelS) : 0;
+    this.maxLevel = maxLevelS ? parseInt(maxLevelS) : 1;
     this.maxTime = maxTimeS ? maxTimeS : '00:00';
   }
 
@@ -53,7 +53,7 @@ export class PointsService {
 
   updateMaxLevel(){
     if(this.level > this.maxLevel){
-      this.maxScore = this.level;
+      this.maxLevel = this.level;
       localStorage.setItem('tetris-maxLevel', JSON.stringify(this.maxLevel));
     }
   }

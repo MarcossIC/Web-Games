@@ -69,7 +69,6 @@ export class PieceService {
 
   public defineColorPiece(): PieceColor {
     const colorIndex = ramdomNumber(false, 7);
-    console.log("COLORi: "+colorIndex);
     //Retorna una color ramdom de entre la paleta de colores definida
     return ALL_COLOR_PIECE[colorIndex];
   }

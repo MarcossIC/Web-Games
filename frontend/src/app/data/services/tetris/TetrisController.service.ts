@@ -150,7 +150,7 @@ export class TetrisControllerService {
     this.boardController.solidifyPieceInBoard(this.bagOfPieces.piece.current);
     
     let updateLevel = this.boardController.verifyLines();
-    this.level = updateLevel === 0 ? this.level : updateLevel;
+    this.level = updateLevel;
     this.bagOfPieces.recoverNextPiece();
     this.endGame();
     this.nextPiece.next(this.bagOfPieces.nextPiece());
