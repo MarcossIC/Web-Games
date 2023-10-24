@@ -35,6 +35,7 @@ export class PointsService {
   addScore(){
     this.score+=100;
   }
+  
   updateTime(updateTime: string){
     this.time = updateTime;
   }

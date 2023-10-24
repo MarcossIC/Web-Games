@@ -121,13 +121,13 @@ export class NextPieceBoardService {
   private printInvertedStaircase(context: CanvasRenderingContext2D): void{
     console.log("STAIR CASE INVERTED");
 
-    context.fillRect(1.5, 2.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
-    context.strokeRect(1.5, 2.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
+    context.fillRect(1.5, 1.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
+    context.strokeRect(1.5, 1.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
+
+    context.fillRect(2.5, 1.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
+    context.strokeRect(2.5, 1.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
 
     context.fillRect(2.5, 2.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
     context.strokeRect(2.5, 2.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
-
-    context.fillRect(2.5, 3.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
-    context.strokeRect(2.5, 3.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
   }
 }

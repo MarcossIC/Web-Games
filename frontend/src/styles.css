@@ -91,7 +91,7 @@ body {
 
 @media screen and (min-width: 600px){
     .abstract-button{
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         width: 165px;
         display: flex;
         align-items: center;

@@ -6,7 +6,8 @@
     padding-inline: 2rem;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
+    margin-block-start: 1rem;
 }
 
 .modal ul li {
@@ -40,7 +41,7 @@
     .modal ul li {
         flex-direction: column;
     
-        row-gap: 10px;
+        row-gap: 4px;
     }
 
     .modal p span {
@@ -53,7 +54,7 @@
     .modal ul li {
         flex-direction: column;
     
-        row-gap: 20px;
+        row-gap: 10px;
     }
 
     .point{
