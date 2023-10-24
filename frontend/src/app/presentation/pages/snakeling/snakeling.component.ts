@@ -69,17 +69,4 @@ export class SnakelingComponent implements OnInit, OnDestroy {
   onPress(key: string){
     this.controller.executeAction(key);
   }
-
-  close(): void {
-    this.controller.reset();
-    this.router.navigate(['/games']);
-  }
-
-  playGame(): void{
-    this.controller.executeAction('p');
-  }
-
-  playAgain(): void{
-    this.controller.reset();
-  }
 }

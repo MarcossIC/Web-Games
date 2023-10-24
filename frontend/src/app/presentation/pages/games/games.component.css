@@ -19,7 +19,7 @@
     aspect-ratio: 1/1;
 
     border-radius: 2rem;
-    border: 5px solid #5EE8EA;
+    border: 5px solid var(--ttt-accent);
     padding: .3rem;
     opacity: 0.9;
     position: relative;
@@ -37,13 +37,13 @@
 }
 
 .game-caption {
-    color: antiquewhite;
+    color: var(--ttt-bg-300);
     width: 180px;
     text-align: center;
     margin-block-start: 1rem;
 
-    font-weight: 500;
-    font-size: 1.5rem;
+    font-weight: 600;
+    font-size: 1.8rem;
 }
 
 .logo-container{

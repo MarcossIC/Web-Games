@@ -23,7 +23,7 @@ export class BagOfPiecesService {
     this.recoverNextPiece();
   }
 
-  loadAllPieceType(): PieceType[] {
+  private loadAllPieceType(): PieceType[] {
     return [
       PieceType.BAR,
       PieceType.ELE,
@@ -35,16 +35,23 @@ export class BagOfPiecesService {
     ];
   }
 
-  //Recupero una tipo ramdom y lo elimina del array
-  get ramdomPieceType(): PieceType {
-    return this.allPieceType.splice(
-      ramdomNumber(true, this.allPieceType.length-1),
-      1
-    )[0];
+  public generatePiece(pieceType: PieceType): Piece {
+    const shape = this.piece.generateShapePiece(pieceType);
+    let ramsomPositionX = ramdomNumber(true, BOARD_WIDTH_SCREEN-1);
+
+    if (ramsomPositionX <= 0) ramsomPositionX += 2;
+    if (ramsomPositionX + shape.length > BOARD_WIDTH_SCREEN - 1) ramsomPositionX -= 2;
+
+    return {
+      shape: shape,
+      type: pieceType,
+      isMovable: true,
+      color: this.piece.defineColorPiece(),
+      position: { x: ramsomPositionX, y: 0 }
+    };
   }
 
-  //Carga la bolsa de piezas de manera aleatoria
-  loadPieceBag(): void {
+  private loadPieceBag(): void {
     const totalPiece = this.allPieceType.length;
     console.log("total is: "+totalPiece);
     for(let i = 0; i < totalPiece; i++) {
@@ -55,11 +62,11 @@ export class BagOfPiecesService {
     this.allPieceType = this.loadAllPieceType();
   }
 
-  addPieceToBag(){
+  public addPieceToBag(): void{
     this.pieceBag.push(this.generatePiece(this.ramdomPieceType));
   }
 
-  reset() {
+  public reset():void {
     const lenght = this.pieceBag.length;
     for (let i = 0; i < lenght; i++) {
       this.pieceBag.pop();
@@ -79,7 +86,7 @@ export class BagOfPiecesService {
   }
 
   //Recupera la siguiente pieza, si no esta vacia la bolsa
-  recoverNextPiece(): void {
+  public recoverNextPiece(): void {
     const isEmpty = this.bagIsEmpty;
     if (!isEmpty) {
       this.updateCurrent();
@@ -90,37 +97,28 @@ export class BagOfPiecesService {
     }
   }
 
-  updateCurrent() {
+  public updateCurrent(): void {
     const nextPiece = this.pieceBag.pop();
     if (nextPiece !== undefined) {
       this.piece.current = nextPiece;
     }
   }
 
-  nextPiece(): Piece {
+  public nextPiece(): Piece {
     const next = this.pieceBag.pop() as Piece;
     this.pieceBag.push(next);
     return next;
   }
 
-  //Verifica si la bolsa esta vacia
-  get bagIsEmpty(): boolean {
-    return this.pieceBag.length <= 1;
+  public get ramdomPieceType(): PieceType {
+    return this.allPieceType.splice(
+      ramdomNumber(true, this.allPieceType.length-1),
+      1
+    )[0];
   }
 
-  generatePiece(pieceType: PieceType): Piece {
-    const shape = this.piece.generateShapePiece(pieceType);
-    let ramsomPositionX = ramdomNumber(true, BOARD_WIDTH_SCREEN-1);
-
-    if (ramsomPositionX <= 0) ramsomPositionX += 2;
-    if (ramsomPositionX + shape.length > BOARD_WIDTH_SCREEN - 1) ramsomPositionX -= 2;
-
-    return {
-      shape: shape,
-      type: pieceType,
-      isMovable: true,
-      color: this.piece.defineColorPiece(),
-      position: { x: ramsomPositionX, y: 0 }
-    };
+  //Verifica si la bolsa esta vacia
+  public get bagIsEmpty(): boolean {
+    return this.pieceBag.length <= 1;
   }
 }

@@ -1,5 +1,5 @@
 import { DestroyRef, Injectable, inject } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { MonoTypeOperatorFunction, Observable, Subject, takeUntil } from 'rxjs';
 import { Axis } from '../models/Axis';
 
 @Injectable({
@@ -43,7 +43,6 @@ export function calcArrayPositionToMatrixCords(position: number, matrixXLenght: 
 
   return {x, y};
 }
-
 
 export function ramdomNumber(includeZero: boolean, maxNumber: number){
   const num = includeZero ? 0 : 1;

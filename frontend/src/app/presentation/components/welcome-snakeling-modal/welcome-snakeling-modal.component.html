@@ -1,0 +1,15 @@
+<div class="modal modal-bg">
+  <h3 class="modal-title-with-bar">Welcome</h3>
+
+  <h4 class="modal-sub text-center font-semibold text-2xl mb-2">How to play</h4>
+  <p class="text-sm text-intro ">Left: <strong>a</strong> y <strong>&larr;</strong></p>
+  <p class="text-sm text-intro ">Right: <strong>d</strong> y <strong>&rarr;</strong></p>
+  <p class="text-sm text-intro ">Down: <strong>s</strong> y <strong>&darr;</strong></p>
+  <p class="text-sm text-intro ">Up: <strong>w</strong> y <strong>&uarr;</strong></p>
+  <p class="text-sm text-intro ">Pause/Resume: <strong>p</strong> y <strong>escape</strong></p>
+
+  <div class="w-full flex justify-center items-center mt-4 buttons">
+      <button class="abstract-button exit-button" (click)="close()" role="button">Exit Game</button>
+      <button class="abstract-button play-button" (click)="playGame()" role="button">Play Game</button>
+  </div>
+</div>

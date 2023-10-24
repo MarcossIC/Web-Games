@@ -11,7 +11,7 @@
     <article *ngFor="let GAME of GAMES; let i = index" >
       <div class="game" [routerLink]="GAME.PATH" [tabindex]="i+1">
         <picture>
-          <img [ngSrc]="GAME.IMG" [alt]="GAME.ALT" role="img" fill>
+          <img [ngSrc]="GAME.IMG" [alt]="GAME.ALT" role="img" fill [priority]="i == 0 ? true : false">
         </picture>
       </div>
 

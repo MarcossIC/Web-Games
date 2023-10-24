@@ -1,0 +1,18 @@
+<div class="modal modal-bg">
+  <h3 class="modal-title-with-bar">Game Over</h3>
+
+  <div class="flex justify-center items-center gap-x-9 mt-7">
+      <div class="flex gap-x-2 text-score" tabindex="2">
+          <h3 class="uppercase">Score: </h3>
+          <span>{{ this.controller.scoreService.score }}</span>
+      </div>
+      <div class="flex gap-x-2 text-score" tabindex="3">
+          <h3 class="uppercase">High Score: </h3>
+          <span>{{ this.controller.scoreService.maxScore  }}</span>
+      </div>
+  </div>
+  <div class="w-full flex justify-center items-center mt-4 buttons">
+      <button class="abstract-button exit-button" (click)="close()" role="button">Exit Game</button>
+      <button class="abstract-button play-button" (click)="playAgain()">Play Again</button>
+  </div>
+</div>

@@ -73,7 +73,7 @@ export const SPEED_PER_LEVEL: Record<number, number> = {
   1: 900,
   2: 500,
   3: 300,
-  4: 100
+  4: 175
 };
 
 export const DEFAULT_PIECE: Piece = {shape: [[]], type: PieceType.SQUARE, position: {x: 0, y: 0}, color: {fill: "", stroke: ""}, isMovable: true};

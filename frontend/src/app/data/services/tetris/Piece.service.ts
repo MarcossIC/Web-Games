@@ -5,6 +5,7 @@ import { PieceImage } from '@app/data/models/tetris/PieceImage';
 import { PieceType } from '@app/data/models/tetris/PieceType.enum';
 import { ALL_COLOR_PIECE, DEFAULT_PIECE } from 'assets/constants/tetrisConstanst';
 import { ramdomNumber } from '../util.service';
+import { Axis } from '@app/data/models/Axis';
 
 @Injectable({
   providedIn: 'root'
@@ -27,26 +28,35 @@ export class PieceService {
     this._current = DEFAULT_PIECE;
   }
 
-  get current(): Piece{
+  public get current(): Piece{
     return this._current;
   }
-  set current(updatePiece: Piece){
+  public set current(updatePiece: Piece){
     this._current = updatePiece;
   }
 
-  moveToLeft(){
+  public generateDefaultPiece(shape?: number[][], position?: Axis, type?: PieceType, isMovable?: boolean, color?: PieceColor): Piece{
+    return {
+      shape: shape ? shape : this._current.shape,
+      type: type ? type : this._current.type,
+      isMovable: isMovable ? isMovable : true,
+      position: position ? position : this._current.position,
+      color: color ? color : this._current.color
+    };
+  }
+  public moveToLeft(): void {
       this._current.position.x--;
   }
 
-  moveToRight(){
+  public moveToRight(): void {
       this._current.position.x++;
   }
 
-  moveToDown(){
+  public moveToDown(): void {
       this._current.position.y++;
   }
 
-  solidify(){
+  solidify(): void {
     this._current.isMovable = false;
     this._current.position.x = 5;
     this._current.position.y = 2;
@@ -57,7 +67,7 @@ export class PieceService {
     return this.allPieces[pieceType]();
   }
 
-  public defineColorPiece(): PieceColor{
+  public defineColorPiece(): PieceColor {
     const colorIndex = ramdomNumber(false, 7);
     console.log("COLORi: "+colorIndex);
     //Retorna una color ramdom de entre la paleta de colores definida

@@ -14,17 +14,12 @@ export class BoardService {
     this._board = fillMatrix(BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN, 0) as number[][];
   }
 
-  //Exponer el tablero
-  get board(){
-    return this._board;
-  }
-
   //Rieniciar el tablero
-  reset(){
+  public reset(): void{
     this._board = fillMatrix(BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN, 0) as number[][];
   }
 
-  drawBoard(
+  public drawBoard(
     context: CanvasRenderingContext2D,
     width: number,
     height: number
@@ -47,7 +42,7 @@ export class BoardService {
     });
   }
 
-  solidifyPieceInBoard(piece: Piece){
+  public solidifyPieceInBoard(piece: Piece): void {
     piece.shape.forEach((row, x) => {
       row.forEach((value, y) => {
         if (value > 0) this._board[y+piece.position.y][x + piece.position.x] = 1;
@@ -55,7 +50,7 @@ export class BoardService {
     })
   }
 
-  verifyLines(): number {
+  public verifyLines(): number {
     this._board.forEach((row, rowX)=>{
       if(row.every(cell => cell > 0)){
         this.removeLine(rowX);
@@ -74,12 +69,15 @@ export class BoardService {
     return level;
   }
 
-  removeLine(line: number){
+  private removeLine(line: number): void{
     this._board.splice(line, 1);
+  }
+
+  private addNewEmptyLine(): void{
     this._board.unshift(fillArray(BOARD_WIDTH_SCREEN, 0));
   }
 
-  addNewEmptyLine(){
-    this._board.unshift(fillArray(BOARD_WIDTH_SCREEN, 0));
+  public get board(): number[][] {
+    return this._board;
   }
 }

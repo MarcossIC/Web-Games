@@ -1,15 +1,16 @@
 .modal{
     position: absolute;
-    background-color: var(--ttt-bg);
     left: 50%;
     top: 50%;
-    width: 275px;
+    width: 270px;
     aspect-ratio: 2/1;
     z-index: 20;
     transform: translate(-50%, -50%);
     padding: 12px;
     padding-block-start: 8px;
     border-radius: 1rem;
+    border: solid 3px #000;
+    box-shadow: inset -10px -10px 25px 0px rgba(0,0,0,0.1), 0 8px 6px -6px black;
 }
 
 .exit-button {
@@ -32,18 +33,62 @@
     color: var(--ttt-text);
   }
 
+  .modal-title-with-bar {
+    text-align: center;
+    color: var(--ttt-primary-300);
+    font-size: 2rem;
+    font-weight: 700;
+    border-bottom: 2px solid var(--ttt-text-200);
+}
+
+.modal p{
+    color: var(--ttt-text-200);
+    text-align: center;
+}
+
+.buttons{
+    column-gap: 15px;
+}
+
+.text-intro {
+  font-size: 1.1rem/* 18px */;
+  line-height: 1.4rem/* 28px */;
+}
 
 @media screen and (min-width: 600px){
+  .text-intro {
+    font-size: 1.5em;
+    line-height: normal;
+}
     .modal{
         width: 550px;
         padding: 12px;
         padding-block-start: 8px;
     }
+
+    .modal-title-with-bar{
+      font-size: 3rem;
+  }
+}
+
+@media screen and (min-width: 1250px){
+  .modal{
+    width: 655px;
+    padding: 15px;
+}
 }
 
 @media screen and (min-width: 1500px){
   .modal{
-    width: 650px;
+    width: 750px;
     padding: 15px;
-}
+  }
+  .modal-title-with-bar{
+    font-size: 4.2rem;
+  }
+
+  .text-intro {
+    font-size: 2.3rem;
+    line-height: 4rem;
+  }
 }

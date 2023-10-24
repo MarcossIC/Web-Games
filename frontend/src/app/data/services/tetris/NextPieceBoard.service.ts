@@ -8,7 +8,6 @@ import { fillMatrix } from '../util.service';
   providedIn: 'root'
 })
 export class NextPieceBoardService {
-
   nextPiece!: Piece;
   nextPieceBoard: number[][];
 
@@ -33,7 +32,7 @@ export class NextPieceBoardService {
     this.executeIfTypesMatch((nextPiece.type === PieceType.BAR), ()=>this.printBar(context));
   }
 
-  executeIfTypesMatch(typesMatch: boolean, printShape: ()=> void){
+  public executeIfTypesMatch(typesMatch: boolean, printShape: ()=> void): void{
     if(typesMatch){
       printShape();
     }

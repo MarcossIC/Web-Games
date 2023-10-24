@@ -16,9 +16,14 @@ export class PointsService {
 
   constructor() { 
     this.score = 0;
-    this.maxScore = 0;
     this.level = 0;
-    this.maxLevel = 0;
+
+    let maxScoreS = localStorage.getItem('tetris-maxScore'); 
+    let maxLevelS = localStorage.getItem('tetris-maxLevel'); 
+    let maxTimeS = localStorage.getItem('tetris-maxTime');
+    this.maxScore = maxScoreS ? parseInt(maxScoreS) : 0;
+    this.maxLevel = maxLevelS ? parseInt(maxLevelS) : 0;
+    this.maxTime = maxTimeS ? maxTimeS : '00:00';
   }
 
 
@@ -36,14 +41,21 @@ export class PointsService {
 
   updateMaxTime(updateMaxTime: string){
     this.maxTime = updateMaxTime;
+    localStorage.setItem('tetris-maxTime', this.maxTime);
   }
   
   updateMaxScore(){
-    this.maxScore = this.score > this.maxScore ? this.score : this.maxScore;
+    if(this.score > this.maxScore){
+      this.maxScore = this.score;
+      localStorage.setItem('tetris-maxScore', JSON.stringify(this.maxScore));
+    }
   }
 
   updateMaxLevel(){
-    this.maxLevel = this.level > this.maxLevel ? this.level : this.maxLevel;
+    if(this.level > this.maxLevel){
+      this.maxScore = this.level;
+      localStorage.setItem('tetris-maxLevel', JSON.stringify(this.maxLevel));
+    }
   }
 
   updateLevel(level: number){

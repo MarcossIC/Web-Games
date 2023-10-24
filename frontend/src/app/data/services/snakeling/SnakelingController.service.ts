@@ -26,8 +26,6 @@ export class SnakelingControllerService {
   private initSnakeAndFood(): void{
     this.snakeService.rePaintSnake(this.boardDiv, this.renderer);
     this.foodService.rePaintFood(this.boardDiv, this.renderer);
-    this._isPaused = false;
-    this._isGameOver = false;
   }
 
   public initGame(boardDiv: HTMLDivElement, renderer: Renderer2): void{
@@ -79,6 +77,8 @@ export class SnakelingControllerService {
 
     this.foodService.foodChangePosition();
     this.initSnakeAndFood();
+    this._isPaused = false;
+    this._isGameOver = false;
   }
 
   public changePause(): void{

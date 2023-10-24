@@ -33,39 +33,6 @@
     </main>
 
 </section>
+<endgame-modal-snakeling *ngIf="this.controller.isGameOver"></endgame-modal-snakeling>
+<welcome-snakeling-modal *ngIf="this.controller.isPaused"></welcome-snakeling-modal>
 
-
-<div class="modal" *ngIf="this.controller.isPaused">
-    <h3 class="modal-title">Welcome</h3>
-
-    <h4 class="modal-sub text-center font-semibold text-2xl mb-2">How to play</h4>
-    <p class="text-sm text-intro ">Left: <strong>a</strong> y <strong>&larr;</strong></p>
-    <p class="text-sm text-intro ">Right: <strong>d</strong> y <strong>&rarr;</strong></p>
-    <p class="text-sm text-intro ">Down: <strong>s</strong> y <strong>&darr;</strong></p>
-    <p class="text-sm text-intro ">Up: <strong>w</strong> y <strong>&uarr;</strong></p>
-    <p class="text-sm text-intro ">Pause/Resume: <strong>p</strong> y <strong>escape</strong></p>
-
-    <div class="w-full flex justify-center items-center mt-4 buttons">
-        <button class="abstract-button exit-game" (click)="close()" role="button">Exit Game</button>
-        <button class="abstract-button play-again" (click)="playGame()" role="button">Play Game</button>
-    </div>
-</div>
-
-<div class="modal" *ngIf="this.controller.isGameOver">
-    <h3 class="modal-title">Game Over</h3>
-
-    <div class="flex justify-center items-center gap-x-9">
-        <div class="flex gap-x-2 text-score" tabindex="2">
-            <h3 class="uppercase">Score: </h3>
-            <span>{{ this.controller.scoreService.score }}</span>
-        </div>
-        <div class="flex gap-x-2 text-score" tabindex="3">
-            <h3 class="uppercase">High Score: </h3>
-            <span>{{ this.controller.scoreService.maxScore  }}</span>
-        </div>
-    </div>
-    <div class="w-full flex justify-center items-center mt-4 gap-x-2">
-        <button class="abstract-button exit-game" (click)="close()" role="button">Exit Game</button>
-        <button class="abstract-button play-again" (click)="playAgain()">Play Again</button>
-    </div>
-</div>

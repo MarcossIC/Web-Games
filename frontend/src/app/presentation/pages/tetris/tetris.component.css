@@ -19,65 +19,6 @@
     user-select: none;
 }
 
-.point{
-    font-weight: 500;
-    font-size: 1.1rem;
-    color: #56bbbd;
-}
-
-.modal{
-    position: absolute;
-    background-color: #1c157a;
-    left: 50%;
-    top: 50%;
-    width: 450px;
-    aspect-ratio: 2/1;
-    z-index: 20;
-    transform: translate(-50%, -50%);
-    padding: 12px;
-    padding-block-start: 8px;
-}
-
-.close-modal{
-    color: #c30000;
-    font-weight: bold;
-    display: flex;
-    justify-content: flex-end;
-    margin-inline-end: 1rem;
-    font-size: 1.1rem;
-    border-radius: .5rem;
-}
-
-.message-modal{
-    display: flex;
-    justify-content: center;
-    font-size: 2rem;
-    margin-block-end: .5rem;
-}
-
-.modal ul {
-    padding-inline: 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.modal ul li {
-    display: flex;
-
-    column-gap: 10px;
-}
-
-
-.modal p{
-    color: #9de8e9;
-    text-align: center;
-    margin-block: 0.5rem;
-}
-
-.buttons{
-    column-gap: 1rem;
-}
 .game-container {
     margin-inline: auto;
 }
@@ -98,37 +39,7 @@
     display: none;
 }
 
-.message-modal-sub{
-    font-size: 1.5rem/* 24px */;
-    line-height: 2rem/* 32px */;
-    font-weight: 500;
-    margin-block-end: .5rem;
-    text-align: center;
-}
-
-.text-intro {
-    font-size: 1.125rem/* 18px */;
-    line-height: 1.75rem/* 28px */;
-}
-
 @media screen and (max-width: 500px) {
-    .text-intro {
-        font-size: 1em;
-        line-height: normal;
-    }
-    .modal {
-        width: 280px;
-    }
-    .modal ul li {
-        flex-direction: column;
-    
-        row-gap: 10px;
-    }
-
-    .buttons{
-        column-gap: .4rem;
-    }
-
     .shared-wrapper {
         flex-direction: column;
         width: 100%;
@@ -218,41 +129,12 @@
     .point-title{
         font-size: 1.2rem;
     }
-
-    .point{
-        font-size: 0.9rem;
-    }
 }
 
 @media screen and (min-width: 1500px) {
-    .modal {
-        width: 650px;
-    }
-    .modal ul li {
-        flex-direction: column;
-    
-        row-gap: 20px;
-    }
-
-    .message-modal{
-        font-size: 4rem;
-    }
-    .message-modal-sub{
-        font-size: 2.5rem;
-        line-height: 2.5rem;
-    }
-
-    .text-intro {
-        font-size: 2.3rem;
-        line-height: 4rem;
-    }
 
     .point-title{
         font-size: 3rem;
-    }
-
-    .point{
-        font-size: 1.5rem;
     }
 }
 

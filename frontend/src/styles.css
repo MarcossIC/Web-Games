@@ -9,7 +9,9 @@
     --ttt-bg-200: #f5f4f1;
     --tt-bg-300: #cccbc8;
   
+    
     --ttt-primary: #d4eaf7;
+    --tt-primary-100: #aed8fd;
     --ttt-primary-200: #b6ccd8;
     --ttt-primary-300: #3b3c3d;
     --ttt-accent: #71c4ef;
@@ -44,7 +46,8 @@ body {
     width: 100%;
     min-height: 100dvh;
 
-    background-color: #13102D;
+    background: rgb(11,59,89);
+    background: radial-gradient(circle, rgba(11,59,89,1) 8%, rgba(14,29,58,1) 100%);
 }
 
 .snake-container {
@@ -58,16 +61,17 @@ body {
 }
 
 .text-format {
-    color: #5EE8EA;
+    color: var(--tt-primary-100);
     font-weight: bold;
 }
 
 .menu-logo {
-    text-shadow: 1px 2px 0 #3e7b9a, 2px 4px 0 #1f2556, 8px 2px 0 #2b2a64,
-      6px 1px 0 #2b2a64, 4px -1px 0 #2b2a64, 2px -3px 0 #2b2a64,
-      -4px -3px 0 #2b2a64, -1px -2px 0 #1f2556, -4px 0px 0 #2b2a64,
-      -3px 1px 0 #2b2a64, -2px 2px 0 #2b2a64, -1px 3px 0 #2b2a64,
-      0px 4px 0 #2b2a64, 1px 5px 0 #2b2a64, 2px 6px 0 #2b2a64, 3px 7px 0 #2b2a64;
+    text-shadow:     
+    2px 2px 0 #3c5e71,
+    3px 4px 0 var(--ttt-accent-200),
+    4px 5px 0px var(--ttt-accent-200),
+    4px 6px 0px var(--ttt-accent-200),
+    5px 6px 0px var(--ttt-accent-200);
   }
 
   .abstract-button{
@@ -83,22 +87,6 @@ body {
     justify-content: center;
     border-radius: 0.5rem;
     text-align: center;
-}
-
-.play-again{
-    background-color: #23eb0b;
-    
-}
-.exit-game{
-    background-color: #c30000;
-}
-
-.play-again:hover{
-    background-color: #1aff00;
-}
-
-.exit-game:hover {
-    background-color: #c40d0d;
 }
 
 @media screen and (min-width: 600px){

@@ -11,9 +11,15 @@ import { NextPieceBoardService } from '@app/data/services/tetris/NextPieceBoard.
 import { ParticlesComponent } from '@app-components/particles/particles.component';
 import { ChronometerComponent } from '@app/presentation/components/chronometer/chronometer.component';
 import { UtilService } from '@app/data/services/util.service';
+import { WelcomeTetrisModalComponent } from '@app/presentation/components/welcome-tetris-modal/welcome-tetris-modal.component';
+import { EndgameModalTetrisComponent } from '@app/presentation/components/endgame-modal-tetris/endgame-modal-tetris.component';
+
 @NgModule({
   imports: [
-    CommonModule, TetrisRoutes, ParticlesComponent
+    CommonModule, TetrisRoutes, 
+    ParticlesComponent, 
+    WelcomeTetrisModalComponent, 
+    EndgameModalTetrisComponent
   ],
   declarations: [
     ChronometerComponent,

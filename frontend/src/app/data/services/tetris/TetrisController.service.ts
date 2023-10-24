@@ -5,7 +5,7 @@ import { Piece } from '@app/data/models/tetris/Piece';
 import {
   ACTIONS, BOARD_HEIGHT_SCREEN, BOARD_WIDTH_SCREEN, LINE_WIDTH_SCALE, NEXT_POSITION, SHADOW_BLUR_SCALE, SPEED_PER_LEVEL } from 'assets/constants/tetrisConstanst';
 import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
-import { Subject } from 'rxjs';
+import { MonoTypeOperatorFunction, Subject } from 'rxjs';
 import { NextPieceBoardService } from './NextPieceBoard.service';
 import { Axis } from '@app/data/models/Axis';
 import { destroy } from '../util.service';
@@ -19,16 +19,17 @@ export class TetrisControllerService {
   public isPaused: boolean;
   public nextPiece: Subject<Piece>;
   public level: number;
-  public animationFrameId: number = 0;
+  public animationFrameId: number;
 
   //Injected services
-  private boardController = inject(BoardService);
-  private bagOfPieces = inject(BagOfPiecesService);
-  private nextPieceBoard = inject(NextPieceBoardService);
-  private ngZone = inject(NgZone);
+  private boardController: BoardService = inject(BoardService);
+  private bagOfPieces: BagOfPiecesService = inject(BagOfPiecesService);
+  private nextPieceBoard: NextPieceBoardService = inject(NextPieceBoardService);
+  private ngZone: NgZone = inject(NgZone);
   private destroy$ = destroy();
 
   constructor() {
+    this.animationFrameId = 0;
     this.gameOver = false;
     this.isPaused = true;
     this.nextPiece = new Subject<Piece>();
@@ -78,7 +79,7 @@ export class TetrisControllerService {
     update();
   }
 
-  movePieceAuto(time: number, dropCounter: number, lastTime: number) {
+  private movePieceAuto(time: number, dropCounter: number, lastTime: number): { newDropCounter: number; newLastTime: number; } {
     const deltaTime = time - lastTime;
     lastTime = time;
     dropCounter += deltaTime;
@@ -96,7 +97,7 @@ export class TetrisControllerService {
       this.checkCollisionEffects();
   }
 
-  draw(context: CanvasRenderingContext2D) {
+  private draw(context: CanvasRenderingContext2D): void {
     let piece = this.bagOfPieces.piece.current;
     piece.shape.forEach((row, x) => {
       row.forEach((value, y) => {
@@ -145,7 +146,7 @@ export class TetrisControllerService {
   }
 
   //Ejecuta efectos de una colision
-  checkCollisionEffects() {
+  private checkCollisionEffects(): void {
     this.boardController.solidifyPieceInBoard(this.bagOfPieces.piece.current);
     
     let updateLevel = this.boardController.verifyLines();
@@ -156,38 +157,66 @@ export class TetrisControllerService {
   }
 
   //Termina el juego al detectar una colision, util al resetear la pieza
-  endGame() {
+  public endGame(): void {
     if (this.detectedACollision(this.bagOfPieces.piece.current, ACTION.DOWN)) {
       this.gameOver = true;
     }
   }
 
   //Verifica que la forma + unas cordenadas no se salga de los limites del tablero
-  private isWithinBoardLimits(axis: Axis, shape: number[][]): boolean {
-    const { x, y } = axis;
-    const numRows = shape.length - 1;
-    const numCols = shape[0].length - 1;
+  private isWithinBoardLimits(x: number, y: number, shape: number[][], isPieceOnRightEdge: boolean): boolean {
+    const numRows = shape.length-1;
+    const numCols = shape[0].length-1;
+    const lastRow = numRows + x;
+    const lastCol = numCols + y;
 
     return (
-      x >= 0 &&
-      x + numRows < BOARD_WIDTH_SCREEN &&
-      y >= 0 &&
-      y + numCols < BOARD_HEIGHT_SCREEN
+        x >= 0 &&
+        lastRow < BOARD_WIDTH_SCREEN &&
+        y >= 0 &&
+        lastCol < BOARD_HEIGHT_SCREEN
     );
   }
 
   //Rota una forma en sentido de las agujas del reloj
-  rotateShapeClockwise(shape: number[][]): number[][] {
-    const numRows = shape.length;
-    const numCols = shape[0].length;
+  private rotateShapeClockwise(shape: number[][], numRows: number, numCols: number): number[][] {
     const rotated = [];
-
+    
     for (let col = numCols - 1; col >= 0; col--) {
+      
       const newRow = [];
       for (let row = 0; row < numRows; row++) newRow.push(shape[row][col]);
       rotated.push(newRow);
     }
     return rotated;
+  }
+
+  //Rota una forma en sentido a contra reloj
+  private rotateShapeCounterClockwise(shape: number[][], numRows: number, numCols: number): number[][] {
+    const rotated = [];
+    let curTetrominoBU;
+    for(let i = 0; i < shape.length; i++) {
+        curTetrominoBU = [...shape];
+ 
+        let x = shape[i][0];
+        let y = shape[i][1];
+        let newX = (this.getLastSquareX(shape) - y);
+        let newY = x;
+        rotated.push([newX, newY]);
+    }
+    return rotated;
+}
+
+ 
+  getLastSquareX(shape: number[][]) {
+      let lastX = 0;
+      for(let i = 0; i < shape.length; i++)
+      {
+          let square = shape[i];
+          if (square[0] > lastX)
+              lastX = square[0];
+      }
+      return lastX;
   }
 
   //Detacta si la pieza tubo una colision en la direccion pasada
@@ -229,12 +258,12 @@ export class TetrisControllerService {
     return false; // Si no se cumple la condición en ningún caso, regresar falso al final
   }
 
-  private doesRotationCollide(rotated: number[][]): boolean {
+  private doesRotationCollide(rotated: number[][], isPieceOnRightEdge: boolean): boolean {
     const { x, y } = this.bagOfPieces.piece.current.position; // Obtener la posición actual de la pieza
 
     return rotated.some((row, rowX) =>
       row.some((cell, cellY) => {
-        const boardX = x + rowX;
+        const boardX = rowX + x;
         const boardY = y + cellY;
 
         const isOutOfBounds =
@@ -249,16 +278,22 @@ export class TetrisControllerService {
     );
   }
 
-  rotate() {
-    const previousShape = this.bagOfPieces.piece.current.shape;
-    const rotated = this.rotateShapeClockwise(previousShape);
+  private isPieceOnRightEdge(numCols: number, xPosition: number): boolean {
+    return xPosition+numCols >= BOARD_WIDTH_SCREEN-1;
+  }
 
+  public rotate(): void {
+    const { position: {x, y}, shape } = this.bagOfPieces.piece.current;
+    const numRows = shape.length;
+    const numCols = shape[0].length;
+
+    const rotated =  this.rotateShapeClockwise(shape, numRows, numCols);
     if (
-      this.isWithinBoardLimits(this.bagOfPieces.piece.current.position, rotated) &&
-      !this.doesRotationCollide(rotated)
+      this.isWithinBoardLimits(x, y, rotated, false) &&
+      !this.doesRotationCollide(rotated, false)
     ) {
       this.bagOfPieces.piece.current.shape = rotated;
-    }
+    } 
   }
 
   public playAgain(): void {

@@ -1,0 +1,23 @@
+.modal-bg{
+    background-color: var(--ttt-bg-200);
+}
+
+.modal-sub{
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+@media screen and (min-width: 600px){
+    .modal-sub{
+        font-size: 2rem;
+    }
+}
+
+@media screen and (min-width: 1500px){
+    
+    .modal-sub{
+        font-size: 2.5rem;
+    }
+
+}
+

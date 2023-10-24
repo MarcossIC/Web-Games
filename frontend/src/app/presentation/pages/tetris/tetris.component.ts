@@ -16,10 +16,10 @@ export class TetrisComponent implements OnInit, OnDestroy {
   @ViewChild('tetris', { static: true }) canvasRef!: ElementRef;
   @ViewChild('nextPiece', { static: true }) nextPieceRef!: ElementRef;
 
-  private board: any;
-  private nextPiece: any;
-  private boardContext: any;
-  private nextPieceContext: any;
+  private board!: HTMLCanvasElement;
+  private nextPiece!: HTMLCanvasElement;
+  private boardContext!: CanvasRenderingContext2D;
+  private nextPieceContext!: CanvasRenderingContext2D;
   private moveListener = () => {};
 
   protected controller = inject(TetrisControllerService);
@@ -27,8 +27,6 @@ export class TetrisComponent implements OnInit, OnDestroy {
   protected title = inject(Title);
   private renderer = inject(Renderer2);
   protected point = inject(PointsService);
-  private router = inject(Router);
-
 
   constructor() { 
   }
@@ -43,14 +41,14 @@ export class TetrisComponent implements OnInit, OnDestroy {
 
     //Board
     this.board = this.canvasRef.nativeElement;
-    this.boardContext = this.board.getContext('2d');
+    this.boardContext = this.board.getContext('2d') as CanvasRenderingContext2D;
     this.board.width = BLOCK_SIZE_SCREEN * BOARD_WIDTH_SCREEN;
     this.board.height = BLOCK_SIZE_SCREEN * BOARD_HEIGHT_SCREEN;
     this.boardContext.scale(BLOCK_SIZE_SCREEN, BLOCK_SIZE_SCREEN);
     
     //Next Piece Board
     this.nextPiece = this.nextPieceRef.nativeElement;
-    this.nextPieceContext = this.nextPiece.getContext('2d');
+    this.nextPieceContext = this.nextPiece.getContext('2d') as CanvasRenderingContext2D;
     this.nextPiece.width = NEXT_PIECE_SIZE * NEXT_PIECE_WIDTH;
     this.nextPiece.height = NEXT_PIECE_SIZE * NEXT_PIECE_HEIGHT;
     this.nextPieceContext.scale(NEXT_PIECE_SIZE, NEXT_PIECE_SIZE);
@@ -79,29 +77,9 @@ export class TetrisComponent implements OnInit, OnDestroy {
     return this.board.height;
   }
 
-  close(){
-    this.point.resetScore();
-    this.point.resetLevel();
-    this.controller.reset();
-
-    this.router.navigate(['/games']);
-  }
-
-  restart(): void{
-    this.controller.reset();
-    this.controller.playAgain();
-    this.point.resetLevel();
-    this.point.resetScore();
-  }
-
   pause(): void{
     this.controller.pause();
   }
-
-  playGame(): void{
-    this.controller.resume();
-  }
-
 
   isMobile(): boolean{
     return window.innerWidth <= 500;

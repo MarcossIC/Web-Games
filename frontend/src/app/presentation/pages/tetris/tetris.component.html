@@ -42,40 +42,5 @@
 
 </section>
 
-<div class="modal" *ngIf="this.controller.gameOver">
-    <h3 class="message-modal text-format menu-logo">Game Over</h3>
-    <ul>
-        <li>
-            <p class="point">Current Score {{ this.point.score }}</p>
-            <p class="point">Max Score {{ this.point.maxScore }}</p>
-        </li>
-        <li>
-            <p class="point">Current Level{{ this.point.level }}</p>
-            <p class="point">Max level {{ this.point.maxLevel }}</p>
-        </li>
-        <li>
-            <p class="point">Current Time {{ this.point.time }}</p>
-            <p class="point">Max time {{ this.point.maxTime }}</p>
-        </li>
-    </ul>
-    <div class="w-full flex justify-center items-center mt-4 buttons">
-        <button class="abstract-button exit-game" (click)="close()">Exit Game</button>
-        <button class="abstract-button play-again" (click)="restart()">Play Game</button>
-    </div>
-</div>
-
-<div class="modal" *ngIf="this.controller.isPaused">
-    <h3 class="message-modal text-format menu-logo">Welcome</h3>
-
-    <h4 class="text-format message-modal-sub">How to play</h4>
-    <p class="text-intro">Left: <strong>a</strong> y <strong>&larr;</strong></p>
-    <p class="text-intro">Right: <strong>d</strong> y <strong>&rarr;</strong></p>
-    <p class="text-intro">Down: <strong>s</strong> y <strong>&darr;</strong></p>
-    <p class="text-intro">Rotate Piece: <strong>w</strong> y <strong>&uarr;</strong></p>
-    <p class="text-intro">Pause/Resume: <strong>p</strong> y <strong>escape</strong></p>
-
-    <div class="w-full flex justify-center items-center mt-4 buttons">
-        <button class="abstract-button exit-game" (click)="close()">Exit Game</button>
-        <button class="abstract-button play-again" (click)="playGame()">Play Game</button>
-    </div>
-</div>
+<endgame-modal-tetris *ngIf="this.controller.gameOver"></endgame-modal-tetris>
+<welcome-tetris-modal *ngIf="this.controller.isPaused">></welcome-tetris-modal>
