@@ -18,10 +18,10 @@ export class StartComponent implements OnInit {
   constructor() { }
 
   ngOnInit(): void {
-    this.title.setTitle("Start");
+    this.title.setTitle("Game Galaxy - Start Page");
     this.seo.generateTags({
-      title: "Start",
-      description: "Start page, before games",
+      title: "Game Galaxy - Start Page",
+      description: "Start Page",
       slug: ""
     });
   }

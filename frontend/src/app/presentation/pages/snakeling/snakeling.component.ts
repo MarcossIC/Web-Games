@@ -35,9 +35,9 @@ export class SnakelingComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.title.setTitle("Snake Game");
+    this.title.setTitle("Game Galaxy - Snake Game");
     this.seo.generateTags({
-      title: "Games Galaxy -Snake Game",
+      title: "Games Galaxy - Snake Game",
       description: "Page to play a clasic snake Game",
       slug: "snakeling"
     });

@@ -15,9 +15,9 @@ export class GamesComponent implements OnInit {
   constructor() { }
 
   ngOnInit(): void {
-    this.title.setTitle("Games Option");
+    this.title.setTitle("Game Galaxy - Selection Games");
     this.seo.generateTags({
-      title: "Games Option",
+      title: "Game Galaxy - Selection Games",
       description: "Page to preview and choose a game",
       slug: "games"
     });

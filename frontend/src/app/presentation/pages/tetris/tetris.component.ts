@@ -32,9 +32,9 @@ export class TetrisComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.title.setTitle("Tetris");
+    this.title.setTitle("Game Galaxy - Tetris");
     this.seo.generateTags({
-      title: "Tetris",
+      title: "Game Galaxy -  <<<<<<<<Tetris",
       description: "Page to play tetris",
       slug: "tetris"
     });

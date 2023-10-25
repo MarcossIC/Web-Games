@@ -195,3 +195,57 @@
   input:checked + .second-player .second-player-handler {
     transform: translate3d(55px, 0, 0) rotate(0);
   }
+
+  @media screen and (min-width: 600px){
+    
+  }
+
+  @media screen  and (min-width: 1500px){
+    .option-text{
+      font-size: 2rem;
+    }
+    .toggle{
+      width: 150px;
+      height: 55px;
+    }
+    .toggle-handler{
+      top: 5px;
+      left: 6px;
+      width: 43px;
+      height: 43px;
+    }
+
+    .select-player:before{
+      top: -1px;
+      left: -155px;
+      font-size: 2rem;
+    }
+
+    .select-player:after{
+      top: -1px;
+      right: -155px;
+      font-size: 2rem;
+    }
+    .toggle-container{
+      margin-block-start: 2rem;
+    }
+    .second-player:before {
+      left: -80px;
+      top: 5px;
+      font-size: 2rem;
+    }
+    
+    .second-player:after {
+      right: -80px;
+      top: 5px;
+      font-size: 2rem;
+    }
+    .radio-inputs{
+      width: 450px;
+      
+    }
+    .radio-inputs .radio .name{
+      font-weight: 500;
+      font-size: 1.6rem;
+    }
+  }

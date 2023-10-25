@@ -2,21 +2,27 @@
     background-color: var(--ttt-bg-200);
 }
 
-.modal-sub{
-    font-size: 1.5rem;
-    font-weight: bold;
+.message-modal-sub{
+    color: var(--ttt-text);
+    font-size: 1.5rem/* 24px */;
+    line-height: 2rem/* 32px */;
+    font-weight: 500;
+    margin-block-end: .5rem;
+    text-align: center;
+    margin-block-start: 1rem;
 }
 
 @media screen and (min-width: 600px){
-    .modal-sub{
+    .message-modal-sub{
         font-size: 2rem;
     }
 }
 
 @media screen and (min-width: 1500px){
     
-    .modal-sub{
+    .message-modal-sub{
         font-size: 2.5rem;
+        line-height: 2.5rem;
     }
 
 }

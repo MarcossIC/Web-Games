@@ -25,18 +25,18 @@
 .modal p span {
     margin-inline-start: 0.6rem;
     text-align: center;
-    font-size: 1rem;
+    font-size: 1.1rem;
 }
 
 .point{
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: #56bbbd;
 }
 
 @media screen and (min-width: 600px) {
     .point{
-        font-size: 1.1rem;
+        font-size: 1.5rem;
     }
     .modal ul li {
         flex-direction: column;
@@ -45,7 +45,7 @@
     }
 
     .modal p span {
-        font-size: 1.2rem;
+        font-size: 1.4rem;
     }
 }
 
@@ -58,10 +58,10 @@
     }
 
     .point{
-        font-size: 1.5rem;
+        font-size: 2.2rem;
     }
 
     .modal p span {
-        font-size: 1.6rem;
+        font-size: 2.1rem;
     }
 }

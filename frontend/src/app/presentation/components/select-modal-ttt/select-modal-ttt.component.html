@@ -1,5 +1,6 @@
 <div class="modal modal-bg">
-  <p class="option-text">Select wich you want to be?</p>
+  <h2 class="modal-title-with-bar ">Welcome</h2>
+  <h3 class="option-text mt-4">Select wich you want to be?</h3>
 
   <div class=" toggle-container">
     <div class="toggle-wrapper">
@@ -11,7 +12,7 @@
     </div>
   </div>
 
-  <p class="option-text mt-14">Will the bot play?</p>
+  <h3 class="option-text mt-20">Will the bot play?</h3>
   <div class=" toggle-container">
     <div class="toggle-wrapper">
       <input type="checkbox" id="second-player" [checked]="this.controller.isBotPlaying()" (change)="activateSecondPlayer($event)">
