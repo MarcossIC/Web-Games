@@ -34,3 +34,17 @@
     font-weight: 700;
     font-size: 2rem;
 }
+
+@media screen and (min-width: 1500px) {
+    .modal-title{
+        font-size: 3.5rem;
+    }
+    .text-winner{
+        margin-block-start: 1rem;
+        font-size: 2rem;
+    }
+
+    .modal-subtitle{
+        font-size: 3rem;
+    }
+}

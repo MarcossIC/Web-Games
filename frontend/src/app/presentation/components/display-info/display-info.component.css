@@ -1,6 +1,6 @@
 .display-info {
   background-color: var(--ttt-bg);
-  width: 360px;
+  width: 270px;
   border-radius: 0.5rem;
   aspect-ratio: 13/2;
   color: var(--ttt-text-200);
@@ -12,7 +12,7 @@
   grid-row-gap: 0px;
   font-weight: 500;
   user-select: none;
-  padding: 7px;
+  padding: 5px;
 }
 
 .info-x {
@@ -60,4 +60,20 @@
 
 .current-o {
   background-color: var(--ttt-select-o-200);
+}
+
+@media screen and (min-width: 1500px) {
+  .display-info {
+    width: 360px;
+    padding: 7px;
+  }
+}
+
+@media screen and (min-width: 1500px) {
+  .display-info {
+    width: 485px;
+    padding: 7px;
+    font-size: 2rem;
+  }
+  
 }

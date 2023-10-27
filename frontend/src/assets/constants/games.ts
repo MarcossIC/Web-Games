@@ -19,7 +19,7 @@ export const GAMES: iGAMES[] = [
         PATH: '/snakeling'
     },
     {
-        IMG: '../../../../assets/images/ajedrez-frontpage.webp',
+        IMG: '../../../../assets/images/ttt-frontpage.webp',
         NAME: 'Tic Tac Toe',
         ALT: 'Tic Tac Toe front page image',
         PATH: '/tictactoe'

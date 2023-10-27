@@ -1,24 +1,24 @@
 <div class="modal modal-bg">
-  <h2 class="modal-title">Round finished</h2>
+  <h3 class="modal-title">Round finished</h3>
 
   <div *ngIf="this.controller.isXPlayerWinner()">
-    <p class="text-winner x-winner">X's Player's Won</p>
+    <h4 class="text-winner x-winner">X's Player's Won</h4>
   </div>
   <div *ngIf="this.controller.isOPlayerWinner()">
-    <p class="text-winner o-winner">O's Player's Won</p>
+    <h4 class="text-winner o-winner">O's Player's Won</h4>
   </div>
   <div *ngIf="this.controller.isDraw()">
-    <p class="text-winner draw">Draw</p>
+    <h4 class="text-winner draw">Draw</h4>
   </div>
 
-  <h3 class="modal-subtitle">Score</h3>
-  <div class="flex w-32 mx-auto">
-    <span class="x-winner font-semibold mr-6 text-2xl">X</span>
-    <span class="x-winner text-3xl">V</span>
-    <span class="o-winner text-4xl">S</span>
-    <span class="o-winner font-semibold ml-6 text-2xl">O</span>
+  <h4 class="modal-subtitle">Score</h4>
+  <div class="flex w-28 min-[1500px]:w-[10rem] mx-auto">
+    <span class="x-winner font-semibold mr-6 text-2xl min-[1500px]:text-5xl">X</span>
+    <span class="x-winner text-3xl min-[1500px]:text-6xl">V</span>
+    <span class="o-winner text-4xl min-[1500px]:text-7xl">S</span>
+    <span class="o-winner font-semibold ml-6 text-2xl min-[1500px]:text-5xl">O</span>
   </div>
-  <div class="flex w-32 mx-auto gap-x-24">
+  <div class="flex w-28 gap-x-[5.4rem] min-[1500px]:w-[10rem] mx-auto min-[1500px]gap-x-36 text-3xl">
     <strong class="x-winner">{{ this.controller.scorePlayerX }}</strong>
     <strong class="o-winner">{{ this.controller.scorePlayerO }}</strong>
   </div>

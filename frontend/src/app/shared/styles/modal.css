@@ -58,11 +58,11 @@
 @media screen and (min-width: 600px){
   .buttons{
     column-gap: 5px;
-}
+  }
   .text-intro {
     font-size: 1.5em;
     line-height: normal;
-}
+  }
     .modal{
         width: 550px;
         padding: 12px;
@@ -72,13 +72,6 @@
     .modal-title-with-bar{
       font-size: 3rem;
   }
-}
-
-@media screen and (min-width: 1250px){
-  .modal{
-    width: 655px;
-    padding: 15px;
-}
 }
 
 @media screen and (min-width: 1500px){

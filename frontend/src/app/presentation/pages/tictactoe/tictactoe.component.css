@@ -4,11 +4,11 @@
     display: grid;
     grid-template-columns: 1fr;
     grid-template-rows: repeat(3, 1fr);
-    grid-auto-columns: 360px; /* Tamaño de celda en columnas */
-    grid-auto-rows: 360px;    /* Tamaño de celda en filas */
+    grid-auto-columns: 270px; /* Tamaño de celda en columnas */
+    grid-auto-rows: 270px;    /* Tamaño de celda en filas */
     grid-row-gap: .5rem;
-    width: 360px;
-    height: 360px;
+    width: 270px;
+    height: 270px;
 
 }
 
@@ -16,12 +16,12 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: 1fr;
-  grid-auto-rows: 120px;    /* Tamaño de celda en filas */
-  grid-auto-columns: 120px; /* Tamaño de celda en columnas */
+  grid-auto-rows: 90px;    /* Tamaño de celda en filas */
+  grid-auto-columns: 90px; /* Tamaño de celda en columnas */
   grid-column-gap: .5rem;
   
-  width: 360px;
-  height: 120px;
+  width: 270px;
+  height: 90px;
 }
 
 .board #line-1 { 
@@ -56,7 +56,7 @@
     place-items: center;
     cursor: pointer;
     font-weight: bold;
-    font-size: 4.5rem;
+    font-size: 3.5rem;
     text-transform: uppercase;
 }
 
@@ -77,46 +77,55 @@
 }
 
 .tictactoe-title { 
-    font-size: 3.5rem;
+    font-size: 2.5rem;
     font-weight: bold;
     text-align: center;
+    margin-block-end: 1.5rem;
 }   
 
-  .display-info {
-    background-color: var(--ttt-bg);
-    width: 360px;
-    border-radius: .5rem;
-    aspect-ratio: 13/2;
-    color: var(--ttt-text-200);
+  @media screen and (min-width: 600px) {
+    .tictactoe-title { 
+      font-size: 4.5rem;
+      margin-block-end: 0px;
+    }
 
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: 1fr;
-    grid-column-gap: 0px;
-    grid-row-gap: 0px;
-    font-weight: 500;
-    user-select: none;
-    padding: 7px;
+    .board {
+      grid-auto-columns: 375px; /* Tamaño de celda en columnas */
+      grid-auto-rows: 375px;    /* Tamaño de celda en filas */
+      width: 375px;
+      height: 375px;
+    }
+
+    .board .line{
+      grid-auto-rows: 125px;    /* Tamaño de celda en filas */
+      grid-auto-columns: 125px; /* Tamaño de celda en columnas */
+      
+      width: 375px;
+      height: 125px;
+    }
+
+    .cell{
+      font-size: 8.5rem;
+    }
   }
 
-  .info-x{
-    grid-area: 1 / 1 / 2 / 2; 
-    display: grid;
-    place-content: center;
-    place-items: center;
-    
-    border-radius: .5rem;
+  @media screen and (min-width: 1500px) {
+    .tictactoe-title { 
+      font-size: 6rem;
+    }
+    .board {
+      grid-auto-columns: 720px; /* Tamaño de celda en columnas */
+      grid-auto-rows: 720px;    /* Tamaño de celda en filas */
+      width: 720px;
+      height: 720px;
+    }
+    .board .line{
+      grid-auto-rows: 240px;    /* Tamaño de celda en filas */
+      grid-auto-columns: 240px; /* Tamaño de celda en columnas */
+      width: 720px;
+      height: 240px;
+    }
+    .cell{
+      font-size: 5rem;
+    }
   }
-
-  .current-x {
-    background-color: var(--ttt-select-x-200);
-  }
-
-  .info-o{
-    grid-area: 1 / 2 / 2 / 3;
-    display: grid;
-    place-content: center;
-    place-items: center;
-    border-radius: .5rem;
-  }
-

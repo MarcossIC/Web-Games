@@ -61,8 +61,8 @@
     box-sizing: border-box;
     box-shadow: 0 0 0px 1px rgba(0, 0, 0, 0.06);
     padding: 0.25rem;
-    width: 300px;
-    font-size: 14px;
+    width: 240px;
+    column-gap: .1rem;
   }
   
   .radio-inputs .radio {
@@ -98,9 +98,9 @@
   .select-player:before {
     content: 'Player (X)';
     position: absolute;
-    left: -85px;
+    left: -75px;
     top: 5px;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--ttt-select-x-200);
     font-weight: 500;
     opacity: 1;
@@ -112,9 +112,9 @@
   .select-player:after {
     content: 'Player (O)';
     position: absolute;
-    right: -85px;
+    right: -75px;
     top: 5px;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--ttt-text);
     opacity: .85;
     font-weight: 500;
@@ -197,7 +197,21 @@
   }
 
   @media screen and (min-width: 600px){
+      .radio-inputs {
+        padding: 0.25rem;
+        width: 300px;
+      }
+    .select-player:before {
+      left: -85px;
+      top: 5px;
+      font-size: 1.1rem;
+    }
     
+    .select-player:after {
+      right: -85px;
+      top: 5px;
+      font-size: 1.1rem;
+    }
   }
 
   @media screen  and (min-width: 1500px){
@@ -240,6 +254,9 @@
       top: 5px;
       font-size: 2rem;
     }
+    .radio-inputs .radio {
+      padding: .1rem;
+    }
     .radio-inputs{
       width: 450px;
       
@@ -247,5 +264,8 @@
     .radio-inputs .radio .name{
       font-weight: 500;
       font-size: 1.6rem;
+    }
+    input:checked + .second-player .second-player-handler {
+      transform: translate3d(92px, 0, 0) rotate(0);
     }
   }

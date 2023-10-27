@@ -2,14 +2,14 @@
   <app-particles></app-particles>
 
   <main class="tictactoe-wrapper ">
-    <h1 class="tictactoe-title">Tic Tac Toe</h1>
+    <h2 class="tictactoe-title">Tic Tac Toe</h2>
     
     <display-info 
     captionO="O's Turn" captionX="X's Turn" 
     [oCurrent]="!this.controller.isPlayerXTurn()" 
     [xCurrent]="this.controller.isPlayerXTurn()" [displayClass]="['mb-4']"></display-info>
   
-    <div #board class="board">
+    <div #board class="board" aria-details="Board where tic tac toe is being played">
       <div *ngFor="let row of this.controller.retrieveBoard(); let rowI = index" class="line" [id]="'line-'+(rowI+1)">
         <div *ngFor="let cell of row; let cellI = index" class="cell" (click)="cellSelected(rowI, cellI)" [ngClass]="{'cell-X': cell === 'X', 'cell-O': cell === 'O'}" [id]="'cell-'+(rowI+1)+'-'+(cellI+1)">
           {{ cell !== '0' ? cell : '' }}
