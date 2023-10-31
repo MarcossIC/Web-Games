@@ -16,4 +16,4 @@ Right now the site has three games available:
   </li>
 </ul>
 
-You can enjoy the site at: [Game Galaxy](https://game-galaxy.netlify.app/games)https://game-galaxy.netlify.app/games
+You can enjoy the site at: [Game Galaxy](https://game-galaxy.netlify.app/games)
