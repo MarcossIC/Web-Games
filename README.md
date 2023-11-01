@@ -1,5 +1,5 @@
 # Game Galaxy
-## Demo
+## :rocket: Demo
 You can enjoy the site at: [Game Galaxy](https://game-galaxy.netlify.app/games)
 
 ## :sparkles: Introduction
