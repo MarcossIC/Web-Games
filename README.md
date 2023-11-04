@@ -1,6 +1,6 @@
 # Game Galaxy
 ## :rocket: Demo
-You can enjoy the site at: [Game Galaxy](https://game-galaxy.netlify.app/games)
+You can enjoy the site at: [Game Galaxy](https://game-galaxy.netlify.app)
 
 ## :sparkles: Introduction
 It is a website that provides a space to play classic games on the Web in a simple and fast way.
