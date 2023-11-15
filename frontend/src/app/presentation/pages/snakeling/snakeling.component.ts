@@ -21,7 +21,6 @@ export class SnakelingComponent implements OnInit, OnDestroy {
   protected controller: SnakelingControllerService = inject(SnakelingControllerService);
   protected seo = inject(SeoService);
   protected title = inject(Title);
-  private router = inject(Router);
   
   private moveListener$!: Subscription;
   private destroy$ = destroy();

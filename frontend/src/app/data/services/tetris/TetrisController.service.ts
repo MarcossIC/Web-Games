@@ -5,10 +5,11 @@ import { Piece } from '@app/data/models/tetris/Piece';
 import {
   ACTIONS, BOARD_HEIGHT_SCREEN, BOARD_WIDTH_SCREEN, LINE_WIDTH_SCALE, NEXT_POSITION, SHADOW_BLUR_SCALE, SPEED_PER_LEVEL } from 'assets/constants/tetrisConstanst';
 import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
-import { MonoTypeOperatorFunction, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { NextPieceBoardService } from './NextPieceBoard.service';
-import { Axis } from '@app/data/models/Axis';
 import { destroy } from '../util.service';
+import { ChronometerServiceService } from '../chronometerService.service';
+import { GameName } from '@app/data/models/GameName.enum';
 
 @Injectable({
   providedIn: 'root',
@@ -26,6 +27,7 @@ export class TetrisControllerService {
   private bagOfPieces: BagOfPiecesService = inject(BagOfPiecesService);
   private nextPieceBoard: NextPieceBoardService = inject(NextPieceBoardService);
   private ngZone: NgZone = inject(NgZone);
+  private chronometerService: ChronometerServiceService = inject(ChronometerServiceService);
   private destroy$ = destroy();
 
   constructor() {
@@ -56,6 +58,8 @@ export class TetrisControllerService {
   ): void {
     this.gameOver = false;
     this.isPaused = true;
+    this.chronometerService.updateGameName(GameName.TETRIS);
+    this.chronometerService.updated.next({gameOver: this.gameOver, isPaused: this.isPaused});
     this.nextPiece.next(this.bagOfPieces.nextPiece());
     context.lineWidth = LINE_WIDTH_SCALE;
     context.shadowBlur = SHADOW_BLUR_SCALE;
@@ -160,6 +164,7 @@ export class TetrisControllerService {
   public endGame(): void {
     if (this.detectedACollision(this.bagOfPieces.piece.current, ACTION.DOWN)) {
       this.gameOver = true;
+      this.chronometerService.updated.next({gameOver: this.gameOver, isPaused: this.isPaused});
     }
   }
 
@@ -299,6 +304,7 @@ export class TetrisControllerService {
   public playAgain(): void {
     this.gameOver = false;
     this.isPaused = false;
+    this.chronometerService.updated.next({gameOver: this.gameOver, isPaused: this.isPaused});
   }
 
   public reset(): void {
@@ -310,10 +316,12 @@ export class TetrisControllerService {
 
   public pause(): void {
     this.isPaused = true;
+    this.chronometerService.updated.next({gameOver: this.gameOver, isPaused: this.isPaused});
   }
 
   public resume(): void {
     this.isPaused = false;
+    this.chronometerService.updated.next({gameOver: this.gameOver, isPaused: this.isPaused});
   }
 }
 

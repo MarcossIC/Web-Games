@@ -1,0 +1,16 @@
+<div class="modal modal-bg">
+  <h3 class="modal-title-with-bar">Game Over</h3>
+
+  <ng-container *ngIf="!controller.isWin; else win">
+    <p class="message message-loose">Opss... Te has quedado sin tiempo</p>
+  </ng-container>
+  <ng-template  #win>
+    <p class="message message-win">Felicidades haz ganado.</p>
+  </ng-template>
+
+
+  <div class="w-full flex justify-center items-center mt-4 buttons">
+    <button class="abstract-button exit-button" (click)="close()" role="button">Exit Game</button>
+    <button class="abstract-button play-button" (click)="playAgain()">Play Again</button>
+</div>
+</div>

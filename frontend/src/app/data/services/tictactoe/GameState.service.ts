@@ -46,8 +46,6 @@ export class GameStateService {
     if(this._board[rowX][cellY] === '0'){
       this._board[rowX][cellY] = this.turn === Player.X ? 'X' : 'O';
     }
-
-    console.log('board-post-up: ',this._board);
     
   }
 

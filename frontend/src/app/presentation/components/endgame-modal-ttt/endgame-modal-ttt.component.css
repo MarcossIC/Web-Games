@@ -35,6 +35,15 @@
     font-size: 2rem;
 }
 
+.winners-scores{
+    display: flex;
+    width: 7rem;
+    column-gap: 5.4rem;
+    margin-inline: auto;
+    font-size: 1.875rem/* 30px */;
+    line-height: 2.25rem/* 36px */;
+}
+
 @media screen and (min-width: 1500px) {
     .modal-title{
         font-size: 3.5rem;
@@ -46,5 +55,9 @@
 
     .modal-subtitle{
         font-size: 3rem;
+    }
+    .winners-scores{
+        column-gap: 9rem;
+        width: 10rem;
     }
 }

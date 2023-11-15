@@ -22,6 +22,10 @@ const routes: Routes = [
     loadChildren: () => import("@app-pages/tictactoe/tictactoe.module").then(m => m.TictactoeModule)
   },
   {
+    path: 'memorama',
+    loadChildren: () => import("@app-pages/memorama/memorama.module").then(m => m.MemoramaModule)
+  },
+  {
     path: '**',
     loadChildren: () => import("@app-pages/notfound/notfound.module").then(m => m.NotfoundModule)
   }

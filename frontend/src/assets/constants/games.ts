@@ -24,4 +24,10 @@ export const GAMES: iGAMES[] = [
         ALT: 'Tic Tac Toe front page image',
         PATH: '/tictactoe'
     },
+    {
+        IMG: '../../../../assets/images/memorama-frontpage.webp',
+        NAME: 'Memorama',
+        ALT: 'Memorama front page image',
+        PATH: '/memorama'
+    }
 ];

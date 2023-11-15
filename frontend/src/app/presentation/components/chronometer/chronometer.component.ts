@@ -1,10 +1,16 @@
+import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChronometerUpdated } from '@app/data/models/ChronometerUpdated';
+import { GameName } from '@app/data/models/GameName.enum';
+import { ChronometerServiceService } from '@app/data/services/chronometerService.service';
 import { PointsService } from '@app/data/services/tetris/Points.service';
 import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
 import { destroy } from '@app/data/services/util.service';
 import { Observable, Subscription, interval } from 'rxjs';
 
 @Component({
+  standalone: true,
+  imports: [CommonModule],
   selector: 'chronometer',
   templateUrl: './chronometer.component.html',
   styleUrls: ['./chronometer.component.css']
@@ -21,11 +27,16 @@ export class ChronometerComponent implements OnInit, OnDestroy {
   public isUpdated: boolean = true;
   private destroy$ = destroy();
 
-  constructor(private point: PointsService, private controller: TetrisControllerService) {
+  constructor(private point: PointsService, private controller: ChronometerServiceService) {
     this.cronometro$ = interval(1000);
   }
 
   ngOnInit(): void {
+    this.controller.updated.pipe(this.destroy$()).subscribe((data: any) => {
+      this.controller.gameOver = data.gameOver;
+      this.controller.isPaused = data.isPaused;
+    });
+
     this.timer$ = this.cronometro$.pipe(this.destroy$()).subscribe(() => {
       if(!this.controller.gameOver && !this.controller.isPaused){
         this.isUpdated = true;
@@ -33,11 +44,12 @@ export class ChronometerComponent implements OnInit, OnDestroy {
         if (this.seconds >= 60) {
           this.seconds = 0;
           this.minutes++;
+          this.controller.minutes = this.minutes;
         }
         this.updateTime();
 
       } else if(this.controller.gameOver && this.isUpdated){
-        this.updateMaximumsTimes();
+        if(this.controller.gameType == GameName.TETRIS) this.updateMaximumsTimes();
         this.reset();
         this.isUpdated = false;
       }
@@ -56,7 +68,7 @@ export class ChronometerComponent implements OnInit, OnDestroy {
     this.time = minutosStr + ':' + segundosStr;
   }
 
-  updateMaximumsTimes(){
+  public updateMaximumsTimes(){
     
     let minutosStr = this.formatTime(this.minutes);
     let segundosStr = this.formatTime(this.seconds);
@@ -76,11 +88,11 @@ export class ChronometerComponent implements OnInit, OnDestroy {
     }
   }
 
-  formatTime(time: number){
+  private formatTime(time: number){
     return time < 10 ? '0'+time : time.toString();
   }
 
-  reset(){
+  public reset(){
     this.seconds = 0;
     this.minutes = 0;
   }
