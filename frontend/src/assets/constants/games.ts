@@ -30,4 +30,10 @@ export const GAMES: iGAMES[] = [
     ALT: 'Memorama front page image',
     PATH: '/memorama',
   },
+  {
+    IMG: '../../../../assets/images/chess-frontpage.webp',
+    NAME: 'Chess',
+    ALT: 'Chess front page image',
+    PATH: '/chess',
+  },
 ];

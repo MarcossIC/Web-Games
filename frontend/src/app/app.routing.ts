@@ -44,6 +44,11 @@ const routes: Routes = [
       ),
   },
   {
+    path: 'chess',
+    title: 'Game Galaxy - Chess',
+    loadComponent: () => import('@app-pages/chess/chess.component'),
+  },
+  {
     path: '**',
     title: 'GG - Not found',
     loadChildren: () =>

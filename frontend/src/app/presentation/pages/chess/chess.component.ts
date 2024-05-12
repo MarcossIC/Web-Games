@@ -20,3 +20,5 @@ export class ChessComponent implements OnInit {
     });
   }
 }
+
+export default ChessComponent;
