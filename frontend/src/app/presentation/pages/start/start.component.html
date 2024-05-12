@@ -1,22 +1,19 @@
 <section class="shared-container relative">
-   
-        <app-particles></app-particles>
+  <app-particles></app-particles>
 
-        <div class="text-format menu-content">
-            <h1 class="menu-title select-none">Start Menu</h1>
-    
-
-            <nav class="menu-buttons">
-                <button class="option" role="button" routerLink="/games" (mouseover)="onHover(0)" (mouseleave)="notHover()">
-                    <span style="opacity: 0;" class="text-format" #spanElement> > </span> 
-                    Play Games
-                </button>
-                <!-- 
-                <a class="text-format option" role="button" routerLink="/options" (mouseover)="onHover(1)" (mouseleave)="notHover()">
-                    <span style="opacity: 0;" class="text-format" #spanElement> > </span>
-                    Options
-                </a>-->
-            </nav>
-        </div>
-    </section>
-
+  <div class="text-format menu-content">
+    <h1 class="menu-title select-none">Start Menu</h1>
+    <nav class="menu-buttons">
+      <button
+        class="option"
+        role="button"
+        routerLink="/games"
+        (mouseover)="onHover(0)"
+        (mouseleave)="notHover()"
+      >
+        <span style="opacity: 0" class="text-format" #spanElement> > </span>
+        Play Games
+      </button>
+    </nav>
+  </div>
+</section>

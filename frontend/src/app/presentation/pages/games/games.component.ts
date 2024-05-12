@@ -1,11 +1,28 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule, NgForOf, NgOptimizedImage } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { SeoService } from '@app/data/services/seo.service';
+import { ParticlesComponent } from '@app/presentation/components/particles/particles.component';
 import { GAMES, iGAMES } from 'assets/constants/games';
 
 @Component({
   selector: 'app-games',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ParticlesComponent,
+    NgOptimizedImage,
+    RouterLink,
+    NgForOf,
+  ],
   templateUrl: './games.component.html',
-  styleUrls: ['./games.component.css'],
+  styleUrl: './games.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GamesComponent implements OnInit {
   protected GAMES: iGAMES[] = GAMES;
@@ -20,3 +37,5 @@ export class GamesComponent implements OnInit {
     });
   }
 }
+
+export default GamesComponent;

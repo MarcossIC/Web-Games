@@ -1,4 +1,6 @@
+import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   OnInit,
@@ -6,12 +8,17 @@ import {
   ViewChildren,
   inject,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { SeoService } from '@app/data/services/seo.service';
+import { ParticlesComponent } from '@app/presentation/components/particles/particles.component';
 
 @Component({
   selector: 'app-start',
+  standalone: true,
+  imports: [CommonModule, ParticlesComponent, RouterLink],
   templateUrl: './start.component.html',
-  styleUrls: ['./start.component.css'],
+  styleUrl: './start.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StartComponent implements OnInit {
   @ViewChildren('spanElement') spanElements!: QueryList<ElementRef>;
@@ -31,7 +38,6 @@ export class StartComponent implements OnInit {
   }
 
   onHover(index: number): void {
-    //this.isHovered[index] = true;
     this.spanElements.toArray().forEach((spanElement, i) => {
       const condition = index === i;
       spanElement.nativeElement.style.opacity = condition ? '1' : '0';
@@ -39,29 +45,14 @@ export class StartComponent implements OnInit {
         ? 'left-right 1s linear infinite normal forwards'
         : 'none';
     });
-
-    /*
-    this.spanElements.toArray().forEach((spanElement, i) => {
-        const condition = index === i;
-        spanElement.nativeElement.style.opacity = condition ? '1' : '0';
-
-        //spanElement.nativeElement.classList.add(condition ? 'highlight' : '');
-        //spanElement.nativeElement.classList.remove(condition ? '' : 'highlight');
-    });*/
   }
 
   notHover() {
-    //this.isHovered = [false, false];
-
     this.spanElements.toArray().forEach((spanElement, i) => {
       spanElement.nativeElement.style.opacity = '0';
       spanElement.nativeElement.style.animation = 'none';
     });
-
-    /*
-    this.spanElements.toArray().forEach((spanElement)=>{
-      spanElement.nativeElement.style.opacity = '0';
-      //spanElement.nativeElement.classList.remove('highlight');
-    })*/
   }
 }
+
+export default StartComponent;

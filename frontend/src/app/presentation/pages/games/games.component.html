@@ -2,21 +2,32 @@
   <app-particles></app-particles>
 
   <div class="logo-container">
-    <a class="text-format menu-logo text-menu" role="button" routerLink="/" tabindex="0">Menu</a>
+    <a
+      class="text-format menu-logo text-menu"
+      role="button"
+      routerLink="/"
+      tabindex="0"
+      >Menu</a
+    >
   </div>
 
-
   <main class="games-container">
-
-    <article *ngFor="let GAME of GAMES; let i = index" >
-      <div class="game" [routerLink]="GAME.PATH" [tabindex]="i+1">
+    @for (GAME of GAMES; track GAME.ID; let i = $index) {
+    <article>
+      <div class="game" [routerLink]="GAME.PATH" [tabindex]="i + 1">
         <picture>
-          <img [ngSrc]="GAME.IMG" [alt]="GAME.ALT" role="img" fill [priority]="i == 0 ? true : false">
+          <img
+            [ngSrc]="GAME.IMG"
+            [alt]="GAME.ALT"
+            role="img"
+            fill
+            [priority]="GAME.priority"
+          />
         </picture>
       </div>
 
       <h2 class="game-caption">{{ GAME.NAME }}</h2>
     </article>
-
+    }
   </main>
 </section>

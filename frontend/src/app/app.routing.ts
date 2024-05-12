@@ -4,14 +4,12 @@ const routes: Routes = [
   {
     path: '',
     title: 'Game Galaxy',
-    loadChildren: () =>
-      import('@app-pages/start/start.module').then((m) => m.StartModule),
+    loadComponent: () => import('@app-pages/start/start.component'),
   },
   {
     path: 'games',
     title: 'Game Galaxy - Games',
-    loadChildren: () =>
-      import('@app-pages/games/games.module').then((m) => m.GamesModule),
+    loadComponent: () => import('@app-pages/games/games.component'),
   },
   {
     path: 'tetris',
