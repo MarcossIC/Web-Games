@@ -6,7 +6,6 @@ import {
   Renderer2,
   inject,
 } from '@angular/core';
-import { Title } from '@angular/platform-browser';
 import { MemoramaControllerService } from '@app/data/services/memorama/memoramaController.service';
 import { SeoService } from '@app/data/services/seo.service';
 import { fillArray } from '@app/data/services/util.service';
@@ -25,7 +24,6 @@ export class MemoramaComponent implements OnInit, OnDestroy, AfterViewInit {
     MemoramaControllerService
   );
   protected seo = inject(SeoService);
-  protected title = inject(Title);
   public cards: number[];
 
   constructor() {

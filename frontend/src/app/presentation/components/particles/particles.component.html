@@ -2,12 +2,11 @@
   <div
     class="bg-none lg:bg-explosion lg:bg-cover lg:bg-right lg:bg-no-repeat w-full h-full"
   >
-    <!-- Contenedor específico para las partículas -->
     <div class="w-full h-full absolute mix-blend-color-dodge z-10">
       <ngx-particles
-        [id]="id"
-        [options]="particlesOptions"
-        (particlesLoaded)="particlesLoaded($event)"
+        [id]="this.id"
+        [options]="this.particlesOptions"
+        (particlesLoaded)="this.particlesLoaded($event)"
       ></ngx-particles>
     </div>
   </div>

@@ -3,108 +3,118 @@
 @tailwind utilities;
 
 :root {
-    --ttt-cell: #eee;
-    --ttt-bg: #fffefb;
-  
-    --ttt-bg-200: #f5f4f1;
-    --tt-bg-300: #cccbc8;
-  
-    
-    --ttt-primary: #d4eaf7;
-    --ttt-primary-100: #aed8fd;
-    --ttt-primary-200: #b6ccd8;
-    --ttt-primary-300: #3b3c3d;
-    --ttt-accent: #71c4ef;
-    --ttt-accent-200: #00668c;
-    --ttt-text: #1d1c1c;
-    --ttt-text-200: #313d44;
-  
-    --ttt-select-x: #FFD2D2;
-    --ttt-select-x-200: #FF5C5C;
-  
-    --ttt-select-o: #99CCFF;
-    --ttt-select-o-200: #66B2FF;
+  --ttt-cell: #eee;
+  --ttt-bg: #fffefb;
+
+  --ttt-bg-200: #f5f4f1;
+  --tt-bg-300: #cccbc8;
+
+  --ttt-primary: #d4eaf7;
+  --ttt-primary-100: #aed8fd;
+  --ttt-primary-200: #b6ccd8;
+  --ttt-primary-300: #3b3c3d;
+  --ttt-accent: #71c4ef;
+  --ttt-accent-200: #00668c;
+  --ttt-text: #1d1c1c;
+  --ttt-text-200: #313d44;
+
+  --ttt-select-x: #ffd2d2;
+  --ttt-select-x-200: #ff5c5c;
+
+  --ttt-select-o: #99ccff;
+  --ttt-select-o-200: #66b2ff;
 }
 
-html{
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
+html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 body {
-    font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    color: #f5f5f5;
-    min-height: 100dvh;
+  font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+    sans-serif;
+  color: #f5f5f5;
+  min-height: 100dvh;
 
-    scroll-behavior: smooth;
-    overflow-x: hidden;
-    outline: none;
-    overscroll-behavior-x: none;
-    touch-action: manipulation;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  outline: none;
+  overscroll-behavior-x: none;
+  touch-action: manipulation;
 }
 
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  z-index: 1;
+}
+picture {
+}
 
 .shared-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    min-height: 100dvh;
-    background: radial-gradient(circle, rgba(11,59,89,1) 8%, rgba(14,29,58,1) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 100dvh;
+  background: radial-gradient(
+    circle,
+    rgba(11, 59, 89, 1) 8%,
+    rgba(14, 29, 58, 1) 100%
+  );
 }
 
 .snake-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    min-height: calc(100dvh - 100px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: calc(100dvh - 100px);
 
-    background-color: #82af05;
+  background-color: #82af05;
 }
 
 .text-format {
-    color: var(--ttt-primary-100);
-    font-weight: bold;
+  color: var(--ttt-primary-100);
+  font-weight: bold;
 }
 
 .menu-logo {
-    text-shadow:     
-    2px 2px 0 #3c5e71,
-    3px 4px 0 var(--ttt-accent-200),
-    4px 5px 0px var(--ttt-accent-200),
-    4px 6px 0px var(--ttt-accent-200),
+  text-shadow: 2px 2px 0 #3c5e71, 3px 4px 0 var(--ttt-accent-200),
+    4px 5px 0px var(--ttt-accent-200), 4px 6px 0px var(--ttt-accent-200),
     5px 6px 0px var(--ttt-accent-200);
-  }
+}
 
-  .abstract-button{
-    color: #141B00;
-    font-weight: 500;
-    font-size: 1rem;
-    padding: 4px;
+.abstract-button {
+  color: #141b00;
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 4px;
+  display: flex;
+  margin-inline: auto;
+  margin-block-start: 20px;
+  aspect-ratio: 7/2;
+  width: 110px;
+  justify-content: center;
+  border-radius: 0.5rem;
+  text-align: center;
+}
+
+@media screen and (min-width: 600px) {
+  .abstract-button {
+    font-size: 1.2rem;
+    width: 165px;
     display: flex;
-    margin-inline: auto;
-    margin-block-start: 20px;
-    aspect-ratio: 7/2;
-    width: 110px;
-    justify-content: center;
-    border-radius: 0.5rem;
-    text-align: center;
+    align-items: center;
+  }
 }
 
-@media screen and (min-width: 600px){
-    .abstract-button{
-        font-size: 1.2rem;
-        width: 165px;
-        display: flex;
-        align-items: center;
-    }
-}
-
-@media screen and (min-width: 1500px){
-    .abstract-button{
-        font-size: 2rem;
-        padding: 10px;
-        width: 230px;
-    }
+@media screen and (min-width: 1500px) {
+  .abstract-button {
+    font-size: 2rem;
+    padding: 10px;
+    width: 230px;
+  }
 }

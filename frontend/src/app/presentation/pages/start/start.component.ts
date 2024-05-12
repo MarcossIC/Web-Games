@@ -1,40 +1,46 @@
-import { Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
-import { Title } from '@angular/platform-browser';
+import {
+  Component,
+  ElementRef,
+  OnInit,
+  QueryList,
+  ViewChildren,
+  inject,
+} from '@angular/core';
 import { SeoService } from '@app/data/services/seo.service';
 
 @Component({
   selector: 'app-start',
   templateUrl: './start.component.html',
-  styleUrls: ['./start.component.css']
+  styleUrls: ['./start.component.css'],
 })
 export class StartComponent implements OnInit {
   @ViewChildren('spanElement') spanElements!: QueryList<ElementRef>;
-  
+
   isHovered: boolean[] = [false, false];
 
   private seo = inject(SeoService);
-  private title = inject(Title);
 
-  constructor() { }
+  constructor() {}
 
   ngOnInit(): void {
-    this.title.setTitle("Game Galaxy - Start Page");
     this.seo.generateTags({
-      title: "Game Galaxy - Start Page",
-      description: "Start Page",
-      slug: ""
+      title: 'Game Galaxy - Start Page',
+      description: 'Start Page',
+      slug: '',
     });
   }
 
-  onHover(index: number): void{
+  onHover(index: number): void {
     //this.isHovered[index] = true;
     this.spanElements.toArray().forEach((spanElement, i) => {
       const condition = index === i;
       spanElement.nativeElement.style.opacity = condition ? '1' : '0';
-      spanElement.nativeElement.style.animation = condition ? 'left-right 1s linear infinite normal forwards' : 'none';
+      spanElement.nativeElement.style.animation = condition
+        ? 'left-right 1s linear infinite normal forwards'
+        : 'none';
     });
-   
-/*
+
+    /*
     this.spanElements.toArray().forEach((spanElement, i) => {
         const condition = index === i;
         spanElement.nativeElement.style.opacity = condition ? '1' : '0';
@@ -44,7 +50,7 @@ export class StartComponent implements OnInit {
     });*/
   }
 
-  notHover(){
+  notHover() {
     //this.isHovered = [false, false];
 
     this.spanElements.toArray().forEach((spanElement, i) => {

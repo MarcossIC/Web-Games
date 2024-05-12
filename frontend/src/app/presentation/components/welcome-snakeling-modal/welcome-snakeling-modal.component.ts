@@ -8,24 +8,28 @@ import { SnakelingControllerService } from '@app/data/services/snakeling/Snakeli
   imports: [CommonModule],
   selector: 'welcome-snakeling-modal',
   templateUrl: './welcome-snakeling-modal.component.html',
-  styleUrls: ['./welcome-snakeling-modal.component.css', '../../../shared/styles/modal.css']
+  styleUrls: [
+    './welcome-snakeling-modal.component.css',
+    '../../../shared/styles/modal.css',
+  ],
 })
 export class WelcomeSnakelingModalComponent implements OnInit {
-  protected controller: SnakelingControllerService = inject(SnakelingControllerService);
+  protected controller: SnakelingControllerService = inject(
+    SnakelingControllerService
+  );
   private router = inject(Router);
 
-  constructor() { }
+  constructor() {}
 
-  ngOnInit(): void {
-  }
+  ngOnInit(): void {}
 
   protected close(): void {
     this.controller.reset();
+    this.controller.changePause();
     this.router.navigate(['/games']);
   }
 
-  protected playGame(): void{
+  protected playGame(): void {
     this.controller.executeAction('p');
   }
-
 }

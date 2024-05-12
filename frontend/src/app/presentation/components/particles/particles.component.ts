@@ -1,8 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { Container, Engine } from '@tsparticles/engine';
-import { loadSlim } from '@tsparticles/slim'; // if you are going to use `loadSlim`, install the "@tsparticles/slim" package too.
+import {
+  CollisionMode,
+  Container,
+  Engine,
+  IColorAnimation,
+  IOptions,
+} from '@tsparticles/engine';
+import { loadSlim } from '@tsparticles/slim';
 import { NgParticlesService, NgxParticlesModule } from '@tsparticles/angular';
+import { loadFull } from 'tsparticles';
 
 @Component({
   standalone: true,
@@ -12,31 +19,52 @@ import { NgParticlesService, NgxParticlesModule } from '@tsparticles/angular';
   styleUrls: ['./particles.component.css'],
 })
 export class ParticlesComponent implements OnInit {
-  private currenteColor: string;
+  private currenteColor: string = '#fff';
   protected id: string = 'tsparticles';
-  protected particlesOptions: any;
+  protected particlesOptions: IOptions;
 
   constructor(private readonly ngParticlesService: NgParticlesService) {
-    this.currenteColor = '#fff';
     this.particlesOptions = {
+      autoPlay: true,
+      backgroundMask: { enable: false, composite: 'color', cover: '' },
+      clear: true,
+      delay: { min: 0, max: 0 },
+      duration: { max: 1000000, min: 1 },
+      fullScreen: { enable: true, zIndex: 0 },
+      manualParticles: [],
+      pauseOnBlur: false,
+      pauseOnOutsideViewport: false,
+      responsive: [],
+      smooth: true,
+      style: {},
+      themes: [],
+      zLayers: -1,
       background: {
         color: {
           value: 'none',
         },
+        image: '',
+        opacity: 1,
+        position: '',
+        repeat: '',
+        size: '',
       },
       fpsLimit: 120,
       interactivity: {
         events: {
+          onDiv: [],
           onClick: {
             enable: false,
-            mode: 'repulse',
+            mode: '',
           },
           onHover: {
             enable: false,
             mode: 'bubble',
+            parallax: { enable: false, force: 0, smooth: 1 },
           },
-          resize: true,
+          resize: { delay: 0, enable: false },
         },
+        detectsOn: 'canvas',
         modes: {
           push: {
             quantity: 4,
@@ -57,6 +85,7 @@ export class ParticlesComponent implements OnInit {
       particles: {
         color: {
           value: this.currenteColor,
+          animation: { offset: 0 } as IColorAnimation,
         },
         links: {
           color: this.currenteColor,
@@ -67,7 +96,22 @@ export class ParticlesComponent implements OnInit {
         },
         collisions: {
           enable: false,
+          absorb: { speed: 0 },
+          bounce: { horizontal: { value: 0 }, vertical: { value: 0 } },
+          maxSpeed: 0,
+          mode: CollisionMode.bounce,
+          overlap: {
+            enable: false,
+            retries: 0,
+          },
         },
+        bounce: { horizontal: { value: 0 }, vertical: { value: 0 } },
+        effect: { type: '', close: false, fill: false, options: {} },
+        groups: {},
+        reduceDuplicates: true,
+        shadow: { enable: false, blur: 0, color: '', offset: { x: 0, y: 0 } },
+        stroke: { width: 0 },
+        zIndex: { value: 0, opacityRate: 0, sizeRate: 0, velocityRate: 0 },
         move: {
           enable: true,
           speed: 0.9,
@@ -77,46 +121,79 @@ export class ParticlesComponent implements OnInit {
           outModes: {
             default: 'out',
           },
+          angle: 0,
+          attract: {
+            enable: false,
+            distance: 0,
+            rotate: { x: 0, y: 0 },
+          },
+          decay: { max: 0, min: 0 },
+          center: { mode: 'percent', radius: 0, x: 0, y: 0 },
+          distance: 0,
+          drift: { max: 0, min: 0 },
+          gravity: {
+            enable: false,
+            acceleration: 0,
+            inverse: false,
+            maxSpeed: 0,
+          },
+          path: {
+            enable: false,
+            clamp: false,
+            delay: { value: 0 },
+            options: {},
+          },
+          size: false,
+          spin: { enable: false, acceleration: 0 },
+          trail: { enable: false, fill: {}, length: 0 },
+          vibrate: false,
+          warp: false,
         },
         number: {
           density: {
             enable: true,
-            area: 800,
+            width: 800,
+            height: 800,
           },
           value: 50,
+          limit: { value: 50, mode: 'wait' },
         },
         opacity: {
           value: 0.9,
-          ramdom: true,
-          anim: {
+          animation: {
             enable: true,
             speed: 1,
-            opacity_min: 0,
+            destroy: 'min',
             sync: false,
+            startValue: 'random',
+            count: 0,
+            decay: { max: 1, min: 0 },
+            delay: { max: 100, min: 0 },
+            mode: 'random',
           },
         },
         shape: {
           type: 'circle',
-          stroke: {
-            width: 0,
-            color: '#fff',
-          },
-          polygon: {
-            nb_sides: 5,
-          },
+          fill: true,
+          close: true,
+          options: {},
         },
         size: {
           value: { min: 2, max: 2 },
-          random: false,
-          anim: {
+          animation: {
             enable: true,
             speed: 4,
-            size_min: 0.3,
             sync: true,
+            startValue: 'random',
+            count: 0,
+            decay: { max: 1, min: 0 },
+            delay: { max: 100, min: 0 },
+            mode: 'random',
+            destroy: 'none',
           },
         },
       },
-      detectRetina: true,
+      detectRetina: false,
     };
   }
 
@@ -127,6 +204,7 @@ export class ParticlesComponent implements OnInit {
   particlesLoaded(container: Container): void {}
 
   async particlesInit(engine?: Engine): Promise<void> {
-    await loadSlim(engine!);
+    await loadFull(engine!);
+    //await loadSlim(engine!);
   }
 }

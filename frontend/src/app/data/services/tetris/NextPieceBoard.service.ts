@@ -22,7 +22,7 @@ export class NextPieceBoardService {
   public drawNextPiece(context: CanvasRenderingContext2D, nextPiece: Piece): void{
     context.fillStyle = nextPiece.color.fill;
     context.strokeStyle = nextPiece.color.stroke;
- 
+
     this.executeIfTypesMatch((nextPiece.type === PieceType.SQUARE), ()=>this.printSquare(context));
     this.executeIfTypesMatch((nextPiece.type === PieceType.TRIANGLE), ()=>this.printTriangle(context));
     this.executeIfTypesMatch((nextPiece.type === PieceType.ELE), ()=>this.printEle(context));
@@ -39,13 +39,11 @@ export class NextPieceBoardService {
   }
 
   private printSquare(context: CanvasRenderingContext2D): void{
-    console.log("SQUARE");
     context.fillRect(2, 2, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
     context.strokeRect(2, 2, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
   }
 
   private printBar(context: CanvasRenderingContext2D): void{
-    console.log("BAR");
     context.fillRect(2, 1, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
     context.strokeRect(2, 1, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
 
@@ -57,7 +55,6 @@ export class NextPieceBoardService {
   }
 
   private printTriangle(context: CanvasRenderingContext2D): void{
-    console.log("TRIANGLE");
     context.fillRect(2.5, 1, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
     context.strokeRect(2.5, 1, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
 
@@ -73,7 +70,6 @@ export class NextPieceBoardService {
 
   //X, Y,
   private printEle(context: CanvasRenderingContext2D): void{
-    console.log("ELE");
     context.fillRect(1, 1.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
     context.strokeRect(1, 1.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
 
@@ -89,7 +85,6 @@ export class NextPieceBoardService {
 
 
   private printInvertedEle(context: CanvasRenderingContext2D): void{
-    console.log("INVERTED ELE");
     context.fillRect(1, 2.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
     context.strokeRect(1, 2.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
 
@@ -103,13 +98,11 @@ export class NextPieceBoardService {
     context.strokeRect(3, 1.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
   }
 
-  //X, Y
   private printStaircase(context: CanvasRenderingContext2D): void{
-    console.log("STAIRCASE");
     context.fillRect(1.5, 2.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
     context.strokeRect(1.5, 2.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
 
-    
+
     context.fillRect(2.5, 2.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
     context.strokeRect(2.5, 2.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
 
@@ -119,7 +112,6 @@ export class NextPieceBoardService {
   }
 
   private printInvertedStaircase(context: CanvasRenderingContext2D): void{
-    console.log("STAIR CASE INVERTED");
 
     context.fillRect(1.5, 1.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
     context.strokeRect(1.5, 1.5, FULL_SQUARE_SIZE, FULL_SQUARE_SIZE);
