@@ -1,25 +1,34 @@
-import { AfterViewChecked, AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, QueryList, Renderer2, ViewChild, ViewChildren, inject } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  OnDestroy,
+  OnInit,
+  Renderer2,
+  inject,
+} from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { MemoramaControllerService } from '@app/data/services/memorama/memoramaController.service';
 import { SeoService } from '@app/data/services/seo.service';
-import { destroy, fillArray } from '@app/data/services/util.service';
+import { fillArray } from '@app/data/services/util.service';
 import { TOTAL_CARDS } from 'assets/constants/memorama';
 import { Subscription, interval } from 'rxjs';
 
 @Component({
   selector: 'app-memorama',
   templateUrl: './memorama.component.html',
-  styleUrls: ['./memorama.component.css']
+  styleUrls: ['./memorama.component.css'],
 })
-export class MemoramaComponent implements OnInit, OnDestroy, AfterViewInit  {
+export class MemoramaComponent implements OnInit, OnDestroy, AfterViewInit {
   protected intervalSubscribe: Subscription;
   protected renderer: Renderer2 = inject(Renderer2);
-  protected controller: MemoramaControllerService = inject(MemoramaControllerService);
+  protected controller: MemoramaControllerService = inject(
+    MemoramaControllerService
+  );
   protected seo = inject(SeoService);
   protected title = inject(Title);
   public cards: number[];
 
-  constructor() { 
+  constructor() {
     this.intervalSubscribe = new Subscription();
     this.cards = fillArray(TOTAL_CARDS, 0);
   }
@@ -32,16 +41,17 @@ export class MemoramaComponent implements OnInit, OnDestroy, AfterViewInit  {
     });
   }
 
-
   ngOnInit(): void {
     this.controller.valueUsed = [];
-    this.cards.forEach(()=>this.controller.ramdomValues());
+    this.cards.forEach(() => this.controller.ramdomValues());
     this.veriftGameTime();
   }
 
   private veriftGameTime(): void {
     // Llama a tu función cada segundo (puedes ajustar el valor según tus necesidades)
-    this.intervalSubscribe = interval(1000).subscribe(() => this.controller.verifyTime());
+    this.intervalSubscribe = interval(1000).subscribe(() =>
+      this.controller.verifyTime()
+    );
   }
 
   ngOnDestroy(): void {

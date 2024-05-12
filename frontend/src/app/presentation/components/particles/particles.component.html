@@ -1,15 +1,14 @@
 <div class="w-[1310px] h-full relative right-0 bottom-0">
-    <div class="bg-none lg:bg-explosion lg:bg-cover lg:bg-right lg:bg-no-repeat w-full h-full">
-        <!-- Contenedor específico para las partículas -->
-        <div class="w-full h-full absolute mix-blend-color-dodge z-10">
-            <ng-particles
-                *ngIf="particlesOptions$"
-                [id]="id"
-                [options]="particlesOptions$"
-                [particlesInit]="particlesInit"
-                (particlesLoaded)="particlesLoaded($event)"
-            ></ng-particles>
-        </div>
+  <div
+    class="bg-none lg:bg-explosion lg:bg-cover lg:bg-right lg:bg-no-repeat w-full h-full"
+  >
+    <!-- Contenedor específico para las partículas -->
+    <div class="w-full h-full absolute mix-blend-color-dodge z-10">
+      <ngx-particles
+        [id]="id"
+        [options]="particlesOptions"
+        (particlesLoaded)="particlesLoaded($event)"
+      ></ngx-particles>
     </div>
   </div>
-
+</div>
