@@ -28,11 +28,11 @@ export class MemoramaComponent implements OnInit, OnDestroy, AfterViewInit {
 
   constructor() {
     this.intervalSubscribe = new Subscription();
-    this.cards = fillArray(TOTAL_CARDS, 0);
+    this.cards = [];
   }
 
   ngAfterViewInit(): void {
-    const gameCards = document.querySelectorAll('.game .game-card');
+    const gameCards = document.querySelectorAll('#game-memorama .game-card');
     gameCards.forEach((card: any) => {
       const content = card.querySelector('.content') as HTMLElement;
       this.controller.cards.push({ card, content });
@@ -41,12 +41,12 @@ export class MemoramaComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     this.controller.valueUsed = [];
+    this.cards = fillArray(TOTAL_CARDS, 0);
     this.cards.forEach(() => this.controller.ramdomValues());
     this.veriftGameTime();
   }
 
   private veriftGameTime(): void {
-    // Llama a tu función cada segundo (puedes ajustar el valor según tus necesidades)
     this.intervalSubscribe = interval(1000).subscribe(() =>
       this.controller.verifyTime()
     );
