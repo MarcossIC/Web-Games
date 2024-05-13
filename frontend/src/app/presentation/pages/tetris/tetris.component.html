@@ -1,45 +1,62 @@
-<section class="shared-container relative" [ngClass]="{'opacity-95': this.controller.gameOver}">
-    <app-particles></app-particles>
+<section
+  class="shared-container relative"
+  [ngClass]="{ 'opacity-95': this.controller.gameOver }"
+>
+  <app-particles></app-particles>
 
-  
-    <main class="shared-wrapper">
-        <div class="game-container">
-            <canvas #tetris class="border-radial"></canvas>
-        </div>
+  <main class="shared-wrapper">
+    <div class="game-container">
+      <canvas #tetris class="border-radial"></canvas>
+    </div>
 
-        <div class="info-container">
-            <ul>
-                <li class="mb-8 flex justify-end items-center text-3xl pause">
-                    <button class="text-format menu-logo" role="button" (click)="pause()">||</button>
-                </li>
-                <li class="next">
-                    <h2 class="point-title menu-logo">Next</h2>
-                    <canvas #nextPiece class="border-radial"></canvas>
-                </li>
-                <li class="score">
-                    <h2 class="point-title menu-logo">Score</h2>
-                    <span class="text-base min-[600px]:text-2xl min-[1500px]:text-3xl">{{ this.point.score }}</span>
-                </li>
-                <li class="lines">
-                    <h2 class="point-title menu-logo">Level</h2>
-                    <span class="text-base min-[600px]:text-2xl min-[1500px]:text-3xl">{{ this.controller.level }}</span>
-                </li>
-                <li class="times">
-                    <h2 class="point-title menu-logo">Time</h2>
-                    <chronometer class="text-base min-[600px]:text-2xl min-[1500px]:text-3xl"></chronometer>
-                </li>
-                <li class="controllers">
-                    <div class="display-buttons">
-                        <button class="button action-rotate" (mousedown)="onPress('w')" >w</button>
-                        <button class="button action-left" (mousedown)="onPress('a')" >a</button>
-                        <button class="button action-down" (mousedown)="onPress('s')" >s</button>
-                        <button class="button action-right" (mousedown)="onPress('d')" >d</button>
-                    </div>
-                </li>
-            </ul>
-        </div>
-    </main>
-
+    <div class="info-container">
+      <ul>
+        <li class="mb-8 flex justify-end items-center text-3xl pause">
+          <button class="text-format menu-logo" role="button" (click)="pause()">
+            ||
+          </button>
+        </li>
+        <li class="next">
+          <h2 class="point-title menu-logo">Next</h2>
+          <canvas #nextPiece class="border-radial"></canvas>
+        </li>
+        <li class="score">
+          <h2 class="point-title menu-logo">Score</h2>
+          <span class="text-base min-[600px]:text-2xl min-[1500px]:text-3xl">{{
+            this.point.score
+          }}</span>
+        </li>
+        <li class="lines">
+          <h2 class="point-title menu-logo">Level</h2>
+          <span class="text-base min-[600px]:text-2xl min-[1500px]:text-3xl">{{
+            this.controller.level
+          }}</span>
+        </li>
+        <li class="times">
+          <h2 class="point-title menu-logo">Time</h2>
+          <chronometer
+            class="text-base min-[600px]:text-2xl min-[1500px]:text-3xl"
+          ></chronometer>
+        </li>
+        <li class="controllers">
+          <div class="display-buttons">
+            <button class="button action-rotate" (mousedown)="onPress('w')">
+              w
+            </button>
+            <button class="button action-left" (mousedown)="onPress('a')">
+              a
+            </button>
+            <button class="button action-down" (mousedown)="onPress('s')">
+              s
+            </button>
+            <button class="button action-right" (mousedown)="onPress('d')">
+              d
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </main>
 </section>
 
 <endgame-modal-tetris *ngIf="this.controller.gameOver"></endgame-modal-tetris>

@@ -14,8 +14,7 @@ const routes: Routes = [
   {
     path: 'tetris',
     title: 'Game Galaxy - Tetris',
-    loadChildren: () =>
-      import('@app-pages/tetris/tetris.module').then((m) => m.TetrisModule),
+    loadComponent: () => import('@app-pages/tetris/tetris.component'),
   },
   {
     path: 'snakeling',
@@ -49,10 +48,7 @@ const routes: Routes = [
   {
     path: '**',
     title: 'GG - Not found',
-    loadChildren: () =>
-      import('@app-pages/notfound/notfound.module').then(
-        (m) => m.NotfoundModule
-      ),
+    loadComponent: () => import('@app-pages/notfound/notfound.component'),
   },
 ];
 

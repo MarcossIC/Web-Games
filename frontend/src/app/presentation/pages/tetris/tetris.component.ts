@@ -18,11 +18,38 @@ import {
 import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
 import { PointsService } from '@app/data/services/tetris/Points.service';
 import { SeoService } from '@app/data/services/seo.service';
+import { ParticlesComponent } from '@app/presentation/components/particles/particles.component';
+import { WelcomeTetrisModalComponent } from '@app/presentation/components/welcome-tetris-modal/welcome-tetris-modal.component';
+import { ChronometerComponent } from '@app/presentation/components/chronometer/chronometer.component';
+import { EndgameModalTetrisComponent } from '@app/presentation/components/endgame-modal-tetris/endgame-modal-tetris.component';
+import { CommonModule } from '@angular/common';
+import { BoardService } from '@app/data/services/tetris/Board.service';
+import { PieceService } from '@app/data/services/tetris/Piece.service';
+import { BagOfPiecesService } from '@app/data/services/tetris/BagOfPieces.service';
+import { NextPieceBoardService } from '@app/data/services/tetris/NextPieceBoard.service';
+import { UtilService } from '@app/data/services/util.service';
 
 @Component({
   selector: 'app-tetris',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ParticlesComponent,
+    ChronometerComponent,
+    WelcomeTetrisModalComponent,
+    EndgameModalTetrisComponent,
+  ],
+  providers: [
+    TetrisControllerService,
+    BoardService,
+    PieceService,
+    BagOfPiecesService,
+    PointsService,
+    NextPieceBoardService,
+    UtilService,
+  ],
   templateUrl: './tetris.component.html',
-  styleUrls: ['./tetris.component.css'],
+  styleUrl: './tetris.component.css',
 })
 export class TetrisComponent implements OnInit, OnDestroy {
   @ViewChild('tetris', { static: true }) canvasRef!: ElementRef;
@@ -106,3 +133,5 @@ export class TetrisComponent implements OnInit, OnDestroy {
     return window.innerWidth <= 500;
   }
 }
+
+export default TetrisComponent;
