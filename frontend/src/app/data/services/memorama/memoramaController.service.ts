@@ -4,9 +4,7 @@ import { ramdomNumber } from '../util.service';
 import { CardDiv } from '@app/data/models/memorama/CardDiv';
 import { ChronometerServiceService } from '../chronometerService.service';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class MemoramaControllerService {
   public currentMove: number;
   public valueUsed: number[];
@@ -16,9 +14,7 @@ export class MemoramaControllerService {
   public isGameOver: boolean;
   public isWin: boolean = true;
   public isPaused: boolean;
-  private chronometerService: ChronometerServiceService = inject(
-    ChronometerServiceService
-  );
+  private chronometerService = inject(ChronometerServiceService);
   public gameContainer!: HTMLElement;
   public cards: CardDiv[] = [];
 

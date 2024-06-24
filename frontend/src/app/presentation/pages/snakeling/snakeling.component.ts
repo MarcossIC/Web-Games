@@ -1,53 +1,44 @@
 import {
   Component,
+  DestroyRef,
   ElementRef,
-  OnDestroy,
   OnInit,
   Renderer2,
   ViewChild,
   inject,
 } from '@angular/core';
-import { SeoService } from '@app/data/services/seo.service';
 import { SnakelingControllerService } from '@app/data/services/snakeling/SnakelingController.service';
-import { destroy } from '@app/data/services/util.service';
-import {
-  Observable,
-  Subscription,
-  fromEvent,
-  interval,
-  throttleTime,
-} from 'rxjs';
+import { Observable, fromEvent, interval, throttleTime } from 'rxjs';
+
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { CommonModule } from '@angular/common';
+import { WelcomeSnakelingModalComponent } from '@app/presentation/components/welcome-snakeling-modal/welcome-snakeling-modal.component';
+import { EndgameModalSnakelingComponent } from '@app/presentation/components/endgame-modal-snakeling/endgame-modal-snakeling.component';
 
 @Component({
+  standalone: true,
   selector: 'app-snakeling',
   templateUrl: './snakeling.component.html',
-  styleUrls: ['./snakeling.component.css'],
+  styleUrl: './snakeling.component.css',
+  imports: [
+    CommonModule,
+    WelcomeSnakelingModalComponent,
+    EndgameModalSnakelingComponent,
+  ],
 })
-export class SnakelingComponent implements OnInit, OnDestroy {
+export class SnakelingComponent implements OnInit {
   @ViewChild('board', { static: true }) boardRef!: ElementRef;
 
-  private renderer: Renderer2 = inject(Renderer2);
-  protected controller: SnakelingControllerService = inject(
-    SnakelingControllerService
-  );
-  protected seo = inject(SeoService);
-
-  private moveListener$!: Subscription;
-  private destroy$ = destroy();
+  private renderer = inject(Renderer2);
+  protected controller = inject(SnakelingControllerService);
+  private destroy = inject(DestroyRef);
   private cronometro$: Observable<number>;
-  private timer$!: Subscription;
 
   constructor() {
     this.cronometro$ = interval(180);
   }
 
   ngOnInit(): void {
-    this.seo.generateTags({
-      title: 'Games Galaxy - Snake Game',
-      description: 'Page to play a clasic snake Game',
-      slug: 'snakeling',
-    });
-
     const boardDiv = this.renderer.selectRootElement(
       this.boardRef.nativeElement
     );
@@ -56,24 +47,20 @@ export class SnakelingComponent implements OnInit, OnDestroy {
     const keyboardEvents$ = fromEvent<KeyboardEvent>(window, 'keydown');
     const throttleDuration = 90;
 
-    this.moveListener$ = keyboardEvents$
-      .pipe(throttleTime(throttleDuration))
-      .pipe(this.destroy$())
+    keyboardEvents$
+      .pipe(throttleTime(throttleDuration), takeUntilDestroyed(this.destroy))
       .subscribe((event: any) => {
         this.controller.executeAction(event.key);
       });
 
-    this.timer$ = this.cronometro$.pipe(this.destroy$()).subscribe(() => {
+    this.cronometro$.pipe(takeUntilDestroyed(this.destroy)).subscribe(() => {
       this.controller.runGame();
     });
-  }
-
-  ngOnDestroy(): void {
-    this.moveListener$.unsubscribe();
-    this.timer$.unsubscribe();
   }
 
   onPress(key: string) {
     this.controller.executeAction(key);
   }
 }
+
+export default SnakelingComponent;

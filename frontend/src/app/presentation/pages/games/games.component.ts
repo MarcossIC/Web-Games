@@ -13,13 +13,7 @@ import { GAMES, iGAMES } from 'assets/constants/games';
 @Component({
   selector: 'app-games',
   standalone: true,
-  imports: [
-    CommonModule,
-    ParticlesComponent,
-    NgOptimizedImage,
-    RouterLink,
-    NgForOf,
-  ],
+  imports: [CommonModule, ParticlesComponent, NgOptimizedImage, RouterLink],
   templateUrl: './games.component.html',
   styleUrl: './games.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

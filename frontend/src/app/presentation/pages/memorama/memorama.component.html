@@ -1,32 +1,34 @@
 <section class="shared-container justify-center relative">
   <app-particles></app-particles>
 
-  
   <div class="memorama-wrapper">
     <span class="pause" (click)="this.controller.pause()" tabindex="0">||</span>
-    <h2 class="text-4xl mb-4 font-bold memorama-title min-[1500px]:text-6xl">Memorama Game</h2>
+    <h2 class="text-4xl mb-4 font-bold memorama-title min-[1500px]:text-6xl">
+      Memorama Game
+    </h2>
 
     <div id="game-memorama" class="game">
-      <div class="game-card rotate" 
-      *ngFor="let card of this.cards; let i = index" 
-      (click)="controller.play(renderer, $event)"
-      >
+      @for (card of this.cards; track $index) {
+      <div class="game-card rotate" (click)="controller.play(renderer, $event)">
         <div class="content">
           <div class="back">?</div>
-          <div class="face">{{ controller.valueUsed[i] }}</div>
+          <div class="face">{{ controller.valueUsed[$index] }}</div>
         </div>
       </div>
+      }
     </div>
 
     <div class="stats">
       <div class="stats-content">
-        <p class="text-2xl">Tiempo: <chronometer></chronometer></p>
-        <p class="text-2xl">Aciertos: {{this.controller.success}}</p>
-        <p class="text-2xl">Movimientos: {{this.controller.currentAttempts}}</p>
+        <p class="text-2xl">Time: <chronometer></chronometer></p>
+        <p class="text-2xl">Successes: {{ this.controller.success }}</p>
+        <p class="text-2xl">Movements: {{ this.controller.currentAttempts }}</p>
       </div>
     </div>
-
   </div>
 </section>
-<welcome-momerama-modal *ngIf="this.controller.isPaused"></welcome-momerama-modal>
-<endgame-modal-memorama *ngIf="this.controller.isGameOver"></endgame-modal-memorama>
+@if(this.controller.isPaused){
+<welcome-momerama-modal></welcome-momerama-modal>
+} @if(this.controller.isGameOver){
+<endgame-modal-memorama></endgame-modal-memorama>
+}

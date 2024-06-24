@@ -1,9 +1,9 @@
 import {
   Component,
+  DestroyRef,
   ElementRef,
   OnDestroy,
   OnInit,
-  Renderer2,
   ViewChild,
   inject,
 } from '@angular/core';
@@ -17,21 +17,19 @@ import {
 } from '../../../../assets/constants/tetrisConstanst';
 import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
 import { PointsService } from '@app/data/services/tetris/Points.service';
-import { SeoService } from '@app/data/services/seo.service';
 import { ParticlesComponent } from '@app/presentation/components/particles/particles.component';
 import { WelcomeTetrisModalComponent } from '@app/presentation/components/welcome-tetris-modal/welcome-tetris-modal.component';
 import { ChronometerComponent } from '@app/presentation/components/chronometer/chronometer.component';
 import { EndgameModalTetrisComponent } from '@app/presentation/components/endgame-modal-tetris/endgame-modal-tetris.component';
 import { CommonModule } from '@angular/common';
-import { BoardService } from '@app/data/services/tetris/Board.service';
-import { PieceService } from '@app/data/services/tetris/Piece.service';
-import { BagOfPiecesService } from '@app/data/services/tetris/BagOfPieces.service';
-import { NextPieceBoardService } from '@app/data/services/tetris/NextPieceBoard.service';
-import { UtilService } from '@app/data/services/util.service';
+import { fromEvent } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
-  selector: 'app-tetris',
   standalone: true,
+  selector: 'app-tetris',
+  templateUrl: './tetris.component.html',
+  styleUrl: './tetris.component.css',
   imports: [
     CommonModule,
     ParticlesComponent,
@@ -39,17 +37,6 @@ import { UtilService } from '@app/data/services/util.service';
     WelcomeTetrisModalComponent,
     EndgameModalTetrisComponent,
   ],
-  providers: [
-    TetrisControllerService,
-    BoardService,
-    PieceService,
-    BagOfPiecesService,
-    PointsService,
-    NextPieceBoardService,
-    UtilService,
-  ],
-  templateUrl: './tetris.component.html',
-  styleUrl: './tetris.component.css',
 })
 export class TetrisComponent implements OnInit, OnDestroy {
   @ViewChild('tetris', { static: true }) canvasRef!: ElementRef;
@@ -59,22 +46,14 @@ export class TetrisComponent implements OnInit, OnDestroy {
   private nextPiece!: HTMLCanvasElement;
   private boardContext!: CanvasRenderingContext2D;
   private nextPieceContext!: CanvasRenderingContext2D;
-  private moveListener = () => {};
 
   protected controller = inject(TetrisControllerService);
-  protected seo = inject(SeoService);
-  private renderer = inject(Renderer2);
   protected point = inject(PointsService);
+  private destroy = inject(DestroyRef);
 
   constructor() {}
 
   ngOnInit(): void {
-    this.seo.generateTags({
-      title: 'Game Galaxy - Tetris',
-      description: 'Page to play tetris',
-      slug: 'tetris',
-    });
-
     //Board
     this.board = this.canvasRef.nativeElement;
     this.boardContext = this.board.getContext('2d') as CanvasRenderingContext2D;
@@ -102,15 +81,13 @@ export class TetrisComponent implements OnInit, OnDestroy {
       this.boardHeight
     );
 
-    this.moveListener = this.renderer.listen(
-      'window',
-      'keydown',
-      (event: KeyboardEvent) => this.controller.executeAction(event.key)
-    );
+    const keyboardEvents$ = fromEvent<KeyboardEvent>(window, 'keydown');
+    keyboardEvents$
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe((event: any) => this.controller.executeAction(event.key));
   }
 
   ngOnDestroy(): void {
-    this.moveListener();
     cancelAnimationFrame(this.controller.animationFrameId);
   }
 

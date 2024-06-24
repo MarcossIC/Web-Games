@@ -1,4 +1,21 @@
 import { Routes, RouterModule } from '@angular/router';
+import { MemoramaControllerService } from '@app/data/services/memorama/memoramaController.service';
+import { BoardServiceService } from '@app/data/services/snakeling/BoardService.service';
+import { FoodService } from '@app/data/services/snakeling/Food.service';
+import { ScoreService } from '@app/data/services/snakeling/Score.service';
+import { SnakeService } from '@app/data/services/snakeling/Snake.service';
+import { SnakelingControllerService } from '@app/data/services/snakeling/SnakelingController.service';
+import { BagOfPiecesService } from '@app/data/services/tetris/BagOfPieces.service';
+import { BoardService } from '@app/data/services/tetris/Board.service';
+import { NextPieceBoardService } from '@app/data/services/tetris/NextPieceBoard.service';
+import { PieceService } from '@app/data/services/tetris/Piece.service';
+import { PointsService } from '@app/data/services/tetris/Points.service';
+import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
+import { GameStateService } from '@app/data/services/tictactoe/GameState.service';
+import { SecondPlayerService } from '@app/data/services/tictactoe/SecondPlayer.service';
+import { TicTacToeControllerService } from '@app/data/services/tictactoe/TicTacToeController.service';
+import { UserPlayerService } from '@app/data/services/tictactoe/UserPlayer.service';
+import { UtilService } from '@app/data/services/util.service';
 
 const routes: Routes = [
   {
@@ -15,30 +32,44 @@ const routes: Routes = [
     path: 'tetris',
     title: 'Game Galaxy - Tetris',
     loadComponent: () => import('@app-pages/tetris/tetris.component'),
+    providers: [
+      TetrisControllerService,
+      BoardService,
+      PieceService,
+      BagOfPiecesService,
+      PointsService,
+      NextPieceBoardService,
+      UtilService,
+    ],
   },
   {
     path: 'snakeling',
     title: 'Game Galaxy - Snakeling',
-    loadChildren: () =>
-      import('@app-pages/snakeling/snakeling.module').then(
-        (m) => m.SnakelingModule
-      ),
+    loadComponent: () => import('@app-pages/snakeling/snakeling.component'),
+    providers: [
+      SnakelingControllerService,
+      BoardServiceService,
+      FoodService,
+      SnakeService,
+      ScoreService,
+    ],
   },
   {
     path: 'tictactoe',
     title: 'Game Galaxy - Tic tac toe',
-    loadChildren: () =>
-      import('@app-pages/tictactoe/tictactoe.module').then(
-        (m) => m.TictactoeModule
-      ),
+    loadComponent: () => import('@app-pages/tictactoe/tictactoe.component'),
+    providers: [
+      GameStateService,
+      SecondPlayerService,
+      UserPlayerService,
+      TicTacToeControllerService,
+    ],
   },
   {
     path: 'memorama',
     title: 'Game Galaxy - Memorama',
-    loadChildren: () =>
-      import('@app-pages/memorama/memorama.module').then(
-        (m) => m.MemoramaModule
-      ),
+    loadComponent: () => import('@app-pages/memorama/memorama.component'),
+    providers: [MemoramaControllerService],
   },
   {
     path: 'chess',

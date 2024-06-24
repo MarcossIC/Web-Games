@@ -59,5 +59,8 @@
   </main>
 </section>
 
-<endgame-modal-tetris *ngIf="this.controller.gameOver"></endgame-modal-tetris>
-<welcome-tetris-modal *ngIf="this.controller.isPaused">></welcome-tetris-modal>
+@if(this.controller.gameOver){
+<endgame-modal-tetris></endgame-modal-tetris>
+} @if(this.controller.isPaused){
+<welcome-tetris-modal>></welcome-tetris-modal>
+}

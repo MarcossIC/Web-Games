@@ -1,42 +1,42 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
+  DestroyRef,
   ElementRef,
   OnInit,
   ViewChild,
   inject,
 } from '@angular/core';
-import { Router } from '@angular/router';
-import { SeoService } from '@app/data/services/seo.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TicTacToeControllerService } from '@app/data/services/tictactoe/TicTacToeController.service';
-import { destroy } from '@app/data/services/util.service';
+import { DisplayInfoComponent } from '@app/presentation/components/display-info/display-info.component';
+import { EndgameModalTttComponent } from '@app/presentation/components/endgame-modal-ttt/endgame-modal-ttt.component';
+import { ParticlesComponent } from '@app/presentation/components/particles/particles.component';
+import { SelectModalTttComponent } from '@app/presentation/components/select-modal-ttt/select-modal-ttt.component';
 import { delay } from 'rxjs';
 
 @Component({
+  standalone: true,
   selector: 'app-tictactoe',
   templateUrl: './tictactoe.component.html',
-  styleUrls: ['./tictactoe.component.css'],
+  styleUrl: './tictactoe.component.css',
+  imports: [
+    CommonModule,
+    ParticlesComponent,
+    SelectModalTttComponent,
+    DisplayInfoComponent,
+    EndgameModalTttComponent,
+  ],
 })
-export class TictactoeComponent implements OnInit {
+export class TictactoeComponent {
   @ViewChild('board', { static: true }) boardRef!: ElementRef;
 
-  protected controller: TicTacToeControllerService = inject(
-    TicTacToeControllerService
-  );
+  protected controller = inject(TicTacToeControllerService);
+  private destroy = inject(DestroyRef);
 
-  private seo = inject(SeoService);
-  private router = inject(Router);
-  private destroy$ = destroy();
-
-  constructor() {}
-  ngOnInit(): void {
-    this.seo.generateTags({
-      title: 'Tic Tac Toe Game',
-      description: 'Page to play a Tic Tac Toe Game',
-      slug: 'tictactoc',
-    });
-
+  constructor() {
     this.controller._notifyBot
-      .pipe(this.destroy$(), delay(500))
+      .pipe(delay(500), takeUntilDestroyed(this.destroy))
       .subscribe(() => this.controller.playBot());
   }
 
@@ -48,3 +48,5 @@ export class TictactoeComponent implements OnInit {
     }
   }
 }
+
+export default TictactoeComponent;
