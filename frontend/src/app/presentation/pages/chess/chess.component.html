@@ -1,0 +1,30 @@
+<section class="shared-container relative justify-center chess-container">
+  <div>Player {{ currentPlayer === 1 ? "white" : "black" }}'s go</div>
+  <div class="chess-board">
+    @for(ROW of chessBoardView; track "x-"+x; let x = $index){ @for(PIECE of
+    ROW; track "y-"+y; let y = $index){
+    <div
+      class="chess-square"
+      [id]="'square-' + x + '-' + y"
+      [ngClass]="[
+        getSquareColor(x, y),
+        getPiecePlayer(PIECE),
+        isSquarePromotionSquare(x, y),
+        isSquareChecked(x, y),
+        isSquareSelected(x, y),
+        isSquareLastMove(x, y)
+      ]"
+      (click)="move(x, y)"
+    >
+      <div
+        [ngClass]="{ 'safe-square': isSquareSafeForSelectedPiece(x, y) }"
+      ></div>
+      <div class="piece">
+        @if(getPiece(PIECE); as piece){
+        <ng-container *ngComponentOutlet="piece"></ng-container>
+        }
+      </div>
+    </div>
+    } }
+  </div>
+</section>

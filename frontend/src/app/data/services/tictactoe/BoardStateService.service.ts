@@ -5,31 +5,31 @@ import { Player } from '@app/data/models/tictactoe/Player.enum';
 import { Subject } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class BoardStateService {
   public updateGameState: Subject<GameStatus> = new Subject<GameStatus>();
 
   private gameStatus: GameStatus;
-  constructor() { 
+  constructor() {
     this.gameStatus = GameStatus.WAITING;
   }
 
-  get gameResult(){
+  get gameResult() {
     return this.gameStatus;
   }
   public countEmptyCell(board: string[][]): number {
-    return board.flat().filter(cell => cell === '0').length;
+    return board.flat().filter((cell) => cell === '0').length;
   }
 
   private checkBoardRows(board: string[][]): boolean {
     const boardLength = board.length;
-    for(let rowIndex = 0; rowIndex < boardLength; rowIndex++){
-      if(board[rowIndex].every(cell => cell === 'X')){
+    for (let rowIndex = 0; rowIndex < boardLength; rowIndex++) {
+      if (board[rowIndex].every((cell) => cell === 'X')) {
         this.gameStatus = GameStatus.X_WON;
         return true;
       }
-      if(board[rowIndex].every(cell => cell === 'O')){
+      if (board[rowIndex].every((cell) => cell === 'O')) {
         this.gameStatus = GameStatus.O_WON;
         return true;
       }
@@ -68,43 +68,64 @@ export class BoardStateService {
     for (let i = 0; i < boardLength; i++) {
       if (board[i][i] === 'X') countXDiagonal1++;
       else if (board[i][i] === 'O') countODiagonal1++;
-      
+
       if (board[i][boardLength - 1 - i] === 'X') countXDiagonal2++;
-      else if (board[i][boardLength - 1 - i] === 'O') countODiagonal2++; 
+      else if (board[i][boardLength - 1 - i] === 'O') countODiagonal2++;
     }
 
-    if(countXDiagonal1 === 3 || countXDiagonal2 === 3){
+    if (countXDiagonal1 === 3 || countXDiagonal2 === 3) {
       this.gameStatus = GameStatus.X_WON;
       return true;
     }
-    if(countODiagonal1 === 3 || countODiagonal2 === 3){
+    if (countODiagonal1 === 3 || countODiagonal2 === 3) {
       this.gameStatus = GameStatus.O_WON;
       return true;
     }
-    
+
     return false;
   }
 
-  public checkBoard(board: string[][]): boolean{
-    return this.checkBoardColumns(board) || this.checkBoardDiagonals(board) || this.checkBoardRows(board);
+  public checkBoard(board: string[][]): boolean {
+    return (
+      this.checkBoardColumns(board) ||
+      this.checkBoardDiagonals(board) ||
+      this.checkBoardRows(board)
+    );
   }
 
+  /**
+   * Evaluates the current state of the game board to determine the score based on the player's perspective.
+   * The evaluation considers if the game has been won, if it's a draw, or provides a default score if neither condition is met.
+   *
+   * @param board The game board represented as a matrix of strings.
+   * @param player The player for whom the score is evaluated (Player.X or Player.O).
+   * @returns The score based on the current state of the board:
+   *          - 10 if the player wins.
+   *          - -10 if the player loses.
+   *          - 0 if the game is a draw.
+   *          - 1000 if the game is not yet decided.
+   */
   public evaluate(board: string[][], player: Player): number {
     let score = 0;
     const emptyCellCount = this.countEmptyCell(board);
     const isAWinner = this.checkBoard(board);
 
-    if(isAWinner) {
-      const isCurrentPlayerWinner = (player === Player.X && this.gameStatus === GameStatus.X_WON) || (player === Player.O && this.gameStatus === GameStatus.O_WON);
-      score = isCurrentPlayerWinner ? 10 : -10;
+    if (isAWinner) {
+      const isCurrentPlayerWinner =
+        (player === Player.X && this.gameStatus === GameStatus.X_WON) ||
+        (player === Player.O && this.gameStatus === GameStatus.O_WON);
 
+      // Assign score based on winner status
+      score = isCurrentPlayerWinner ? 10 : -10;
       return score;
     }
-    
-    if(emptyCellCount === 0) {
+
+    if (emptyCellCount === 0) {
       this.gameStatus = GameStatus.DRAW;
       return 0;
     }
+
+    // Default score if the game is still ongoing
     return 1000;
   }
 }

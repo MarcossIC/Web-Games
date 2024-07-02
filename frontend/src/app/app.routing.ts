@@ -1,4 +1,9 @@
 import { Routes, RouterModule } from '@angular/router';
+import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
+import { ChessBoardMapper } from '@app/data/services/chess/ChessBoardMapper.service';
+import { ChessControllerService } from '@app/data/services/chess/ChessController.service';
+import { ChessHistory } from '@app/data/services/chess/ChessHistory.service';
+import { ChessMoveValidator } from '@app/data/services/chess/ChessMoveValidator.service';
 import { MemoramaControllerService } from '@app/data/services/memorama/memoramaController.service';
 import { BoardServiceService } from '@app/data/services/snakeling/BoardService.service';
 import { FoodService } from '@app/data/services/snakeling/Food.service';
@@ -75,11 +80,19 @@ const routes: Routes = [
     path: 'chess',
     title: 'Game Galaxy - Chess',
     loadComponent: () => import('@app-pages/chess/chess.component'),
+    providers: [
+      ChessControllerService,
+      ChessBoard,
+      ChessBoardMapper,
+      ChessHistory,
+      ChessMoveValidator,
+    ],
   },
   {
     path: '**',
     title: 'GG - Not found',
     loadComponent: () => import('@app-pages/notfound/notfound.component'),
+    providers: [ChessControllerService],
   },
 ];
 
