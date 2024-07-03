@@ -314,7 +314,7 @@ export class ChessBoard {
       isInCheck,
       kingSideCastle
     );
-    console.log({ kingMoves });
+  
 
     if (!kingMoves) return false;
 

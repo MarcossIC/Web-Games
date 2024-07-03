@@ -244,8 +244,6 @@ export class ChessComponent implements OnInit {
   }
 
   public move(x: number, y: number): void {
-    const pieceSymbol: PieceSymbol = this.chessBoardView[x][y];
-    console.log({ pieceSymbol });
     this.selectingPiece(x, y);
     this.placingPiece(x, y);
   }

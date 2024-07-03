@@ -87,9 +87,7 @@ export class ChessControllerService {
     }
 
     const piece: Piece = this.chessBoard.board[prevX][prevY];
-    console.log('Piece weight: ', piece.weight);
-    console.log('Piece symbol: ', piece.symbol);
-    console.log('Piece player: ', piece.player);
+
     if (piece.isEmpty() || piece.player !== this._playerTurn) return;
 
     const safeCoords: Coords[] | undefined = this.chessBoard.safeCoords.get(
@@ -200,14 +198,8 @@ export class ChessControllerService {
     moveType: Set<MoveType>
   ): void {
     const lastMove = this.chessHistory.lastMove;
-    console.log('Instance: ', piece.symbol);
-    console.log({ newY });
-    console.log({ prevY });
-    console.log('Result for abs: ', Math.abs(newY - prevY));
 
     if (piece instanceof KingPiece && Math.abs(newY - prevY) === 2) {
-      console.log('Enter to Enroque');
-
       // newY > prevY  === king side castle
 
       const rookPositionX = prevX;
