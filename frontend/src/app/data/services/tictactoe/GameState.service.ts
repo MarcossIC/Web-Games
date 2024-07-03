@@ -6,18 +6,16 @@ import { PartyStatus } from '@app/data/models/tictactoe/PartyStatus.enum';
 import { BoardStateService } from './BoardStateService.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class GameStateService {
-
   private _board: string[][];
   public turn: Player;
   public gameStatus: GameStatus;
   public partyStatus: PartyStatus;
   private boardStateService: BoardStateService = inject(BoardStateService);
 
-
-  constructor() { 
+  constructor() {
     this._board = this.emptyBoard();
     this.turn = Player.X;
     this.gameStatus = GameStatus.WAITING;
@@ -33,7 +31,7 @@ export class GameStateService {
   public emptyBoard(): string[][] {
     return fillMatrix(3, 3, '0') as string[][];
   }
-  
+
   public advanceTurn(): void {
     this.turn = this.turn === Player.X ? Player.O : Player.X;
   }
@@ -43,25 +41,40 @@ export class GameStateService {
   }
 
   public updateBoard(rowX: number, cellY: number): void {
-    if(this._board[rowX][cellY] === '0'){
+    if (this._board[rowX][cellY] === '0') {
       this._board[rowX][cellY] = this.turn === Player.X ? 'X' : 'O';
     }
-    
   }
 
-  public isEndGame(): boolean{
+  /**
+   * Determina si el juego ha terminado.
+   *
+   * Esta función verifica si el juego ha llegado a su fin, ya sea porque hay un ganador
+   * o porque el tablero está completamente lleno (empate).
+   *
+   * @public
+   * @returns {boolean} Retorna true si el juego ha terminado, false en caso contrario.
+   */
+  public isEndGame(): boolean {
     const BOARD = this._board;
     const emptyCellCount = this.boardStateService.countEmptyCell(BOARD);
-    const isAWinner = this.boardStateService.checkBoard(BOARD);
-    if(isAWinner) {
+
+    // Verificar si hay un ganador
+    const isAWinner = this.boardStateService.checkBoardForWinner(BOARD);
+
+    // Si hay un ganador, actualizar el estado del juego y terminar
+    if (isAWinner) {
       this.gameStatus = this.boardStateService.gameResult;
       return true;
     }
-    if(emptyCellCount === 0) {
+
+    // Si no hay celdas vacías, es un empate
+    if (emptyCellCount === 0) {
       this.gameStatus = GameStatus.DRAW;
       return true;
     }
 
+    // Si no se cumplen las condiciones anteriores, el juego continúa
     return false;
   }
 }

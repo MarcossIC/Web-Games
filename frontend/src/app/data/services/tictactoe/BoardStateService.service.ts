@@ -22,110 +22,172 @@ export class BoardStateService {
     return board.flat().filter((cell) => cell === '0').length;
   }
 
-  private checkBoardRows(board: string[][]): boolean {
+  /**
+   * Verifica si hay una línea completa en las filas del tablero.
+   *
+   * Esta función examina cada fila del tablero para determinar si todas las celdas
+   * en una fila contienen el mismo símbolo ('X' u 'O'), lo que indicaría una victoria.
+   *
+   * @private
+   * @param {string[][]} board - El tablero de juego representado como una matriz bidimensional.
+   * @returns {boolean} Retorna true si se encuentra una fila completa, false en caso contrario.
+   */
+  private checkRowsForWinner(board: string[][]): boolean {
     const boardLength = board.length;
+
     for (let rowIndex = 0; rowIndex < boardLength; rowIndex++) {
+      // Verifica si todas las celdas en la fila actual son 'X'
       if (board[rowIndex].every((cell) => cell === 'X')) {
         this.gameStatus = GameStatus.X_WON;
         return true;
       }
+
+      // Verifica si todas las celdas en la fila actual son 'O'
       if (board[rowIndex].every((cell) => cell === 'O')) {
         this.gameStatus = GameStatus.O_WON;
         return true;
       }
     }
+
+    // Si no se encuentra ninguna fila completa
     return false;
   }
 
-  private checkBoardColumns(board: string[][]): boolean {
+  /**
+   * Verifica si hay un ganador en las columnas del tablero.
+   *
+   * Esta función examina cada columna del tablero para determinar si todas las celdas
+   * en una columna contienen el mismo símbolo ('X' u 'O'), lo que indicaría una victoria.
+   *
+   * @private
+   * @param {string[][]} board - El tablero de juego representado como una matriz bidimensional.
+   * @returns {boolean} Retorna true si se encuentra una columna ganadora, false en caso contrario.
+   */
+  private checkColumnsForWinner(board: string[][]): boolean {
     const boardLength = board.length;
+
     for (let columnIndex = 0; columnIndex < boardLength; columnIndex++) {
       let countXColumns = 0;
       let countOColumns = 0;
+
       for (let rowIndex = 0; rowIndex < boardLength; rowIndex++) {
         if (board[rowIndex][columnIndex] === 'X') countXColumns++;
         else if (board[rowIndex][columnIndex] === 'O') countOColumns++;
       }
+
+      // Si todas las celdas en la columna son 'X'
       if (countXColumns === boardLength) {
         this.gameStatus = GameStatus.X_WON;
         return true;
       }
+
+      // Si todas las celdas en la columna son 'O'
       if (countOColumns === boardLength) {
         this.gameStatus = GameStatus.O_WON;
         return true;
       }
     }
+
+    // Si no se encuentra ninguna columna ganadora
     return false;
   }
 
-  private checkBoardDiagonals(board: string[][]): boolean {
-    const boardLength = board.length;
-    let countXDiagonal1 = 0;
-    let countODiagonal1 = 0;
-    let countXDiagonal2 = 0;
-    let countODiagonal2 = 0;
+  /**
+   * Verifica si hay un ganador en las diagonales del tablero.
+   *
+   * Esta función examina ambas diagonales del tablero (de izquierda a derecha y de derecha a izquierda)
+   * para determinar si todas las celdas en una diagonal contienen el mismo símbolo ('X' u 'O'),
+   * lo que indicaría una victoria.
+   *
+   * @private
+   * @param {string[][]} board - El tablero de juego representado como una matriz bidimensional.
+   * @returns {boolean} Retorna true si se encuentra una diagonal ganadora, false en caso contrario.
+   */
+  private checkDiagonalsForWinner(board: string[][]): boolean {
+    const boardSize = board.length;
 
-    for (let i = 0; i < boardLength; i++) {
-      if (board[i][i] === 'X') countXDiagonal1++;
-      else if (board[i][i] === 'O') countODiagonal1++;
+    let mainDiagonalSymbol = board[0][0];
+    let antiDiagonalSymbol = board[0][boardSize - 1];
+    let mainDiagonalComplete = true;
+    let antiDiagonalComplete = true;
 
-      if (board[i][boardLength - 1 - i] === 'X') countXDiagonal2++;
-      else if (board[i][boardLength - 1 - i] === 'O') countODiagonal2++;
+    for (let i = 0; i < boardSize; i++) {
+      // Verifica la diagonal principal (de izquierda a derecha)
+      if (board[i][i] !== mainDiagonalSymbol) {
+        mainDiagonalComplete = false;
+      }
+
+      // Verifica la diagonal secundaria (de derecha a izquierda)
+      if (board[i][boardSize - 1 - i] !== antiDiagonalSymbol) {
+        antiDiagonalComplete = false;
+      }
+
+      // Si ambas diagonales ya no son completas, no hay necesidad de seguir verificando
+      if (!mainDiagonalComplete && !antiDiagonalComplete) {
+        break;
+      }
     }
 
-    if (countXDiagonal1 === 3 || countXDiagonal2 === 3) {
-      this.gameStatus = GameStatus.X_WON;
+    // Verifica si hay un ganador en alguna diagonal
+    if (mainDiagonalComplete && mainDiagonalSymbol !== '') {
+      this.gameStatus =
+        mainDiagonalSymbol === 'X' ? GameStatus.X_WON : GameStatus.O_WON;
       return true;
     }
-    if (countODiagonal1 === 3 || countODiagonal2 === 3) {
-      this.gameStatus = GameStatus.O_WON;
+
+    if (antiDiagonalComplete && antiDiagonalSymbol !== '') {
+      this.gameStatus =
+        antiDiagonalSymbol === 'X' ? GameStatus.X_WON : GameStatus.O_WON;
       return true;
     }
 
     return false;
   }
 
-  public checkBoard(board: string[][]): boolean {
+  public checkBoardForWinner(board: string[][]): boolean {
     return (
-      this.checkBoardColumns(board) ||
-      this.checkBoardDiagonals(board) ||
-      this.checkBoardRows(board)
+      this.checkColumnsForWinner(board) ||
+      this.checkDiagonalsForWinner(board) ||
+      this.checkRowsForWinner(board)
     );
   }
 
   /**
-   * Evaluates the current state of the game board to determine the score based on the player's perspective.
-   * The evaluation considers if the game has been won, if it's a draw, or provides a default score if neither condition is met.
+   * Evalúa el estado actual del tablero para determinar la puntuación según la perspectiva del jugador.
    *
-   * @param board The game board represented as a matrix of strings.
-   * @param player The player for whom the score is evaluated (Player.X or Player.O).
-   * @returns The score based on the current state of the board:
-   *          - 10 if the player wins.
-   *          - -10 if the player loses.
-   *          - 0 if the game is a draw.
-   *          - 1000 if the game is not yet decided.
+   * Se considera si el juego se ha ganado, se ha perdido o si es un empate.
+   * Por defecto da una puntuacion si ninguna condición se cumple.
+   *
+   * @param board El tablero de juego representado como una matriz de cadenas.
+   * @param player El jugador para quien se evalúa la puntuación (Player.X o Player.O).
+   * @returns La puntuación basada en el estado actual del tablero:
+   *          - 10 si el jugador gana.
+   *          - -10 si el jugador pierde.
+   *          - 0 si el juego es un empate.
+   *          - 1000 si el juego aún no está decidido.
    */
   public evaluate(board: string[][], player: Player): number {
     let score = 0;
     const emptyCellCount = this.countEmptyCell(board);
-    const isAWinner = this.checkBoard(board);
+    const isAWinner = this.checkBoardForWinner(board);
 
     if (isAWinner) {
       const isCurrentPlayerWinner =
         (player === Player.X && this.gameStatus === GameStatus.X_WON) ||
         (player === Player.O && this.gameStatus === GameStatus.O_WON);
 
-      // Assign score based on winner status
+      // Asignar puntuación basado en el estado del ganador
       score = isCurrentPlayerWinner ? 10 : -10;
       return score;
     }
 
+    //Empate
     if (emptyCellCount === 0) {
       this.gameStatus = GameStatus.DRAW;
       return 0;
     }
 
-    // Default score if the game is still ongoing
+    // Puntuación por defecto si el juego aún está en curso
     return 1000;
   }
 }

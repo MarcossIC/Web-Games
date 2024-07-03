@@ -43,16 +43,16 @@ export class SecondPlayerService {
   }
 
   /**
-   * Implements the Minimax algorithm with alpha-beta pruning to evaluate the best move in a game.
-   * This algorithm is typically used in strategy games to determine the optimal move for the maximizing player.
+   * Implementa el algoritmo Minimax con poda alfa-beta para evaluar el mejor movimiento en un juego.
+   * Este algoritmo se utiliza típicamente en juegos de estrategia para determinar el movimiento óptimo para el jugador maximizador.
    *
-   * @param board The game board represented as a matrix of strings.
-   * @param depth The current depth in the algorithm's search tree.
-   * @param isMaximizingPlayer Indicates whether the current player is the maximizer (`true`) or the minimizer (`false`).
-   * @param alpha The best current value that the maximizing player can ensure (alpha).
-   * @param beta The best current value that the minimizing player can ensure (beta).
+   * @param board El tablero de juego representado como una matriz de cadenas.
+   * @param depth La profundidad actual en el árbol de búsqueda del algoritmo.
+   * @param isMaximizingPlayer Indica si el jugador actual es el maximizador (`true`) o el minimizador (`false`).
+   * @param alpha El mejor valor actual que el jugador maximizador puede asegurar (alfa).
+   * @param beta El mejor valor actual que el jugador minimizador puede asegurar (beta).
    *
-   * @returns The evaluated score for the board position considering the optimal strategy.
+   * @returns La puntuación evaluada para la posición del tablero considerando la estrategia óptima.
    */
   protected minimax(
     board: string[][],
@@ -63,7 +63,7 @@ export class SecondPlayerService {
   ): number {
     const score: number = this.boardStateService.evaluate(board, this.player);
 
-    // Evaluation of the current board position
+    // Evaluación de la posición actual del tablero
     if (score === 10) {
       return score - depth;
     }
@@ -75,58 +75,60 @@ export class SecondPlayerService {
     }
 
     if (isMaximizingPlayer) {
-      // Maximizing player (X in the case of Tic Tac Toe)
+      // Jugador maximizador (X en el caso del Tres en Raya)
       let bestScore = -Infinity;
 
-      // Iterate through all empty cells on the board
+      // Iterar a través de todas las celdas vacías en el tablero
       for (let i = 0; i < board.length; i++) {
         for (let j = 0; j < board[0].length; j++) {
           if (board[i][j] === '0') {
-            // Make the move for the maximizing player
+            // Realizar el movimiento para el jugador maximizador
             board[i][j] = this.player === Player.X ? 'X' : 'O';
 
-            // Recursive call to minimax to evaluate the next move
+            // Llamada recursiva a minimax para evaluar el siguiente movimiento
             bestScore = Math.max(
               bestScore,
               this.minimax(board, depth + 1, false, alpha, beta)
             );
 
-            // Update alpha with the best found value
+            // Actualizar alfa con el mejor valor encontrado
             alpha = Math.max(alpha, bestScore);
 
-            // Undo the simulated move
+            // Deshacer el movimiento simulado
             board[i][j] = '0';
 
-            // Perform alpha-beta pruning if possible
+            // Realizar poda alfa-beta si es posible
             if (beta <= alpha) break;
           }
         }
       }
       return bestScore;
     } else {
-      // Minimizing player (O in the case of Tic Tac Toe)
+      // Jugador minimizador (O en el caso del Tres en Raya)
       let bestScore = Infinity;
+      const CURRENT_BOARD_LEN = board.length;
+      const FIRSTH_ONE_BOARD_LEN = board[0].length;
 
-      // Iterate through all empty cells on the board
-      for (let i = 0; i < board.length; i++) {
-        for (let j = 0; j < board[0].length; j++) {
+      // Iterar a través de todas las celdas vacías en el tablero
+      for (let i = 0; i < CURRENT_BOARD_LEN; i++) {
+        for (let j = 0; j < FIRSTH_ONE_BOARD_LEN; j++) {
           if (board[i][j] === '0') {
-            // Make the move for the minimizing player
+            // Realizar el movimiento para el jugador minimizador
             board[i][j] = this.player !== Player.X ? 'X' : 'O';
 
-            // Recursive call to minimax to evaluate the next move
+            // Llamada recursiva a minimax para evaluar el siguiente movimiento
             bestScore = Math.min(
               bestScore,
               this.minimax(board, depth + 1, true, alpha, beta)
             );
 
-            // Update beta with the best found value
+            // Actualizar beta con el mejor valor encontrado
             beta = Math.min(beta, bestScore);
 
-            // Undo the simulated move
+            // Deshacer el movimiento simulado
             board[i][j] = '0';
 
-            // Perform alpha-beta pruning if possible
+            // Realizar poda alfa-beta si es posible
             if (beta <= alpha) break;
           }
         }
@@ -136,17 +138,17 @@ export class SecondPlayerService {
   }
 
   /**
-   * Makes a strategic move for the AI player by evaluating potential future states using Minimax algorithm with alpha-beta pruning.
-   * Selects the move with the highest Minimax value to maximize chances of winning.
+   * Realiza un movimiento estratégico para el jugador IA evaluando los posibles estados futuros utilizando el algoritmo Minimax con poda alfa-beta.
+   * Selecciona el movimiento con el valor Minimax más alto para maximizar las posibilidades de ganar.
    *
-   * @param state The current state of the game screen.
-   * @returns The position on the board where the AI will make its move.
+   * @param state El estado actual de la pantalla del juego.
+   * @returns La posición en el tablero donde la IA realizará su movimiento.
    */
   public takeAMasterMove(state: StateScreen): number {
     let avalaible: number[] = state.emptyCells;
     let board: string[][] = state.boardScreen;
 
-    // Evaluate all available actions using Minimax algorithm with alpha-beta pruning
+    // Evaluar todas las acciones disponibles utilizando el algoritmo Minimax con poda alfa-beta
     let availableActions = avalaible.map((position) => {
       let action = this.AIAction(position);
       var nextState = this.applyTo(state, action);
@@ -160,24 +162,24 @@ export class SecondPlayerService {
       return action;
     });
 
-    // Sort actions by descending Minimax value
+    // Ordenar las acciones por valor Minimax descendente
     availableActions.sort((a, b) => b.minMaxValue - a.minMaxValue);
 
-    // Return the position of the highest valued action (best move)
+    // Devolver la posición de la acción con el valor más alto (mejor movimiento)
     return availableActions[0].movePosition;
   }
 
   /**
-   * Makes a move for the AI player by evaluating potential future states using Minimax algorithm with alpha-beta pruning.
-   * Selects the move with the highest Minimax value to maximize chances of winning, with a chance of random move or second best move.
+   * Realiza un movimiento para el jugador IA evaluando los posibles estados futuros utilizando el algoritmo Minimax con poda alfa-beta.
+   * Selecciona el movimiento con el valor Minimax más alto para maximizar las posibilidades de ganar, con una probabilidad de movimiento aleatorio o segundo mejor movimiento.
    *
-   * @param state The current state of the game screen.
-   * @returns The position on the board where the AI will make its move.
+   * @param state El estado actual de la pantalla del juego.
+   * @returns La posición en el tablero donde la IA realizará su movimiento.
    */
   public takeANoviceMove(state: StateScreen): number {
     let avalaible: number[] = state.emptyCells;
 
-    // Evaluate all available actions using Minimax algorithm with alpha-beta pruning
+    // Evaluar todas las acciones disponibles utilizando el algoritmo Minimax con poda alfa-beta
     let availableActions = avalaible.map((position) => {
       let action = this.AIAction(position);
       var nextState = this.applyTo(state, action);
@@ -191,55 +193,55 @@ export class SecondPlayerService {
       return action;
     });
 
-    // Sort actions by descending Minimax value
+    // Ordenar las acciones por valor Minimax descendente
     availableActions.sort((a, b) => b.minMaxValue - a.minMaxValue);
 
-    // Decide between the best move, a random move, or the second best move
+    // Decidir entre el mejor movimiento, un movimiento aleatorio o el segundo mejor movimiento
     if (ramdomNumber(false, 100) <= 40 && availableActions.length > 0) {
-      return availableActions[0].movePosition; // 40% chance for the best move
+      return availableActions[0].movePosition; // 40% de probabilidad para el mejor movimiento
     } else if (availableActions.length >= 2) {
-      return availableActions[1].movePosition; // Second best move if available
+      return availableActions[1].movePosition; // Segundo mejor movimiento si está disponible
     }
     return availableActions[0].movePosition;
   }
 
   /**
-   * Makes a random move for the AI player without considering game strategy.
-   * Useful for novice or random AI behavior.
+   * Realiza un movimiento aleatorio para el jugador IA sin considerar la estrategia del juego.
+   * Útil para comportamiento de IA novato o aleatorio.
    *
-   * @param state The current state of the game screen.
-   * @returns A randomly selected position on the board where the AI will make its move.
+   * @param state El estado actual de la pantalla del juego.
+   * @returns Una posición seleccionada aleatoriamente en el tablero donde la IA realizará su movimiento.
    */
   public takeABlindMove(state: StateScreen): number {
-    // Select a random empty cell from the list of available cells
+    // Seleccionar una celda vacía aleatoria de la lista de celdas disponibles
     let randomCell =
       state.emptyCells[ramdomNumber(true, state.emptyCells.length - 1)];
 
-    // Create an AI action object for the selected cell
+    // Crear un objeto de acción de IA para la celda seleccionada
     const action = this.AIAction(randomCell);
 
-    // Return the position of the randomly selected move
+    // Devolver la posición del movimiento seleccionado aleatoriamente
     return action.movePosition;
   }
 
   /**
-   * Applies the AI's action to the current game state, updating the board and game turn information accordingly.
+   * Aplica la acción de la IA al estado actual del juego, actualizando el tablero y la información del turno del juego en consecuencia.
    *
-   * @param state The current state of the game screen.
-   * @param action The AI action to be applied, containing the move position to be played.
-   * @returns The updated state of the game screen after applying the AI's action.
+   * @param state El estado actual de la pantalla del juego.
+   * @param action La acción de la IA a aplicar, que contiene la posición del movimiento a realizar.
+   * @returns El estado actualizado de la pantalla del juego después de aplicar la acción de la IA.
    */
   private applyTo(state: StateScreen, action: ActionsAI): StateScreen {
-    // Calculate the board coordinates from the linear move position
+    // Calcular las coordenadas del tablero a partir de la posición lineal del movimiento
     const { x, y } = calcArrayPositionToMatrixCords(action.movePosition, 3, 3);
 
-    // Place the AI's move (X or O) on the game board
+    // Colocar el movimiento de la IA (X u O) en el tablero de juego
     state.boardScreen[y][x] = state.turn === Player.X ? 'X' : 'O';
-    // Switch turns between players (X and O)
+    // Cambiar los turnos entre jugadores (X y O)
     state.turn = state.turn === Player.X ? Player.O : Player.X;
-    // Update the move position in the game state
+    // Actualizar la posición del movimiento en el estado del juego
     state.movePosition = action.movePosition;
-    // Update the list of empty cells on the game board
+    // Actualizar la lista de celdas vacías en el tablero de juego
     state.emptyCells = findEmptyBoardCells(state.boardScreen);
     return state;
   }
