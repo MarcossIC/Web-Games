@@ -1,24 +1,46 @@
 import { Injectable } from '@angular/core';
-import { BOARD_HEIGHT_SCREEN, BOARD_WIDTH_SCREEN, DEFAULT_COLOR } from "../../../../assets/constants/tetrisConstanst";
+import {
+  BOARD_HEIGHT_SCREEN,
+  BOARD_WIDTH_SCREEN,
+  DEFAULT_COLOR,
+} from '../../../../assets/constants/tetrisConstanst';
 import { Piece } from '@app/data/models/tetris/Piece';
 import { PointsService } from './Points.service';
 import { fillArray, fillMatrix, ramdomNumber } from '../util.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class BoardService {
   private _board: number[][];
 
-  constructor(private points: PointsService) { 
-    this._board = fillMatrix(BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN, 0) as number[][];
+  constructor(private points: PointsService) {
+    this._board = fillMatrix(
+      BOARD_WIDTH_SCREEN,
+      BOARD_HEIGHT_SCREEN,
+      0
+    ) as number[][];
   }
 
   //Rieniciar el tablero
-  public reset(): void{
-    this._board = fillMatrix(BOARD_WIDTH_SCREEN, BOARD_HEIGHT_SCREEN, 0) as number[][];
+  public reset(): void {
+    this._board = fillMatrix(
+      BOARD_WIDTH_SCREEN,
+      BOARD_HEIGHT_SCREEN,
+      0
+    ) as number[][];
   }
 
+  /**
+   * Dibuja el tablero de juego en el canvas.
+   *
+   * @param context - El contexto 2D del canvas donde se dibujará el tablero.
+   * @param width - El ancho del canvas en píxeles.
+   * @param height - La altura del canvas en píxeles.
+   *
+   * Primero dibuja un fondo negro, luego recorre el tablero y
+   * dibuja cada celda ocupada con el color predeterminado.
+   */
   public drawBoard(
     context: CanvasRenderingContext2D,
     width: number,
@@ -34,7 +56,7 @@ export class BoardService {
           context.fillStyle = DEFAULT_COLOR.fill;
           context.strokeStyle = DEFAULT_COLOR.stroke;
 
-          //Variables para, dibujar el cuadrado
+          //Dibujando
           context.fillRect(y, x, 1, 1);
           context.strokeRect(y, x, 1, 1);
         }
@@ -45,14 +67,23 @@ export class BoardService {
   public solidifyPieceInBoard(piece: Piece): void {
     piece.shape.forEach((row, x) => {
       row.forEach((value, y) => {
-        if (value > 0) this._board[y+piece.position.y][x + piece.position.x] = 1;
-      })
-    })
+        if (value > 0)
+          this._board[y + piece.position.y][x + piece.position.x] = 1;
+      });
+    });
   }
 
-  public verifyLines(): number {
-    this._board.forEach((row, rowX)=>{
-      if(row.every(cell => cell > 0)){
+  /**
+   * Verifica líneas completas, actualiza el tablero y la puntuación.
+   *
+   * Elimina las líneas completas, añade nuevas líneas vacías,
+   * incrementa la puntuación y actualiza el nivel del juego.
+   *
+   * @returns El nuevo nivel del juego basado en la puntuación actual.
+   */
+  public updateBoardAndScore(): number {
+    this._board.forEach((row, rowX) => {
+      if (row.every((cell) => cell > 0)) {
         this.removeLine(rowX);
         this.addNewEmptyLine();
         this.points.addScore();
@@ -61,20 +92,20 @@ export class BoardService {
 
     let score = this.points.score;
     let level;
-    if(score < 500) level = 1;
-    else if(score >= 500 && score < 1000) level =  2;
-    else if(score >= 1000 && score < 1500) level =  3;
-    else level =  4;
+    if (score < 500) level = 1;
+    else if (score >= 500 && score < 1000) level = 2;
+    else if (score >= 1000 && score < 1500) level = 3;
+    else level = 4;
     this.points.updateLevel(level);
     this.points.updateMaxPoints();
     return level;
   }
 
-  private removeLine(line: number): void{
+  private removeLine(line: number): void {
     this._board.splice(line, 1);
   }
 
-  private addNewEmptyLine(): void{
+  private addNewEmptyLine(): void {
     this._board.unshift(fillArray(BOARD_WIDTH_SCREEN, 0));
   }
 

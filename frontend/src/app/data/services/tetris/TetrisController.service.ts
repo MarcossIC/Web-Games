@@ -3,7 +3,14 @@ import { BoardService } from '@app/data/services/tetris/Board.service';
 import { BagOfPiecesService } from './BagOfPieces.service';
 import { Piece } from '@app/data/models/tetris/Piece';
 import {
-  ACTIONS, BOARD_HEIGHT_SCREEN, BOARD_WIDTH_SCREEN, LINE_WIDTH_SCALE, NEXT_POSITION, SHADOW_BLUR_SCALE, SPEED_PER_LEVEL } from 'assets/constants/tetrisConstanst';
+  ACTIONS,
+  BOARD_HEIGHT_SCREEN,
+  BOARD_WIDTH_SCREEN,
+  LINE_WIDTH_SCALE,
+  NEXT_POSITION,
+  SHADOW_BLUR_SCALE,
+  SPEED_PER_LEVEL,
+} from 'assets/constants/tetrisConstanst';
 import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
 import { Subject } from 'rxjs';
 import { NextPieceBoardService } from './NextPieceBoard.service';
@@ -27,7 +34,9 @@ export class TetrisControllerService {
   private bagOfPieces: BagOfPiecesService = inject(BagOfPiecesService);
   private nextPieceBoard: NextPieceBoardService = inject(NextPieceBoardService);
   private ngZone: NgZone = inject(NgZone);
-  private chronometerService: ChronometerServiceService = inject(ChronometerServiceService);
+  private chronometerService: ChronometerServiceService = inject(
+    ChronometerServiceService
+  );
   private destroy$ = destroy();
 
   constructor() {
@@ -38,7 +47,7 @@ export class TetrisControllerService {
     this.level = 1;
   }
 
-  updateNextPiece = (
+  public updateNextPiece = (
     context: CanvasRenderingContext2D,
     width: number,
     height: number
@@ -51,7 +60,28 @@ export class TetrisControllerService {
       this.nextPieceBoard.drawNextPiece(context, nextPiece);
     });
 
-  runGame(
+  /**
+   * Inicia y ejecuta el juego de Tetris.
+   *
+   * @param context - El contexto 2D del canvas donde se dibujará el juego.
+   * @param width - El ancho del área de juego en píxeles.
+   * @param height - La altura del área de juego en píxeles.
+   *
+   * Esta función configura el estado inicial del juego.
+   * Funcionamiento:
+   * 1. Inicializa las variables de estado del juego.
+   * 2. Actualiza el nombre del juego en el servicio de cronómetro.
+   * 3. Genera la siguiente pieza.
+   * 4. Configura el estilo de dibujo del contexto.
+   * 5. Inicia un bucle de animación que:
+   *    - Mueve la pieza automáticamente si el juego no está pausado o terminado.
+   *    - Dibuja el tablero y las piezas.
+   *    - Solicita el siguiente frame de animación.
+   *
+   * La función utiliza `requestAnimationFrame` para mantener una animación fluida
+   * y se ejecuta fuera de la zona de detección de cambios de Angular(ZoneJs) para mejor rendimiento.
+   */
+  public runGame(
     context: CanvasRenderingContext2D,
     width: number,
     height: number
@@ -59,7 +89,10 @@ export class TetrisControllerService {
     this.gameOver = false;
     this.isPaused = true;
     this.chronometerService.updateGameName(GameName.TETRIS);
-    this.chronometerService.updated.next({gameOver: this.gameOver, isPaused: this.isPaused});
+    this.chronometerService.updated.next({
+      gameOver: this.gameOver,
+      isPaused: this.isPaused,
+    });
     this.nextPiece.next(this.bagOfPieces.nextPiece());
     context.lineWidth = LINE_WIDTH_SCALE;
     context.shadowBlur = SHADOW_BLUR_SCALE;
@@ -68,7 +101,11 @@ export class TetrisControllerService {
 
     const update = (time: number = 0) => {
       if (!this.gameOver && !this.isPaused) {
-        const { newDropCounter, newLastTime } = this.movePieceAuto(time, dropCounter, lastTime);
+        const { newDropCounter, newLastTime } = this.movePieceAuto(
+          time,
+          dropCounter,
+          lastTime
+        );
         dropCounter = newDropCounter;
         lastTime = newLastTime;
         this.boardController.drawBoard(context, width, height);
@@ -83,7 +120,22 @@ export class TetrisControllerService {
     update();
   }
 
-  private movePieceAuto(time: number, dropCounter: number, lastTime: number): { newDropCounter: number; newLastTime: number; } {
+  /**
+   * Mueve automáticamente la pieza actual hacia abajo.
+   * Calcula el tiempo transcurrido y mueve la pieza hacia abajo
+   * cuando se alcanza el intervalo definido por el nivel actual.
+   * Verifica colisiones después del movimiento.
+   *
+   * @param time - Tiempo actual del juego (ms).
+   * @param dropCounter - Tiempo acumulado desde la última caída.
+   * @param lastTime - Tiempo de la última actualización.
+   * @returns Nuevos valores de dropCounter y lastTime.
+   */
+  private movePieceAuto(
+    time: number,
+    dropCounter: number,
+    lastTime: number
+  ): { newDropCounter: number; newLastTime: number } {
     const deltaTime = time - lastTime;
     lastTime = time;
     dropCounter += deltaTime;
@@ -97,10 +149,19 @@ export class TetrisControllerService {
   }
 
   protected checkCollision(): void {
-    if (this.detectedACollision(this.bagOfPieces.piece.current, ACTION.DOWN)) 
+    if (this.detectedACollision(this.bagOfPieces.piece.current, ACTION.DOWN))
       this.checkCollisionEffects();
   }
 
+  /**
+   * Dibuja la pieza actual en el contexto del canvas.
+   *
+   * @param context - El contexto 2D del canvas donde se dibujará la pieza.
+   *
+   * Recorre la forma de la pieza actual y dibuja cada bloque ocupado
+   * en su posición correspondiente en el tablero. Utiliza el color
+   * de relleno y de borde definidos para la pieza.
+   */
   private draw(context: CanvasRenderingContext2D): void {
     let piece = this.bagOfPieces.piece.current;
     piece.shape.forEach((row, x) => {
@@ -121,25 +182,37 @@ export class TetrisControllerService {
     });
   }
 
-  //Ejecuta una accion segun la tecla pasada
+  /**
+   * Ejecuta una acción en el juego basada en la tecla presionada.
+   *
+   * @param key - La tecla presionada que determina la acción a ejecutar.
+   *
+   * Realiza diferentes acciones dependiendo de la tecla:
+   * - Mueve o rota la pieza si no hay colisión y el juego está activo.
+   * - Verifica efectos de colisión si la pieza no puede moverse hacia abajo.
+   * - Alterna el estado de pausa del juego si se presiona la tecla de pausa.
+   */
   public executeAction(key: string): void {
     const action = ACTIONS[key];
 
+    //Las acciones solo se ejecutan si el juego no ha terminado y no está pausado
     if (!this.gameOver && !this.isPaused) {
       if (
-      action !== undefined &&
+        action !== undefined &&
         !this.detectedACollision(this.bagOfPieces.piece.current, action)
       ) {
         this.bagOfPieces.movePiece(action);
-      } 
+      }
       if (
         action === ACTION.ROTATE &&
         this.bagOfPieces.piece.current.isMovable
       ) {
         this.rotate();
       }
-      //
-      if (this.detectedACollision(this.bagOfPieces.piece.current, ACTION.DOWN)) {
+
+      if (
+        this.detectedACollision(this.bagOfPieces.piece.current, ACTION.DOWN)
+      ) {
         this.checkCollisionEffects();
       }
     }
@@ -149,11 +222,16 @@ export class TetrisControllerService {
     }
   }
 
-  //Ejecuta efectos de una colision
+  /**
+   * Maneja los efectos de una colisión de la pieza actual.
+   *
+   * Solidifica la pieza, verifica líneas, actualiza el nivel,
+   * obtiene la siguiente pieza y verifica el fin del juego.
+   */
   private checkCollisionEffects(): void {
     this.boardController.solidifyPieceInBoard(this.bagOfPieces.piece.current);
-    
-    let updateLevel = this.boardController.verifyLines();
+
+    let updateLevel = this.boardController.updateBoardAndScore();
     this.level = updateLevel;
     this.bagOfPieces.recoverNextPiece();
     this.endGame();
@@ -164,31 +242,56 @@ export class TetrisControllerService {
   public endGame(): void {
     if (this.detectedACollision(this.bagOfPieces.piece.current, ACTION.DOWN)) {
       this.gameOver = true;
-      this.chronometerService.updated.next({gameOver: this.gameOver, isPaused: this.isPaused});
+      this.chronometerService.updated.next({
+        gameOver: this.gameOver,
+        isPaused: this.isPaused,
+      });
     }
   }
 
-  //Verifica que la forma + unas cordenadas no se salga de los limites del tablero
-  private isWithinBoardLimits(x: number, y: number, shape: number[][], isPieceOnRightEdge: boolean): boolean {
-    const numRows = shape.length-1;
-    const numCols = shape[0].length-1;
-    const lastRow = numRows + x;
-    const lastCol = numCols + y;
+  /**
+   * Verifica si una pieza está dentro de los límites del tablero.
+   *
+   * @param x - Posición X de la pieza en el tablero.
+   * @param y - Posición Y de la pieza en el tablero.
+   * @param shape - Matriz que representa la forma de la pieza.
+   * @returns true si la pieza está completamente dentro del tablero, false en caso contrario.
+   */
+  private isWithinBoardLimits(
+    x: number,
+    y: number,
+    shape: number[][],
+    isPieceOnRightEdge: boolean
+  ): boolean {
+    const pieceWidth = shape[0].length;
+    const pieceHeight = shape.length;
 
-    return (
-        x >= 0 &&
-        lastRow < BOARD_WIDTH_SCREEN &&
-        y >= 0 &&
-        lastCol < BOARD_HEIGHT_SCREEN
-    );
+    const isWithinLeftAndTop = x >= 0 && y >= 0;
+    const isWithinRight = x + pieceWidth <= BOARD_WIDTH_SCREEN;
+    const isWithinBottom = y + pieceHeight <= BOARD_HEIGHT_SCREEN;
+
+    return isWithinLeftAndTop && isWithinRight && isWithinBottom;
   }
 
-  //Rota una forma en sentido de las agujas del reloj
-  private rotateShapeClockwise(shape: number[][], numRows: number, numCols: number): number[][] {
+  /**
+   * Rota una matriz 2D en sentido horario.
+   *
+   * @param shape - La matriz 2D a rotar.
+   * @param numRows - Número de filas de la matriz.
+   * @param numCols - Número de columnas de la matriz.
+   * @returns Una nueva matriz rotada 90 grados en sentido horario.
+   *
+   * Crea una nueva matriz donde las columnas de la original
+   * se convierten en filas, invirtiendo el orden de las columnas.
+   */
+  private rotateShapeClockwise(
+    shape: number[][],
+    numRows: number,
+    numCols: number
+  ): number[][] {
     const rotated = [];
-    
+
     for (let col = numCols - 1; col >= 0; col--) {
-      
       const newRow = [];
       for (let row = 0; row < numRows; row++) newRow.push(shape[row][col]);
       rotated.push(newRow);
@@ -197,34 +300,45 @@ export class TetrisControllerService {
   }
 
   //Rota una forma en sentido a contra reloj
-  private rotateShapeCounterClockwise(shape: number[][], numRows: number, numCols: number): number[][] {
+  private rotateShapeCounterClockwise(
+    shape: number[][],
+    numRows: number,
+    numCols: number
+  ): number[][] {
     const rotated = [];
     let curTetrominoBU;
-    for(let i = 0; i < shape.length; i++) {
-        curTetrominoBU = [...shape];
- 
-        let x = shape[i][0];
-        let y = shape[i][1];
-        let newX = (this.getLastSquareX(shape) - y);
-        let newY = x;
-        rotated.push([newX, newY]);
+    for (let i = 0; i < shape.length; i++) {
+      curTetrominoBU = [...shape];
+
+      let x = shape[i][0];
+      let y = shape[i][1];
+      let newX = this.getLastSquareX(shape) - y;
+      let newY = x;
+      rotated.push([newX, newY]);
     }
     return rotated;
-}
-
- 
-  getLastSquareX(shape: number[][]) {
-      let lastX = 0;
-      for(let i = 0; i < shape.length; i++)
-      {
-          let square = shape[i];
-          if (square[0] > lastX)
-              lastX = square[0];
-      }
-      return lastX;
   }
 
-  //Detacta si la pieza tubo una colision en la direccion pasada
+  getLastSquareX(shape: number[][]) {
+    let lastX = 0;
+    for (let i = 0; i < shape.length; i++) {
+      let square = shape[i];
+      if (square[0] > lastX) lastX = square[0];
+    }
+    return lastX;
+  }
+
+  /**
+   * Detecta si hay colisión al mover una pieza en una dirección específica.
+   *
+   * @param piece - La pieza a verificar.
+   * @param direction - La dirección del movimiento (ACTION.RIGHT, ACTION.LEFT, ACTION.DOWN).
+   * @returns true si se detecta una colisión, false en caso contrario.
+   *
+   * Verifica cada celda de la pieza para detectar:
+   * - Si está fuera de los límites del tablero.
+   * - Si colisiona con una celda ocupada del tablero.
+   */
   private detectedACollision(piece: Piece, direction: ACTION): boolean {
     const { x, y } = piece.position;
 
@@ -263,7 +377,21 @@ export class TetrisControllerService {
     return false; // Si no se cumple la condición en ningún caso, regresar falso al final
   }
 
-  private doesRotationCollide(rotated: number[][], isPieceOnRightEdge: boolean): boolean {
+  /**
+   * Verifica si la rotación de una pieza colisiona con el tablero o sus límites.
+   *
+   * @param rotated - La matriz que representa la forma rotada de la pieza.
+   * @param isPieceOnRightEdge - Indica si la pieza está en el borde derecho (no utilizado en la implementación actual).
+   * @returns true si la rotación colisiona, false en caso contrario.
+   *
+   * Comprueba cada celda de la pieza rotada para detectar:
+   * - Si está fuera de los límites del tablero.
+   * - Si colisiona con una celda ocupada del tablero.
+   */
+  private doesRotationCollide(
+    rotated: number[][],
+    isPieceOnRightEdge: boolean
+  ): boolean {
     const { x, y } = this.bagOfPieces.piece.current.position; // Obtener la posición actual de la pieza
 
     return rotated.some((row, rowX) =>
@@ -284,27 +412,40 @@ export class TetrisControllerService {
   }
 
   private isPieceOnRightEdge(numCols: number, xPosition: number): boolean {
-    return xPosition+numCols >= BOARD_WIDTH_SCREEN-1;
+    return xPosition + numCols >= BOARD_WIDTH_SCREEN - 1;
   }
 
+  /**
+   * Intenta rotar la pieza actual en sentido horario.
+   *
+   * Calcula la forma rotada de la pieza y verifica si es posible aplicar
+   * la rotación sin colisiones y dentro de los límites del tablero.
+   * Si es válida, actualiza la forma de la pieza actual.
+   */
   public rotate(): void {
-    const { position: {x, y}, shape } = this.bagOfPieces.piece.current;
+    const {
+      position: { x, y },
+      shape,
+    } = this.bagOfPieces.piece.current;
     const numRows = shape.length;
     const numCols = shape[0].length;
 
-    const rotated =  this.rotateShapeClockwise(shape, numRows, numCols);
+    const rotated = this.rotateShapeClockwise(shape, numRows, numCols);
     if (
       this.isWithinBoardLimits(x, y, rotated, false) &&
       !this.doesRotationCollide(rotated, false)
     ) {
       this.bagOfPieces.piece.current.shape = rotated;
-    } 
+    }
   }
 
   public playAgain(): void {
     this.gameOver = false;
     this.isPaused = false;
-    this.chronometerService.updated.next({gameOver: this.gameOver, isPaused: this.isPaused});
+    this.chronometerService.updated.next({
+      gameOver: this.gameOver,
+      isPaused: this.isPaused,
+    });
   }
 
   public reset(): void {
@@ -316,13 +457,17 @@ export class TetrisControllerService {
 
   public pause(): void {
     this.isPaused = true;
-    this.chronometerService.updated.next({gameOver: this.gameOver, isPaused: this.isPaused});
+    this.chronometerService.updated.next({
+      gameOver: this.gameOver,
+      isPaused: this.isPaused,
+    });
   }
 
   public resume(): void {
     this.isPaused = false;
-    this.chronometerService.updated.next({gameOver: this.gameOver, isPaused: this.isPaused});
+    this.chronometerService.updated.next({
+      gameOver: this.gameOver,
+      isPaused: this.isPaused,
+    });
   }
 }
-
-
