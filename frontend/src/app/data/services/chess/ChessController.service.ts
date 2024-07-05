@@ -236,37 +236,50 @@ export class ChessController {
     moveType.add(MoveType.Capture);
   }
 
+  /**
+   * Verifica si el juego ha terminado y establece el tipo de finalización del juego.
+   *
+   * @returns `true` si el juego ha terminado, `false` en caso contrario.
+   */
   private isGameFinished(): boolean {
     const checkState = this.chessHistory.checkState;
     const safeCoords = this.pieceMover.safeCoords;
+
+    // Verifica material insuficiente
     if (this.chessBoard.insufficientMaterial()) {
       this._gameOverType = ChessGameOverType.DRAW_BY_INSUFFICIENT_MATERIAL;
       return true;
     }
 
+    // Verifica si no hay movimientos seguros restantes
     if (!safeCoords.size) {
       if (checkState.isInCheck) {
+        // Jaque mate
         this._gameOverType =
           this._playerTurn === ChessPlayers.WHITE
             ? ChessGameOverType.CHECK_MATE_BLACK
             : ChessGameOverType.CHECK_MATE_WHITE;
       } else {
+        // Ahogado
         this._gameOverType = ChessGameOverType.DRAW_BY_DROWNED;
       }
 
       return true;
     }
 
+    // Verifica la regla de tres repeticiones
     if (this.moveCounter.threeFoldRepetitionFlag) {
       this._gameOverType = ChessGameOverType.DRAW_BY_REPETITION;
       return true;
     }
 
+    // Verifica la regla de los cincuenta movimientos
     if (this.moveCounter.isFulfilledFiftyRuleCounter()) {
       this._gameOverType = ChessGameOverType.DRAW_BY_FIFTYMOVES_RULE;
       return true;
     }
 
+    // El juego no ha terminado
     return false;
   }
 
