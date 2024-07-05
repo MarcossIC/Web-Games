@@ -1,12 +1,10 @@
-import { IPiece, Piece } from '@app/data/models/chess/Piece';
+import { IPiece, Piece } from '@app/data/services/chess/Piece';
 import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
 
 class BishopPiece extends Piece {
   constructor() {
     super();
-    this.setIsMovable(false);
-    this.setPieceIsAlive(true);
     this.setWeight(320);
     this.setSymbol(PieceSymbol.BLACK_BISHOP);
     this.setDirections([
@@ -18,14 +16,10 @@ class BishopPiece extends Piece {
   }
 
   public static createPiece({
-    isMovable = false,
-    pieceIsAlive = true,
     weight = 320,
     player = ChessPlayers.BLACK,
   }: Partial<IPiece>) {
     const bishop = new BishopPiece();
-    bishop.setIsMovable(isMovable);
-    bishop.setPieceIsAlive(pieceIsAlive);
     bishop.setWeight(weight);
     bishop.setPlayer(player);
 

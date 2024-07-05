@@ -1,4 +1,4 @@
-import { IPiece, Piece } from '@app/data/models/chess/Piece';
+import { IPiece, Piece } from '@app/data/services/chess/Piece';
 import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
 
@@ -8,8 +8,6 @@ class RookPiece extends Piece {
   constructor() {
     super();
     this._hasMoved = false;
-    this.setIsMovable(false);
-    this.setPieceIsAlive(true);
     this.setWeight(479);
     this.setSymbol(PieceSymbol.BLACK_ROOK);
     this.setDirections([
@@ -21,14 +19,10 @@ class RookPiece extends Piece {
   }
 
   public static createPiece({
-    isMovable = false,
-    pieceIsAlive = true,
     weight = 479,
     player = ChessPlayers.BLACK,
   }: Partial<IPiece>) {
     const rook = new RookPiece();
-    rook.setIsMovable(isMovable);
-    rook.setPieceIsAlive(pieceIsAlive);
     rook.setWeight(weight);
     rook.setPlayer(player);
     rook.setSymbol(

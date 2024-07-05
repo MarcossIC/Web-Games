@@ -8,6 +8,9 @@ import { PawnPieceComponent } from '@app/presentation/components/chess-pieces/pa
 import { KingPieceComponent } from '@app/presentation/components/chess-pieces/king.component';
 import { RookPieceComponent } from '@app/presentation/components/chess-pieces/rook.component';
 import { QueenPieceComponent } from '@app/presentation/components/chess-pieces/queen.component';
+import PawnPiece from '@app/data/services/chess/PawnPiece';
+import KingPiece from '@app/data/services/chess/KingPiece';
+import RookPiece from '@app/data/services/chess/RookPiece';
 
 export interface IPiece {
   weight: number;
@@ -59,6 +62,21 @@ export class Piece {
 
   public isEmpty() {
     return this._symbol === PieceSymbol.UNKNOWN;
+  }
+
+  public isPieceMovable(currentTurn: ChessPlayers) {
+    return !this.isEmpty() && this._player === currentTurn;
+  }
+
+  public static updateMoveState(piece: Piece) {
+    if (
+      (piece instanceof PawnPiece ||
+        piece instanceof KingPiece ||
+        piece instanceof RookPiece) &&
+      !piece.hasMoved
+    ) {
+      piece.updateMoved();
+    }
   }
 
   public static createEmpty() {

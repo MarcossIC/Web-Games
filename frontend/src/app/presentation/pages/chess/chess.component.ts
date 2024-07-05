@@ -1,9 +1,9 @@
 import { CommonModule, NgClass } from '@angular/common';
 import { Component, OnInit, Type, inject, signal } from '@angular/core';
 import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
-import { Piece } from '@app/data/models/chess/Piece';
+import { Piece } from '@app/data/services/chess/Piece';
 import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
-import { ChessControllerService } from '@app/data/services/chess/ChessController.service';
+import { ChessController } from '@app/data/services/chess/ChessController.service';
 import { BishopPieceComponent } from '@app/presentation/components/chess-pieces/bishop.component';
 import { KnightPieceComponent } from '@app/presentation/components/chess-pieces/knight.component';
 import { PawnPieceComponent } from '@app/presentation/components/chess-pieces/pawn.component';
@@ -13,7 +13,7 @@ import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import { ChessGameOverType } from '@app/data/models/chess/chess-gameOverType';
 import { Coords } from '@app/data/models/chess/chess-coords';
 import { BehaviorSubject } from 'rxjs';
-import { ChessBoardMapper } from '@app/data/services/chess/ChessBoardMapper.service';
+import { ChessBoardConverter } from '@app/data/services/chess/ChessBoardConverter.service';
 import { QueenPieceComponent } from '@app/presentation/components/chess-pieces/queen.component';
 
 export type SelectedSquare = {
@@ -39,7 +39,7 @@ export type SelectedSquare = {
   ],
 })
 export class ChessComponent implements OnInit {
-  protected controller = inject(ChessControllerService);
+  protected controller = inject(ChessController);
   protected selectedSquare: SelectedSquare = { symbol: PieceSymbol.UNKNOWN };
   private pieceSafeCoords: Coords[] = [];
   public isPromotionActive: boolean = false;
@@ -48,7 +48,7 @@ export class ChessComponent implements OnInit {
   public boardView = signal(this.chessBoardView);
   public gameHistoryPointer: number = 0;
   public chessBoardState$ = new BehaviorSubject<string>(
-    ChessBoardMapper.DEFAULT_INITIAL_POSITION
+    ChessBoardConverter.DEFAULT_INITIAL_POSITION
   );
 
   ngOnInit(): void {

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Piece } from '@app/data/models/chess/Piece';
+import { Piece } from '@app/data/services/chess/Piece';
 import { CheckState } from '@app/data/models/chess/chess-checkstate';
 import { SafeCoords } from '@app/data/models/chess/chess-coords';
 import { LastMove, MoveType } from '@app/data/models/chess/chess-lastmove';

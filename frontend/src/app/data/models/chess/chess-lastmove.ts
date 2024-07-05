@@ -1,4 +1,4 @@
-import { Piece } from '@app/data/models/chess/Piece';
+import { Piece } from '@app/data/services/chess/Piece';
 
 export enum MoveType {
   Capture,

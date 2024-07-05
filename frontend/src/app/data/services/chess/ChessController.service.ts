@@ -1,55 +1,41 @@
 import { Injectable, inject } from '@angular/core';
 import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
-import { Piece } from '@app/data/models/chess/Piece';
+import { Piece } from '@app/data/services/chess/Piece';
 import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import { ChessHistory } from '@app/data/services/chess/ChessHistory.service';
 import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
-import { Coords } from '@app/data/models/chess/chess-coords';
+import { SafeCoords } from '@app/data/models/chess/chess-coords';
 import PawnPiece from '@app/data/services/chess/PawnPiece';
 import KingPiece from '@app/data/services/chess/KingPiece';
 import RookPiece from '@app/data/services/chess/RookPiece';
-import { LastMove, MoveType } from '@app/data/models/chess/chess-lastmove';
-import KnightPiece from '@app/data/services/chess/KnightPiece';
-import BishopPiece from '@app/data/services/chess/BishopPiece';
-import QueenPiece from '@app/data/services/chess/QueenPiece';
-import { BOARD_ROW_SIZE } from 'assets/constants/chess';
-import { ChessBoardMapper } from '@app/data/services/chess/ChessBoardMapper.service';
+import { MoveType } from '@app/data/models/chess/chess-lastmove';
+import { ChessBoardConverter } from '@app/data/services/chess/ChessBoardConverter.service';
 import { ChessGameOverType } from '@app/data/models/chess/chess-gameOverType';
-
-interface ChessGameState {
-  lastMove: LastMove | undefined;
-  isInCheck: boolean;
-  currentPlayer: ChessPlayers;
-}
+import { ChessMoveCounter } from '@app/data/services/chess/ChessMoveCounter.service';
+import { ChessPieceMover } from '@app/data/services/chess/ChessPieceMover.service';
 
 @Injectable()
-export class ChessControllerService {
+export class ChessController {
   private chessBoard = inject(ChessBoard);
   private chessHistory = inject(ChessHistory);
-  private mapper = inject(ChessBoardMapper);
+  private converter = inject(ChessBoardConverter);
+  private moveCounter = inject(ChessMoveCounter);
+  private pieceMover = inject(ChessPieceMover);
   private _isGameOver: boolean;
   private _playerTurn: ChessPlayers;
-  private fiftyMoveRuleCounter: number;
-  private fullNumberOfMoves: number;
-  private threeFoldRepetitionDictionary: Map<string, number>;
-  private threeFoldRepetitionFlag: boolean;
   private _boardAsSymbols: string;
   private _gameOverType: ChessGameOverType;
 
   constructor() {
-    this.fullNumberOfMoves = 1;
     this._isGameOver = false;
     this._playerTurn = ChessPlayers.WHITE;
-    this.fiftyMoveRuleCounter = 0;
-    this.threeFoldRepetitionFlag = false;
-    this.threeFoldRepetitionDictionary = new Map<string, number>();
-    this.chessBoard.updateSafeCoords({
+    this.pieceMover.updateSafeCoords(this.chessBoard.board, {
       isInCheck: this.chessHistory.checkState.isInCheck,
       lastMove: this.chessHistory.lastMove,
       currentPlayer: this._playerTurn,
     });
     this.chessHistory.updateHistory(this.currentChessBoardView);
-    this._boardAsSymbols = ChessBoardMapper.DEFAULT_INITIAL_POSITION;
+    this._boardAsSymbols = ChessBoardConverter.DEFAULT_INITIAL_POSITION;
     this._gameOverType = ChessGameOverType.IN_GAME;
   }
 
@@ -57,17 +43,15 @@ export class ChessControllerService {
     this._gameOverType = ChessGameOverType.IN_GAME;
     this._isGameOver = false;
     this._playerTurn = ChessPlayers.WHITE;
-    this.fiftyMoveRuleCounter = 0;
-    this.threeFoldRepetitionFlag = false;
-    this.threeFoldRepetitionDictionary = new Map<string, number>();
+    this.moveCounter.resetState();
     this.chessHistory.resetAllHistory();
     this.chessBoard.restart();
-    this.chessBoard.updateSafeCoords({
+    this.pieceMover.updateSafeCoords(this.chessBoard.board, {
       isInCheck: this.chessHistory.checkState.isInCheck,
       lastMove: this.chessHistory.lastMove,
       currentPlayer: this._playerTurn,
     });
-    this._boardAsSymbols = ChessBoardMapper.DEFAULT_INITIAL_POSITION;
+    this._boardAsSymbols = ChessBoardConverter.DEFAULT_INITIAL_POSITION;
   }
 
   public movePiece(
@@ -79,116 +63,106 @@ export class ChessControllerService {
   ) {
     if (this._isGameOver) throw new Error('Game is over, you cant play move');
 
-    if (
-      !this.chessBoard.moveValidator.areCoordsValid(prevX, prevY) ||
-      !this.chessBoard.moveValidator.areCoordsValid(newX, newY)
-    ) {
+    if (!this.pieceMover.isValidMove(prevX, prevY, newX, newY)) {
       return;
     }
 
     const piece: Piece = this.chessBoard.board[prevX][prevY];
+    if (!piece.isPieceMovable(this._playerTurn)) return;
 
-    if (piece.isEmpty() || piece.player !== this._playerTurn) return;
+    const newPositionPiece: Piece = this.chessBoard.board[newX][newY];
+    this.pieceMover.checkSafeCoords(prevX, prevY, newX, newY);
 
-    const safeCoords: Coords[] | undefined = this.chessBoard.safeCoords.get(
-      prevX + ',' + prevY
+    const moveType = this.getMoveType(newX, newY);
+    this.moveCounter.updateFiftyMoveRuleCounter(piece, newPositionPiece);
+
+    this.handlingSpecialMoves(piece, prevX, prevY, newX, newY, moveType);
+    this.pieceMover.updateMoveState(piece);
+    const prometedPiece = this.chessBoard.promotedPiece(
+      promotedPieceType,
+      this._playerTurn
     );
+    this.chessBoard.applyMove(
+      prevX,
+      prevY,
+      newX,
+      newY,
+      prometedPiece,
+      moveType
+    );
+    this.swapPlyer();
+    this.updateMoveHistory(prevX, prevY, newX, newY, moveType);
+    const updatedSafeCoords = this.pieceMover.findSafeCoords(
+      this.chessBoard.board,
+      {
+        isInCheck: this.chessHistory.checkState.isInCheck,
+        lastMove: this.chessHistory.lastMove,
+        currentPlayer: this._playerTurn,
+      }
+    );
+    const checkMove = this.updateCheckState(
+      moveType.size,
+      updatedSafeCoords.size
+    );
+    if (checkMove) moveType.add(checkMove);
 
-    if (
-      !safeCoords ||
-      !safeCoords.find((coords) => coords.x === newX && coords.y === newY)
-    ) {
-      throw new Error('Square is not safe');
-    }
+    this.updateGameState(updatedSafeCoords, promotedPieceType);
+  }
 
+  private getMoveType(newX: number, newY: number) {
     const moveType = new Set<MoveType>();
-
     const takenPiece = this.chessBoard.board[newX][newY];
 
-    const isPieceTaken: boolean = !!takenPiece && !takenPiece.isEmpty();
-    if (isPieceTaken) {
+    if (takenPiece && !takenPiece.isEmpty()) {
       moveType.add(MoveType.Capture);
     }
 
-    this.fiftyMoveRuleCounter =
-      piece instanceof PawnPiece || isPieceTaken
-        ? 0
-        : this.fiftyMoveRuleCounter + 0.5;
+    return moveType;
+  }
 
-    this.handlingSpecialMoves(piece, prevX, prevY, newX, newY, moveType);
-    if (
-      (piece instanceof PawnPiece ||
-        piece instanceof KingPiece ||
-        piece instanceof RookPiece) &&
-      !piece.hasMoved
-    ) {
-      piece.updateMoved();
-    }
-    // update the board
-    if (promotedPieceType && promotedPieceType !== PieceSymbol.UNKNOWN) {
-      this.chessBoard.board[newX][newY] = this.promotedPiece(promotedPieceType);
-      moveType.add(MoveType.Promotion);
-    } else {
-      this.chessBoard.board[newX][newY] = piece;
-    }
-
-    this.chessBoard.board[prevX][prevY] = Piece.createEmpty();
-    this.chessHistory.setLastMove({
-      prevX,
-      prevY,
-      currX: newX,
-      currY: newY,
-      piece,
-      moveType,
-    });
-    this.swapPlyer();
-
-    const checkState = this.chessBoard.moveValidator.isInCheck(
+  private updateCheckState(moveTypeSize: number, safeCoordsSize: number) {
+    const checkState = this.pieceMover.validator.isInCheck(
       this.chessBoard.board,
       this._playerTurn
     );
     this.chessHistory.setCheckState(checkState);
 
-    const updatedSafeCoords = this.chessBoard.findSafeCoords({
-      isInCheck: this.chessHistory.checkState.isInCheck,
-      lastMove: this.chessHistory.lastMove,
-      currentPlayer: this._playerTurn,
-    });
-
     if (checkState.isInCheck) {
-      moveType.add(
-        !updatedSafeCoords.size ? MoveType.CheckMate : MoveType.Check
-      );
-    } else if (!moveType.size) {
-      moveType.add(MoveType.BasicMove);
+      return !safeCoordsSize ? MoveType.CheckMate : MoveType.Check;
+    } else if (!moveTypeSize) {
+      return MoveType.BasicMove;
     }
+    return null;
+  }
 
+  private updateGameState(
+    updatedSafeCoords: SafeCoords,
+    promotedPieceType: PieceSymbol | null
+  ) {
     this.chessHistory.storeMove(
       promotedPieceType || PieceSymbol.UNKNOWN,
       this.chessBoard.board,
-      this.chessBoard.safeCoords
+      this.pieceMover.safeCoords
     );
     this.chessHistory.updateHistory(this.currentChessBoardView);
-    //this.updateGameHistory();
 
-    this.chessBoard.setSafeCoords(updatedSafeCoords);
-
-    if (this._playerTurn === ChessPlayers.WHITE) {
-      this.fullNumberOfMoves++;
-    }
-    this._boardAsSymbols = this.mapper.convertBoardToSymbol(
-      this.chessBoard.board,
-      this._playerTurn,
-      this.chessHistory.lastMove,
-      this.fiftyMoveRuleCounter,
-      this.fullNumberOfMoves
-    );
-
-    this.updateThreeFoldRepetitionDictionary(this._boardAsSymbols);
+    this.pieceMover.setSafeCoords(updatedSafeCoords);
+    this.moveCounter.updateFullMoveCounter(this._playerTurn);
+    this.updateBoardAsSymbols();
 
     this._isGameOver = this.isGameFinished();
   }
 
+  /**
+   * Maneja los movimientos especiales en el ajedrez, como el enroque y la captura al paso.
+   *
+   * @param piece - La pieza que realiza el movimiento.
+   * @param prevX - La coordenada X anterior de la pieza.
+   * @param prevY - La coordenada Y anterior de la pieza.
+   * @param newX - La coordenada X nueva de la pieza.
+   * @param newY - La coordenada Y nueva de la pieza.
+   * @param moveType - Un conjunto de tipos de movimiento que se actualizan según el tipo de movimiento especial realizado.
+   */
   private handlingSpecialMoves(
     piece: Piece,
     prevX: number,
@@ -200,24 +174,7 @@ export class ChessControllerService {
     const lastMove = this.chessHistory.lastMove;
 
     if (piece instanceof KingPiece && Math.abs(newY - prevY) === 2) {
-      // newY > prevY  === king side castle
-
-      const rookPositionX = prevX;
-      const rookPositionY = newY > prevY ? 7 : 0;
-
-      const rook = this.chessBoard.board[rookPositionX][
-        rookPositionY
-      ] as RookPiece;
-
-      const rookNewPositionY = newY > prevY ? 5 : 3;
-
-      this.chessBoard.board[rookPositionX][rookPositionY] = Piece.createEmpty();
-
-      this.chessBoard.board[rookPositionX][rookNewPositionY] = rook;
-
-      rook.updateMoved();
-
-      moveType.add(MoveType.Castling);
+      this.handleCastling(prevX, prevY, newX, newY, moveType);
     } else if (
       piece instanceof PawnPiece &&
       lastMove &&
@@ -226,41 +183,63 @@ export class ChessControllerService {
       prevX === lastMove.currX &&
       newY === lastMove.currY
     ) {
-      this.chessBoard.board[lastMove.currX][lastMove.currY] =
-        Piece.createEmpty();
-      moveType.add(MoveType.Capture);
+      this.handleEnPassant(lastMove.currX, lastMove.currY, moveType);
     }
   }
 
-  public promotedPiece(
-    symbol: PieceSymbol
-  ): KnightPiece | BishopPiece | RookPiece | QueenPiece {
-    const pieceOptions = {
-      player: this._playerTurn,
-      isMovable: true,
-    };
-    if (
-      symbol === PieceSymbol.WHITE_KNIGHT ||
-      symbol === PieceSymbol.BLACK_KNIGHT
-    )
-      return KnightPiece.createPiece(pieceOptions);
+  /**
+   * Maneja el movimiento de enroque.
+   *
+   * @param prevX - La coordenada X anterior del rey.
+   * @param prevY - La coordenada Y anterior del rey.
+   * @param newX - La coordenada X nueva del rey.
+   * @param newY - La coordenada Y nueva del rey.
+   * @param moveType - Un conjunto de tipos de movimiento que se actualizan con el tipo de movimiento especial realizado.
+   */
+  private handleCastling(
+    prevX: number,
+    prevY: number,
+    newX: number,
+    newY: number,
+    moveType: Set<MoveType>
+  ): void {
+    // Determine la posición inicial y final de la torre
+    const rookPositionY = newY > prevY ? 7 : 0;
+    const rookNewPositionY = newY > prevY ? 5 : 3;
+    const rook = this.chessBoard.board[prevX][rookPositionY] as RookPiece;
 
-    if (
-      symbol === PieceSymbol.WHITE_BISHOP ||
-      symbol === PieceSymbol.BLACK_BISHOP
-    )
-      return BishopPiece.createPiece(pieceOptions);
+    // Mueve la torre a su nueva posición
+    this.chessBoard.removePiece(prevX, rookPositionY);
+    this.chessBoard.addOrMovePiece(prevX, rookNewPositionY, rook);
+    rook.updateMoved();
 
-    if (symbol === PieceSymbol.WHITE_ROOK || symbol === PieceSymbol.BLACK_ROOK)
-      return RookPiece.createPiece(pieceOptions);
+    // Actualiza el tipo de movimiento
+    moveType.add(MoveType.Castling);
+  }
 
-    return QueenPiece.createPiece(pieceOptions);
+  /**
+   * Maneja la captura al paso de un peón.
+   *
+   * @param captureX - La coordenada X de la posición donde el peón fue capturado al paso.
+   * @param captureY - La coordenada Y de la posición donde el peón fue capturado al paso.
+   * @param moveType - Un conjunto de tipos de movimiento que se actualizan con el tipo de movimiento especial realizado.
+   */
+  private handleEnPassant(
+    captureX: number,
+    captureY: number,
+    moveType: Set<MoveType>
+  ): void {
+    // Elimina el peón capturado al paso
+    this.chessBoard.removePiece(captureX, captureY);
+
+    // Actualiza el tipo de movimiento
+    moveType.add(MoveType.Capture);
   }
 
   private isGameFinished(): boolean {
     const checkState = this.chessHistory.checkState;
-    const safeCoords = this.chessBoard.safeCoords;
-    if (this.insufficientMaterial()) {
+    const safeCoords = this.pieceMover.safeCoords;
+    if (this.chessBoard.insufficientMaterial()) {
       this._gameOverType = ChessGameOverType.DRAW_BY_INSUFFICIENT_MATERIAL;
       return true;
     }
@@ -278,12 +257,12 @@ export class ChessControllerService {
       return true;
     }
 
-    if (this.threeFoldRepetitionFlag) {
+    if (this.moveCounter.threeFoldRepetitionFlag) {
       this._gameOverType = ChessGameOverType.DRAW_BY_REPETITION;
       return true;
     }
 
-    if (this.fiftyMoveRuleCounter === 50) {
+    if (this.moveCounter.isFulfilledFiftyRuleCounter()) {
       this._gameOverType = ChessGameOverType.DRAW_BY_FIFTYMOVES_RULE;
       return true;
     }
@@ -291,120 +270,32 @@ export class ChessControllerService {
     return false;
   }
 
-  private playerHasOnlyTwoKnightsAndKing(
-    pieces: { piece: Piece; x: number; y: number }[]
-  ): boolean {
-    return (
-      pieces.filter((piece) => piece.piece instanceof KnightPiece).length === 2
+  private updateMoveHistory(
+    prevX: number,
+    prevY: number,
+    newX: number,
+    newY: number,
+    moveType: Set<MoveType>
+  ): void {
+    this.chessHistory.setLastMove({
+      prevX,
+      prevY,
+      currX: newX,
+      currY: newY,
+      piece: this.chessBoard.board[newX][newY],
+      moveType,
+    });
+  }
+
+  private updateBoardAsSymbols(): void {
+    this._boardAsSymbols = this.converter.convertBoardToSymbol(
+      this.chessBoard.board,
+      this._playerTurn,
+      this.chessHistory.lastMove,
+      this.moveCounter.fiftyMoveRuleCounter,
+      this.moveCounter.fullNumberOfMoves
     );
-  }
-
-  private playerHasOnlyBishopsWithSameColorAndKing(
-    pieces: { piece: Piece; x: number; y: number }[]
-  ): boolean {
-    const bishops = pieces.filter(
-      (piece) => piece.piece instanceof BishopPiece
-    );
-    const areAllBishopsOfSameColor =
-      new Set(
-        bishops.map((bishop) => !ChessBoard.isSquareWhite(bishop.x, bishop.y))
-      ).size === 1;
-    return bishops.length === pieces.length - 1 && areAllBishopsOfSameColor;
-  }
-
-  private insufficientMaterial(): boolean {
-    const whitePieces: { piece: Piece; x: number; y: number }[] = [];
-    const blackPieces: { piece: Piece; x: number; y: number }[] = [];
-
-    for (let x = 0; x < BOARD_ROW_SIZE; x++) {
-      for (let y = 0; y < BOARD_ROW_SIZE; y++) {
-        const piece: Piece | null = this.chessBoard.board[x][y];
-        if (!piece || piece.isEmpty()) continue;
-
-        if (piece.player === ChessPlayers.WHITE)
-          whitePieces.push({ piece, x, y });
-        else blackPieces.push({ piece, x, y });
-      }
-    }
-
-    // King vs King
-    if (whitePieces.length === 1 && blackPieces.length === 1) {
-      return true;
-    }
-
-    // King and Minor Piece vs King
-    if (whitePieces.length === 1 && blackPieces.length === 2) {
-      return blackPieces.some(
-        (piece) =>
-          piece.piece instanceof KnightPiece ||
-          piece.piece instanceof BishopPiece
-      );
-    } else if (whitePieces.length === 2 && blackPieces.length === 1) {
-      return whitePieces.some(
-        (piece) =>
-          piece.piece instanceof KnightPiece ||
-          piece.piece instanceof BishopPiece
-      );
-    } // both sides have bishop of same color
-    else if (whitePieces.length === 2 && blackPieces.length === 2) {
-      const whiteBishop = whitePieces.find(
-        (piece) => piece.piece instanceof BishopPiece
-      );
-      const blackBishop = blackPieces.find(
-        (piece) => piece.piece instanceof BishopPiece
-      );
-
-      if (whiteBishop && blackBishop) {
-        const areBishopsOfSameColor: boolean =
-          (ChessBoard.isSquareWhite(whiteBishop.x, whiteBishop.y) &&
-            ChessBoard.isSquareWhite(blackBishop.x, blackBishop.y)) ||
-          (!ChessBoard.isSquareWhite(whiteBishop.x, whiteBishop.y) &&
-            !ChessBoard.isSquareWhite(blackBishop.x, blackBishop.y));
-
-        return areBishopsOfSameColor;
-      }
-    }
-
-    if (
-      (whitePieces.length === 3 &&
-        blackPieces.length === 1 &&
-        this.playerHasOnlyTwoKnightsAndKing(whitePieces)) ||
-      (whitePieces.length === 1 &&
-        blackPieces.length === 3 &&
-        this.playerHasOnlyTwoKnightsAndKing(blackPieces))
-    )
-      return true;
-
-    if (
-      (whitePieces.length >= 3 &&
-        blackPieces.length === 1 &&
-        this.playerHasOnlyBishopsWithSameColorAndKing(whitePieces)) ||
-      (whitePieces.length === 1 &&
-        blackPieces.length >= 3 &&
-        this.playerHasOnlyBishopsWithSameColorAndKing(blackPieces))
-    )
-      return true;
-
-    return false;
-  }
-
-  private updateThreeFoldRepetitionDictionary(symbolPiece: string): void {
-    const threeFoldRepetitionSymbolKey: string = symbolPiece
-      .split(' ')
-      .slice(0, 4)
-      .join('');
-    const threeFoldRepetionValue: number | undefined =
-      this.threeFoldRepetitionDictionary.get(threeFoldRepetitionSymbolKey);
-
-    if (threeFoldRepetionValue === undefined) {
-      this.threeFoldRepetitionDictionary.set(threeFoldRepetitionSymbolKey, 1);
-    } else {
-      if (threeFoldRepetionValue === 2) {
-        this.threeFoldRepetitionFlag = true;
-        return;
-      }
-      this.threeFoldRepetitionDictionary.set(threeFoldRepetitionSymbolKey, 2);
-    }
+    this.moveCounter.updateThreeFoldRepetitionDictionary(this._boardAsSymbols);
   }
 
   public swapPlyer() {
@@ -437,6 +328,6 @@ export class ChessControllerService {
     return this.chessHistory;
   }
   public get safeCoords() {
-    return this.chessBoard.safeCoords;
+    return this.pieceMover.safeCoords;
   }
 }

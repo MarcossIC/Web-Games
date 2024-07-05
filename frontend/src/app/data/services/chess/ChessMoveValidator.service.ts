@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Piece } from '@app/data/models/chess/Piece';
+import { Piece } from '@app/data/services/chess/Piece';
 import { CheckState } from '@app/data/models/chess/chess-checkstate';
 import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import KingPiece from '@app/data/services/chess/KingPiece';

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Piece } from '@app/data/models/chess/Piece';
+import { Piece } from '@app/data/services/chess/Piece';
 import { LastMove } from '@app/data/models/chess/chess-lastmove';
 import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import KingPiece from '@app/data/services/chess/KingPiece';
@@ -8,7 +8,7 @@ import RookPiece from '@app/data/services/chess/RookPiece';
 import { columns } from 'assets/constants/chess';
 
 @Injectable()
-export class ChessBoardMapper {
+export class ChessBoardConverter {
   public static readonly DEFAULT_INITIAL_POSITION: string =
     'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
