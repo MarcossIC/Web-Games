@@ -3,13 +3,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  OnInit,
   QueryList,
   ViewChildren,
-  inject,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { SeoService } from '@app/data/services/seo.service';
 import { ParticlesComponent } from '@app/presentation/components/particles/particles.component';
 
 @Component({
@@ -20,22 +17,10 @@ import { ParticlesComponent } from '@app/presentation/components/particles/parti
   styleUrl: './start.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StartComponent implements OnInit {
+export class StartComponent {
   @ViewChildren('spanElement') spanElements!: QueryList<ElementRef>;
 
   isHovered: boolean[] = [false, false];
-
-  private seo = inject(SeoService);
-
-  constructor() {}
-
-  ngOnInit(): void {
-    this.seo.generateTags({
-      title: 'Game Galaxy - Start Page',
-      description: 'Start Page',
-      slug: '',
-    });
-  }
 
   onHover(index: number): void {
     this.spanElements.toArray().forEach((spanElement, i) => {

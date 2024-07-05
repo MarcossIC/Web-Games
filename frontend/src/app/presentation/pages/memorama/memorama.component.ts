@@ -3,21 +3,19 @@ import {
   AfterViewInit,
   Component,
   DestroyRef,
-  OnDestroy,
   OnInit,
   Renderer2,
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MemoramaControllerService } from '@app/data/services/memorama/memoramaController.service';
-import { SeoService } from '@app/data/services/seo.service';
 import { fillArray } from '@app/data/services/util.service';
 import { ChronometerComponent } from '@app/presentation/components/chronometer/chronometer.component';
 import { EndgameModalMemoramaComponent } from '@app/presentation/components/endgame-modal-memorama/endgame-modal-memorama.component';
 import { ParticlesComponent } from '@app/presentation/components/particles/particles.component';
 import { WelcomeMomeramaModalComponent } from '@app/presentation/components/welcome-momerama-modal/welcome-momerama-modal.component';
 import { TOTAL_CARDS } from 'assets/constants/memorama';
-import { Subscription, interval } from 'rxjs';
+import { interval } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -37,8 +35,6 @@ export class MemoramaComponent implements OnInit, AfterViewInit {
   protected controller = inject(MemoramaControllerService);
   private destroy = inject(DestroyRef);
   public cards: number[] = [];
-
-  constructor() {}
 
   ngAfterViewInit(): void {
     const gameCards = document.querySelectorAll('#game-memorama .game-card');

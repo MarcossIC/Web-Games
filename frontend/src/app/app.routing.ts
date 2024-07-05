@@ -1,4 +1,4 @@
-import { Routes, RouterModule } from '@angular/router';
+import { Routes } from '@angular/router';
 import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
 import { ChessBoardConverter } from '@app/data/services/chess/ChessBoardConverter.service';
 import { ChessController } from '@app/data/services/chess/ChessController.service';
