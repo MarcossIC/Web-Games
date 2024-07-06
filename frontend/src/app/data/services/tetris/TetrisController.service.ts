@@ -30,13 +30,11 @@ export class TetrisControllerService {
   public animationFrameId: number;
 
   //Injected services
-  private boardController: BoardService = inject(BoardService);
-  private bagOfPieces: BagOfPiecesService = inject(BagOfPiecesService);
-  private nextPieceBoard: NextPieceBoardService = inject(NextPieceBoardService);
-  private ngZone: NgZone = inject(NgZone);
-  private chronometerService: ChronometerServiceService = inject(
-    ChronometerServiceService
-  );
+  private boardController = inject(BoardService);
+  private bagOfPieces = inject(BagOfPiecesService);
+  private nextPieceBoard = inject(NextPieceBoardService);
+  private ngZone = inject(NgZone);
+  private chronometerService = inject(ChronometerServiceService);
   private destroy$ = destroy();
 
   constructor() {

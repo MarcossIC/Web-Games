@@ -26,8 +26,6 @@ export interface IPiece {
 export class Piece {
   private _weight: number;
   private _symbol: PieceSymbol;
-  private _isMovable: boolean;
-  private _pieceIsAlive: boolean;
   private _player: ChessPlayers;
   protected _directions: Coords[];
 
@@ -54,8 +52,6 @@ export class Piece {
   constructor() {
     this._weight = 0;
     this._symbol = PieceSymbol.UNKNOWN;
-    this._isMovable = false;
-    this._pieceIsAlive = false;
     this._player = ChessPlayers.UNKNOWN;
     this._directions = [];
   }
@@ -66,17 +62,6 @@ export class Piece {
 
   public isPieceMovable(currentTurn: ChessPlayers) {
     return !this.isEmpty() && this._player === currentTurn;
-  }
-
-  public static updateMoveState(piece: Piece) {
-    if (
-      (piece instanceof PawnPiece ||
-        piece instanceof KingPiece ||
-        piece instanceof RookPiece) &&
-      !piece.hasMoved
-    ) {
-      piece.updateMoved();
-    }
   }
 
   public static createEmpty() {
@@ -99,22 +84,6 @@ export class Piece {
 
   setSymbol(name: PieceSymbol): void {
     this._symbol = name;
-  }
-
-  public get isMovable(): boolean {
-    return this._isMovable;
-  }
-
-  setIsMovable(isMovable: boolean): void {
-    this._isMovable = isMovable;
-  }
-
-  public get hasAlive(): boolean {
-    return this._pieceIsAlive;
-  }
-
-  setPieceIsAlive(hasPiece: boolean): void {
-    this._pieceIsAlive = hasPiece;
   }
 
   public get player(): ChessPlayers {

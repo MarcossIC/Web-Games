@@ -2,32 +2,33 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM"],
-    "module": "ES2022",
-    "moduleResolution": "node",
-
-    "outDir": "./dist/out-tsc",
     "baseUrl": "src",
-    "paths": {
-      "@app/*": ["app/*"],
-      "@app-pages/*": ["app/presentation/pages/*"],
-      "@app-components/*": ["app/presentation/components/*"],
-      "@app-services/*": ["app/data/services/*"],
-      "@app-models/*": ["app/data/models/*"]
-    },
+    "outDir": "./dist/out-tsc",
+
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
+    "downlevelIteration": true,
+    "esModuleInterop": true,
     "sourceMap": true,
     "declaration": false,
-    "downlevelIteration": true,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "useDefineForClassFields": false
+    "useDefineForClassFields": false,
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "paths": {
+      "@app/*": ["app/*"],
+      "@app-pages/*": ["app/presentation/pages/*"],
+      "@app-components/*": ["app/presentation/components/*"],
+      "@app-services/*": ["app/data/services/*"],
+      "@app-models/*": ["app/data/models/*"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

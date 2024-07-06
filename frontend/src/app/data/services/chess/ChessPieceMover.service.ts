@@ -13,7 +13,7 @@ import { BOARD_ROW_SIZE } from 'assets/constants/chess';
 
 @Injectable()
 export class ChessPieceMover {
-  public validator = inject(ChessMoveValidator);
+  private _validator = inject(ChessMoveValidator);
   private _safeCoords: SafeCoords;
 
   constructor() {
@@ -22,8 +22,8 @@ export class ChessPieceMover {
 
   public isValidMove(prevX: number, prevY: number, newX: number, newY: number) {
     return (
-      this.validator.areCoordsValid(prevX, prevY) &&
-      this.validator.areCoordsValid(newX, newY)
+      this._validator.areCoordsValid(prevX, prevY) &&
+      this._validator.areCoordsValid(newX, newY)
     );
   }
 
@@ -80,7 +80,7 @@ export class ChessPieceMover {
           let newX: number = x + dx;
           let newY: number = y + dy;
 
-          if (!this.validator.areCoordsValid(newX, newY)) {
+          if (!this._validator.areCoordsValid(newX, newY)) {
             continue;
           }
           let newPiece: Piece = board[newX][newY];
@@ -98,7 +98,7 @@ export class ChessPieceMover {
               const posiblePiece: Piece | null =
                 board[newX + (dx === 2 ? -1 : 1)][newY];
               if (
-                !this.validator.areCoordsValid(newX, newY) ||
+                !this._validator.areCoordsValid(newX, newY) ||
                 (posiblePiece && !posiblePiece.isEmpty())
               ) {
                 continue;
@@ -131,7 +131,7 @@ export class ChessPieceMover {
             piece instanceof KnightPiece ||
             piece instanceof KingPiece
           ) {
-            const isPositionSafe = this.validator.isPositionSafeAfterMove(
+            const isPositionSafe = this._validator.isPositionSafeAfterMove(
               board,
               x,
               y,
@@ -143,7 +143,7 @@ export class ChessPieceMover {
               pieceSafeCoords.push({ x: newX, y: newY });
             }
           } else {
-            while (this.validator.areCoordsValid(newX, newY)) {
+            while (this._validator.areCoordsValid(newX, newY)) {
               newPiece = board[newX][newY];
               if (
                 newPiece &&
@@ -152,7 +152,7 @@ export class ChessPieceMover {
               )
                 break;
 
-              const isPositionSafe = this.validator.isPositionSafeAfterMove(
+              const isPositionSafe = this._validator.isPositionSafeAfterMove(
                 board,
                 x,
                 y,
@@ -229,7 +229,7 @@ export class ChessPieceMover {
 
     board[currX][currY] = Piece.createEmpty();
 
-    const isPositionSafe = this.validator.isPositionSafeAfterMove(
+    const isPositionSafe = this._validator.isPositionSafeAfterMove(
       board,
       pawnX,
       pawnY,
@@ -248,7 +248,7 @@ export class ChessPieceMover {
     isInCheck: boolean,
     board: Piece[][]
   ): boolean {
-    const kingMoves = this.validator.getKingMoveCoords(
+    const kingMoves = this._validator.getKingMoveCoords(
       board,
       king,
       isInCheck,
@@ -258,7 +258,7 @@ export class ChessPieceMover {
     if (!kingMoves) return false;
 
     const isPositionSafeInFirstPosition =
-      this.validator.isPositionSafeAfterMove(
+      this._validator.isPositionSafeAfterMove(
         board,
         kingMoves.kingPositionX,
         kingMoves.kingPositionY,
@@ -266,7 +266,7 @@ export class ChessPieceMover {
         kingMoves.firstNextKingPositionY
       );
     const isPositionSafeInSecondPosition =
-      this.validator.isPositionSafeAfterMove(
+      this._validator.isPositionSafeAfterMove(
         board,
         kingMoves.kingPositionX,
         kingMoves.kingPositionY,
@@ -275,6 +275,10 @@ export class ChessPieceMover {
       );
 
     return isPositionSafeInFirstPosition && isPositionSafeInSecondPosition;
+  }
+
+  public get validator() {
+    return this._validator;
   }
 
   public get safeCoords() {

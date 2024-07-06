@@ -14,10 +14,10 @@ export class SnakelingControllerService {
   public _isGameOver: boolean = false;
 
   private renderer!: Renderer2;
-  private boardService: BoardServiceService = inject(BoardServiceService);
-  private snakeService: SnakeService = inject(SnakeService);
-  private foodService: FoodService = inject(FoodService);
-  public scoreService: ScoreService = inject(ScoreService);
+  private boardService = inject(BoardServiceService);
+  private snakeService = inject(SnakeService);
+  private foodService = inject(FoodService);
+  public scoreService = inject(ScoreService);
 
   private boardDiv!: HTMLDivElement;
 

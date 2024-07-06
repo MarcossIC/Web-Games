@@ -3,8 +3,10 @@ import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
 import { ChessBoardConverter } from '@app/data/services/chess/ChessBoardConverter.service';
 import { ChessController } from '@app/data/services/chess/ChessController.service';
 import { ChessHistory } from '@app/data/services/chess/ChessHistory.service';
+import { ChessMoveCounter } from '@app/data/services/chess/ChessMoveCounter.service';
 import { ChessMoveValidator } from '@app/data/services/chess/ChessMoveValidator.service';
 import { ChessPieceMover } from '@app/data/services/chess/ChessPieceMover.service';
+import { ChronometerServiceService } from '@app/data/services/chronometerService.service';
 import { MemoramaControllerService } from '@app/data/services/memorama/memoramaController.service';
 import { BoardServiceService } from '@app/data/services/snakeling/BoardService.service';
 import { FoodService } from '@app/data/services/snakeling/Food.service';
@@ -17,6 +19,7 @@ import { NextPieceBoardService } from '@app/data/services/tetris/NextPieceBoard.
 import { PieceService } from '@app/data/services/tetris/Piece.service';
 import { PointsService } from '@app/data/services/tetris/Points.service';
 import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
+import { BoardStateService } from '@app/data/services/tictactoe/BoardStateService.service';
 import { GameStateService } from '@app/data/services/tictactoe/GameState.service';
 import { SecondPlayerService } from '@app/data/services/tictactoe/SecondPlayer.service';
 import { TicTacToeControllerService } from '@app/data/services/tictactoe/TicTacToeController.service';
@@ -46,6 +49,7 @@ const routes: Routes = [
       PointsService,
       NextPieceBoardService,
       UtilService,
+      ChronometerServiceService,
     ],
   },
   {
@@ -65,17 +69,18 @@ const routes: Routes = [
     title: 'Game Galaxy - Tic tac toe',
     loadComponent: () => import('@app-pages/tictactoe/tictactoe.component'),
     providers: [
+      TicTacToeControllerService,
+      BoardStateService,
       GameStateService,
       SecondPlayerService,
       UserPlayerService,
-      TicTacToeControllerService,
     ],
   },
   {
     path: 'memorama',
     title: 'Game Galaxy - Memorama',
     loadComponent: () => import('@app-pages/memorama/memorama.component'),
-    providers: [MemoramaControllerService],
+    providers: [MemoramaControllerService, ChronometerServiceService],
   },
   {
     path: 'chess',
@@ -86,6 +91,7 @@ const routes: Routes = [
       ChessBoard,
       ChessBoardConverter,
       ChessHistory,
+      ChessMoveCounter,
       ChessMoveValidator,
       ChessPieceMover,
     ],
@@ -94,7 +100,6 @@ const routes: Routes = [
     path: '**',
     title: 'GG - Not found',
     loadComponent: () => import('@app-pages/notfound/notfound.component'),
-    providers: [ChessController],
   },
 ];
 

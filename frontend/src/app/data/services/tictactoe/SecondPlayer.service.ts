@@ -10,9 +10,7 @@ import {
 import { ActionsAI } from '@app/data/models/tictactoe/ActionsAI';
 import { BoardStateService } from './BoardStateService.service';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class SecondPlayerService {
   private player: Player;
   private _isBotPlaying: boolean;

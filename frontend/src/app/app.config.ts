@@ -1,12 +1,22 @@
-import { HttpClientModule } from '@angular/common/http';
-import { ApplicationConfig, importProvidersFrom } from '@angular/core';
-import { provideRouter, withPreloading } from '@angular/router';
-import { CustomPreloadStrategyService } from './data/services/CustomPreloadStrategy.service';
+import { provideHttpClient, withFetch } from '@angular/common/http';
+import { ApplicationConfig } from '@angular/core';
+import {
+  PreloadAllModules,
+  provideRouter,
+  withPreloading,
+} from '@angular/router';
 import routes from './app.routing';
+import {
+  provideClientHydration,
+  withHttpTransferCacheOptions,
+} from '@angular/platform-browser';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes, withPreloading(CustomPreloadStrategyService)),
-    importProvidersFrom(HttpClientModule),
+    provideRouter(routes, withPreloading(PreloadAllModules)),
+    provideHttpClient(withFetch()),
+    provideClientHydration(
+      withHttpTransferCacheOptions({ includePostRequests: true })
+    ),
   ],
 };

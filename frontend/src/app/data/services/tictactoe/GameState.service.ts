@@ -5,9 +5,7 @@ import { GameStatus } from '@app/data/models/tictactoe/GameStatus.enum';
 import { PartyStatus } from '@app/data/models/tictactoe/PartyStatus.enum';
 import { BoardStateService } from './BoardStateService.service';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class GameStateService {
   private _board: string[][];
   public turn: Player;

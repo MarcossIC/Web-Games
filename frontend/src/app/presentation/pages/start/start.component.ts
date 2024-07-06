@@ -22,6 +22,8 @@ export class StartComponent {
 
   isHovered: boolean[] = [false, false];
 
+  constructor() {}
+
   onHover(index: number): void {
     this.spanElements.toArray().forEach((spanElement, i) => {
       const condition = index === i;

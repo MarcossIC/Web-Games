@@ -13,9 +13,7 @@ import {
 } from '../util.service';
 import { Subject } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class TicTacToeControllerService {
   private gameState: GameStateService = inject(GameStateService);
   private secondPlayer: SecondPlayerService = inject(SecondPlayerService);

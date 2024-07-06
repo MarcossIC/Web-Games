@@ -4,9 +4,7 @@ import { GameStatus } from '@app/data/models/tictactoe/GameStatus.enum';
 import { Player } from '@app/data/models/tictactoe/Player.enum';
 import { Subject } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class BoardStateService {
   public updateGameState: Subject<GameStatus> = new Subject<GameStatus>();
 
