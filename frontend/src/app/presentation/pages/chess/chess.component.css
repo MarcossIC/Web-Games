@@ -4,7 +4,7 @@ section.chess-container {
 
   --chess-board-white-color: #e8edf9;
   --chess-board-black-color: #b7c0d8;
-  --chess-square-size: 40px;
+  --chess-square-size: 45px;
 }
 
 .chess-board {
@@ -109,4 +109,18 @@ section.chess-container {
 
 .chess-square ::ng-deep .piece .border-fill {
   fill: var(--piece-border-color);
+}
+
+.player-card {
+  @apply flex justify-start items-start gap-x-2;
+
+  img {
+    @apply object-cover object-center max-w-full w-[50px] aspect-square;
+  }
+
+  p {
+    font-weight: 500;
+    font-size: 0.975rem;
+    color: #ffffffcf;
+  }
 }
