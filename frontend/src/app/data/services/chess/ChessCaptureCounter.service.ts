@@ -7,9 +7,9 @@ import {
 import { MoveType } from '@app/data/models/chess/chess-lastmove';
 import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
-import { BehaviorSubject, Observable, distinctUntilChanged, map } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 
-const DEFAULT_COUNTER = {
+const DEFAULT_COUNTER: CaptureCounter = {
   pawns: 0,
   bishop: 0,
   queen: 0,
@@ -23,7 +23,7 @@ type CaptureKey = keyof CaptureCounter;
 export class ChessCaptureCounter {
   private subject$: BehaviorSubject<PieceCaptureCounter>;
   private state$: Observable<PieceCaptureCounter>;
-  private readonly LIMIT_COUNT = {
+  private readonly LIMIT_COUNT: CaptureCounter = {
     pawns: 8,
     queen: 1,
     bishop: 2,
@@ -49,7 +49,6 @@ export class ChessCaptureCounter {
     promotedPiece: PieceSymbol,
     capturedPiece: PieceSymbol
   ) {
-    console.log({ player: player === 1 ? 'WHITE' : 'BLACK' });
     if (moveType.has(MoveType.Capture)) {
       this.captureCount(player, capturedPiece);
     }
@@ -94,6 +93,7 @@ export class ChessCaptureCounter {
   }
 
   public promotedPawn(player: ChessPlayers, piecePromotedTo: PieceSymbol) {
+    if (piecePromotedTo === PieceSymbol.UNKNOWN) return;
     const piece = this.getPieceCaptured(piecePromotedTo);
     const opponentColor = player === ChessPlayers.WHITE ? 'black' : 'white';
     const currentState = this.subject$.getValue();
@@ -102,7 +102,7 @@ export class ChessCaptureCounter {
     if (opponentCounter.pawns < this.LIMIT_COUNT.pawns) {
       opponentCounter.pawns++;
       if (opponentCounter[piece] > 0) {
-        opponentCounter[piece]--;
+        --opponentCounter[piece];
       }
       this.updateState(
         opponentCounter,

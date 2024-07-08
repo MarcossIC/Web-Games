@@ -56,7 +56,6 @@ import { Observable } from 'rxjs';
       <span
         class="new-captured-pieces captured-queen"
         [ngClass]="[getPlayerColor()]"
-        ]
       ></span>
       } }
     </div>
@@ -72,11 +71,6 @@ export class ChessCapturedPieces {
 
   constructor() {
     this.capturedPieces = this.captureCounter.getState();
-    this.capturedPieces.subscribe((counters) => {
-      console.log({ player: this.player() });
-      console.log({ counterWhite: counters.white });
-      console.log({ counterBlack: counters.black });
-    });
   }
 
   public getCounter(counters: PieceCaptureCounter | null): CaptureCounter {
