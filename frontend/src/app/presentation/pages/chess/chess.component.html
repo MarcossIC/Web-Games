@@ -27,8 +27,29 @@
           }
         </div>
       </div>
-      } }
+      } } @if(isPromotionActive || true){
+      <div class="promotion-dialog">
+        <span
+          class="close-promotion-dialog"
+          (click)="closePawnPromotionDialog()"
+        >
+          &times;
+        </span>
+        @for(PIECE_SYMBOL of getPromotionPieces(); track "pp-"+$index){
+        @if(getPiece(PIECE_SYMBOL); as piece){
+        <div
+          class="piece w-full h-[25%] piece-promotion-style"
+          [ngClass]="[getPiecePlayer(PIECE_SYMBOL)]"
+        >
+          <ng-container
+            *ngComponentOutlet="piece"
+            (click)="promotePiece(PIECE_SYMBOL)"
+          ></ng-container>
+        </div>
+        } }
+      </div>
+      }
     </div>
-    <chess-card-player [player]="1"></chess-card-player>
+    <chess-card-player [player]="1" />
   </div>
 </section>

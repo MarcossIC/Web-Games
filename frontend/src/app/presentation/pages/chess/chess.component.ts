@@ -57,6 +57,22 @@ export class ChessComponent implements OnInit {
     this.controller.restartGame();
   }
 
+  public getPromotionPieces(): PieceSymbol[] {
+    return this.controller.playerGo === ChessPlayers.WHITE
+      ? [
+          PieceSymbol.WHITE_KNIGHT,
+          PieceSymbol.WHITE_BISHOP,
+          PieceSymbol.WHITE_ROOK,
+          PieceSymbol.WHITE_QUEEN,
+        ]
+      : [
+          PieceSymbol.BLACK_KNIGHT,
+          PieceSymbol.BLACK_BISHOP,
+          PieceSymbol.BLACK_ROOK,
+          PieceSymbol.BLACK_QUEEN,
+        ];
+  }
+
   public getSquareColor(row: number, column: number): string {
     return ChessBoard.isSquareWhite(row, column)
       ? 'square-white'

@@ -17,6 +17,7 @@ section.chess-container {
   border-radius: 5px;
   margin: auto;
   line-height: 0px;
+  position: relative;
 }
 
 .chess-square {
@@ -35,20 +36,20 @@ section.chess-container {
   --piece-bg-color: var(--chess-piece-black-color);
 }
 
-.chess-square.square-black {
+.square-black {
   --chess-square-color: var(--chess-board-black-color);
   --piece-yellow-high: rgb(255 250 139 / 70%);
 }
-.chess-square.square-white {
+.square-white {
   --chess-square-color: var(--chess-board-white-color);
   --piece-yellow-high: rgb(253 247 119 / 60%);
 }
 
-.chess-square.white-piece {
+.white-piece {
   --piece-border-color: var(--chess-piece-black-color);
   --piece-bg-color: var(--chess-piece-white-color);
 }
-.chess-square.black-piece {
+.black-piece {
   --piece-border-color: var(--chess-piece-white-color);
   --piece-bg-color: var(--chess-piece-black-color);
 }
@@ -82,7 +83,7 @@ section.chess-container {
     inset rgba(0, 0, 0, 1) 0px 0px 36px -24px;
 }
 
-.chess-square .piece {
+.piece {
   width: 100%;
   height: 100%;
   pointer-events: all;
@@ -92,7 +93,13 @@ section.chess-container {
   z-index: 10;
 }
 
-.chess-square .piece ::ng-deep svg {
+.piece.piece-promotion-style {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.piece ::ng-deep svg {
   width: var(--chess-square-size);
   height: var(--chess-square-size);
   position: relative;
@@ -102,26 +109,33 @@ section.chess-container {
   overflow: clip;
 }
 
-.chess-square .piece ::ng-deep path {
+.piece ::ng-deep path {
   position: relative;
   z-index: -10;
 }
 
-.chess-square ::ng-deep .piece .border-fill {
+::ng-deep .piece .border-fill {
   fill: var(--piece-border-color);
 }
 
-.player-card {
-  @apply flex justify-start items-start gap-x-2;
+.promotion-dialog {
+  --promotion-dialog-w: 16%;
+  --promotion-dialog-h: 60%;
 
-  img {
-    @apply object-cover object-center max-w-full w-[50px] aspect-square;
-  }
+  display: flex;
+  flex-direction: column-reverse;
+  box-shadow: 3px 3px 10px #2e2b2b96;
+  background-color: #fff;
+  border-radius: 3px;
+  position: absolute;
+  left: 0;
+  z-index: 10;
+  width: var(--promotion-dialog-w);
+  height: var(--promotion-dialog-h);
+}
 
-  p {
-    font-weight: 500;
-    font-size: 0.975rem;
-    color: #ffffffcf;
-    text-shadow: 0.1rem 0.1rem #2e2b2b96;
-  }
+.close-promotion-dialog {
+  font-size: 45px;
+  cursor: pointer;
+  color: rgb(8, 8, 8);
 }
