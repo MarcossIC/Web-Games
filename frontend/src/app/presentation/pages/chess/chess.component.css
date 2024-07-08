@@ -135,7 +135,13 @@ section.chess-container {
 }
 
 .close-promotion-dialog {
-  font-size: 45px;
+  height: 12%;
+  padding-block: 10px;
+
+  font-size: 30px;
+  font-weight: bold;
+  color: var(--chess-piece-black-color);
+  text-align: center;
+
   cursor: pointer;
-  color: rgb(8, 8, 8);
 }

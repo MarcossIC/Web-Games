@@ -27,24 +27,22 @@
           }
         </div>
       </div>
-      } } @if(isPromotionActive || true){
+      } } @if(isPromotionActive){
       <div class="promotion-dialog">
-        <span
+        <div
           class="close-promotion-dialog"
           (click)="closePawnPromotionDialog()"
         >
           &times;
-        </span>
+        </div>
         @for(PIECE_SYMBOL of getPromotionPieces(); track "pp-"+$index){
         @if(getPiece(PIECE_SYMBOL); as piece){
         <div
-          class="piece w-full h-[25%] piece-promotion-style"
+          class="piece w-full h-[22%] piece-promotion-style cursor-pointer"
           [ngClass]="[getPiecePlayer(PIECE_SYMBOL)]"
+          (click)="promotePiece(PIECE_SYMBOL)"
         >
-          <ng-container
-            *ngComponentOutlet="piece"
-            (click)="promotePiece(PIECE_SYMBOL)"
-          ></ng-container>
+          <ng-container *ngComponentOutlet="piece"></ng-container>
         </div>
         } }
       </div>
