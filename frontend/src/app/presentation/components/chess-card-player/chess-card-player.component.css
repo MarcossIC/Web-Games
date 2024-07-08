@@ -1,0 +1,19 @@
+.player-card {
+  @apply flex justify-start items-start gap-x-2;
+
+  img {
+    @apply object-cover object-center max-w-full w-[50px] aspect-square;
+  }
+
+  p {
+    font-weight: 500;
+    font-size: 0.975rem;
+    color: #ffffffcf;
+    text-shadow: 0.1rem 0.1rem #2e2b2b96;
+  }
+}
+
+.captured-piece-container {
+  width: 100%;
+  position: relative;
+}

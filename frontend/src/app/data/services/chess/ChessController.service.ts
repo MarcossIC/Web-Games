@@ -13,6 +13,7 @@ import { ChessBoardConverter } from '@app/data/services/chess/ChessBoardConverte
 import { ChessGameOverType } from '@app/data/models/chess/chess-gameOverType';
 import { ChessMoveCounter } from '@app/data/services/chess/ChessMoveCounter.service';
 import { ChessPieceMover } from '@app/data/services/chess/ChessPieceMover.service';
+import { ChessCaptureCounter } from '@app/data/services/chess/ChessCaptureCounter.service';
 
 @Injectable()
 export class ChessController {
@@ -21,6 +22,7 @@ export class ChessController {
   private converter = inject(ChessBoardConverter);
   private moveCounter = inject(ChessMoveCounter);
   private pieceMover = inject(ChessPieceMover);
+  public captureCounter = inject(ChessCaptureCounter);
   private _isGameOver: boolean;
   private _playerTurn: ChessPlayers;
   private _boardAsSymbols: string;
@@ -74,6 +76,12 @@ export class ChessController {
     this.pieceMover.checkSafeCoords(prevX, prevY, newX, newY);
 
     const moveType = this.getMoveType(newX, newY);
+    this.captureCounter.updateCounter(
+      moveType,
+      this._playerTurn,
+      promotedPieceType || PieceSymbol.UNKNOWN,
+      newPositionPiece.symbol
+    );
     this.moveCounter.updateFiftyMoveRuleCounter(piece, newPositionPiece);
 
     this.handlingSpecialMoves(piece, prevX, prevY, newX, newY, moveType);
@@ -82,6 +90,7 @@ export class ChessController {
       promotedPieceType,
       this._playerTurn
     );
+
     this.chessBoard.applyMove(
       prevX,
       prevY,

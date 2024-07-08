@@ -1,0 +1,174 @@
+.captured-pieces {
+  scrollbar-color: rgba(0, 0, 0, 0.45) transparent;
+  scrollbar-width: thin;
+  text-shadow: 0.1rem 0.1rem var(--color-transparent-black-30);
+  position: absolute;
+  scale: 0.8;
+  width: 275px;
+  left: -30px;
+}
+
+.new-captured-pieces {
+  background-image: url("../../../../assets/images/chess/captured-pieces.png");
+  background-repeat: no-repeat;
+  background-size: 68.3rem 61.1rem;
+  display: inline-block;
+  margin-right: 0.3rem;
+}
+
+.captured-pawns-1 {
+  height: 1.7rem;
+  width: 1.3rem;
+}
+.captured-pawns-1.white {
+  background-position: 0 -59.4rem;
+}
+.captured-pawns-1.black {
+  background-position: -36rem -59.4rem;
+}
+.captured-pawns-2 {
+  height: 1.7rem;
+  width: 2rem;
+}
+.captured-pawns-2.white {
+  background-position: 0 -56.9rem;
+}
+.captured-pawns-2.black {
+  background-position: -36rem -56.9rem;
+}
+.captured-pawns-3 {
+  height: 1.7rem;
+  width: 2.7rem;
+}
+.captured-pawns-3.white {
+  background-position: 0 -54.4rem;
+}
+.captured-pawns-3.black {
+  background-position: -36rem -54.4rem;
+}
+.captured-pawns-4 {
+  height: 1.7rem;
+  width: 3.4rem;
+}
+.captured-pawns-4.white {
+  background-position: 0 -51.9rem;
+}
+.captured-pawns-4.black {
+  background-position: -36rem -51.9rem;
+}
+.captured-pawns-5 {
+  height: 1.7rem;
+  width: 4.1rem;
+}
+.captured-pawns-5.white {
+  background-position: 0 -49.4rem;
+}
+.captured-pawns-5.black {
+  background-position: -36rem -49.4rem;
+}
+.captured-pawns-6 {
+  height: 1.7rem;
+  width: 4.8rem;
+}
+.captured-pawns-6.white {
+  background-position: 0 -46.9rem;
+}
+.captured-pawns-6.black {
+  background-position: -36rem -46.9rem;
+}
+.captured-pawns-7 {
+  height: 1.7rem;
+  width: 5.5rem;
+}
+.captured-pawns-7.white {
+  background-position: 0 -44.4rem;
+}
+.captured-pawns-7.black {
+  background-position: -36rem -44.4rem;
+}
+.captured-pawns-8 {
+  height: 1.7rem;
+  width: 6.2rem;
+}
+.captured-pawns-8.white {
+  background-position: 0 -41.9rem;
+}
+.captured-pawns-8.black {
+  background-position: -36rem -41.9rem;
+}
+
+.captured-bishop-1 {
+  height: 1.8rem;
+  width: 1.5rem;
+}
+.captured-bishop-1.white {
+  background-position: -6.7rem -44.3rem;
+}
+.captured-bishop-1.black {
+  background-position: -42.7rem -44.3rem;
+}
+.captured-bishop-2 {
+  height: 1.9rem;
+  width: 2.3rem;
+}
+.captured-bishop-2.white {
+  background-position: -6.7rem -41.7rem;
+}
+.captured-bishop-2.black {
+  background-position: -42.7rem -41.7rem;
+}
+
+.captured-knight-1 {
+  height: 1.9rem;
+  width: 1.6rem;
+}
+.captured-knight-1.white {
+  background-position: -9.5rem -44.2rem;
+}
+.captured-knight-1.black {
+  background-position: -45.4rem -44.2rem;
+}
+.captured-knight-2 {
+  height: 1.9rem;
+  width: 2.3rem;
+}
+.captured-knight-2.white {
+  background-position: -9.5rem -41.7rem;
+}
+.captured-knight-2.black {
+  background-position: -45.4rem -41.7rem;
+}
+
+.captured-rook-1 {
+  height: 1.7rem;
+  width: 1.5rem;
+}
+.captured-rook-1.white {
+  background-position: -12rem -44.4rem;
+}
+.captured-rook-1.black {
+  background-position: -48rem -44.4rem;
+}
+
+.captured-rook-2 {
+  height: 1.7rem;
+  width: 2.3rem;
+}
+.captured-rook-2.white {
+  background-position: -12rem -41.9rem;
+}
+.captured-rook-2.black {
+  background-position: -48rem -41.9rem;
+}
+
+.captured-queen {
+  height: 1.9rem;
+  width: 1.8rem;
+}
+
+.captured-queen.white {
+  background-position: -14.5rem -41.7rem;
+}
+.captured-queen.black {
+  background-position: -50.4rem -41.7rem;
+}

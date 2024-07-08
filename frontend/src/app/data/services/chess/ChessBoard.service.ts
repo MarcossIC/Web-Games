@@ -127,7 +127,7 @@ export class ChessBoard {
   public promotedPiece(
     symbol: PieceSymbol | null,
     currentPlayer: ChessPlayers
-  ): KnightPiece | BishopPiece | RookPiece | QueenPiece {
+  ): KnightPiece | BishopPiece | RookPiece | QueenPiece | Piece {
     if (!symbol || symbol === PieceSymbol.UNKNOWN) return Piece.createEmpty();
     const pieceOptions = {
       player: currentPlayer,

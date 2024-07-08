@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
 import { ChessBoardConverter } from '@app/data/services/chess/ChessBoardConverter.service';
+import { ChessCaptureCounter } from '@app/data/services/chess/ChessCaptureCounter.service';
 import { ChessController } from '@app/data/services/chess/ChessController.service';
 import { ChessHistory } from '@app/data/services/chess/ChessHistory.service';
 import { ChessMoveCounter } from '@app/data/services/chess/ChessMoveCounter.service';
@@ -94,6 +95,7 @@ const routes: Routes = [
       ChessMoveCounter,
       ChessMoveValidator,
       ChessPieceMover,
+      ChessCaptureCounter,
     ],
   },
   {

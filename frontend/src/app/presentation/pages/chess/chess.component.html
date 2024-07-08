@@ -1,13 +1,7 @@
 <section class="shared-container relative justify-center chess-container">
   <div>Player {{ currentPlayer === 1 ? "white" : "black" }}'s go</div>
   <div class="flex flex-col gap-y-4">
-    <div class="player-card">
-      <img src="../../../../assets/images/chess/BLACK_PROFILE.webp" />
-      <div>
-        <p>Black Player</p>
-        <div></div>
-      </div>
-    </div>
+    <chess-card-player [player]="2"></chess-card-player>
     <div class="chess-board">
       @for(ROW of chessBoardView; track "x-"+x; let x = $index){ @for(PIECE of
       ROW; track "y-"+y; let y = $index){
@@ -35,12 +29,6 @@
       </div>
       } }
     </div>
-    <div class="player-card">
-      <img src="../../../../assets/images/chess/WHITE_PROFILE.webp" />
-      <div>
-        <p>White Player</p>
-        <div></div>
-      </div>
-    </div>
+    <chess-card-player [player]="1"></chess-card-player>
   </div>
 </section>

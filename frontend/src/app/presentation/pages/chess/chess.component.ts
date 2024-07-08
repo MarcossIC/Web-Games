@@ -15,6 +15,7 @@ import { Coords } from '@app/data/models/chess/chess-coords';
 import { BehaviorSubject } from 'rxjs';
 import { ChessBoardConverter } from '@app/data/services/chess/ChessBoardConverter.service';
 import { QueenPieceComponent } from '@app/presentation/components/chess-pieces/queen.component';
+import { ChessCardPlayer } from '@app/presentation/components/chess-card-player/chess-card-player.component';
 
 export type SelectedSquare = {
   symbol: PieceSymbol;
@@ -36,6 +37,7 @@ export type SelectedSquare = {
     KnightPieceComponent,
     BishopPieceComponent,
     KingPieceComponent,
+    ChessCardPlayer,
   ],
 })
 export class ChessComponent implements OnInit {
