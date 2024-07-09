@@ -151,7 +151,8 @@ export class ChessController {
     this.chessHistory.storeMove(
       promotedPieceType || PieceSymbol.UNKNOWN,
       this.chessBoard.board,
-      this.pieceMover.safeCoords
+      this.pieceMover.safeCoords,
+      this.moveCounter.fullNumberOfMoves
     );
     this.chessHistory.updateHistory(this.currentChessBoardView);
 
@@ -348,6 +349,9 @@ export class ChessController {
   }
   public get gameHistory() {
     return this.chessHistory;
+  }
+  public get history() {
+    return this.chessHistory.gameHistory;
   }
   public get safeCoords() {
     return this.pieceMover.safeCoords;

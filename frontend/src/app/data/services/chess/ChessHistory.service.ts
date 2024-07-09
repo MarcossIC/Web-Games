@@ -7,41 +7,37 @@ import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
 import KingPiece from '@app/data/services/chess/KingPiece';
 import PawnPiece from '@app/data/services/chess/PawnPiece';
 import { BOARD_ROW_SIZE, columns } from 'assets/constants/chess';
-
-type GameHistory = {
-  lastMove: LastMove | undefined;
-  checkState: CheckState;
-  board: PieceSymbol[][];
-};
-
-type MoveList = [string, string?];
+import {
+  GameHistory,
+  MoveList,
+} from '@app/data/models/chess/chess-history-move';
 
 @Injectable()
 export class ChessHistory {
   private _lastMove: LastMove | undefined;
   private _checkState: CheckState;
   private _gameHistory: GameHistory[];
-  private _moveList: MoveList[];
-  private _fullNumberOfMoves: number;
+  private _moveList: MoveList;
+  private _gameHistoryPointer: number;
 
   constructor() {
     this._gameHistory = [];
     this._checkState = { isInCheck: false };
-    this._fullNumberOfMoves = 1;
     this._moveList = [];
+    this._gameHistoryPointer = 0;
   }
 
   public resetAllHistory() {
     this._gameHistory = [];
     this._checkState = { isInCheck: false };
-    this._fullNumberOfMoves = 1;
     this._moveList = [];
   }
 
   public storeMove(
     promotedPiece: PieceSymbol,
     board: Piece[][],
-    pieceSafeCoords: SafeCoords
+    pieceSafeCoords: SafeCoords,
+    movesNumber: number
   ): void {
     const { piece, currX, currY, prevX, prevY, moveType } = this._lastMove!;
     let pieceName: string = !(piece instanceof PawnPiece)
@@ -58,9 +54,9 @@ export class ChessHistory {
         move += piece instanceof PawnPiece ? columns[prevY] + 'x' : 'x';
       }
 
-      move += columns[currY] + String(currX + 1);
+      move += columns[currY] + String(8 - currX);
 
-      if (promotedPiece) {
+      if (promotedPiece !== PieceSymbol.UNKNOWN) {
         move += '=' + promotedPiece.toUpperCase();
       }
     }
@@ -71,10 +67,10 @@ export class ChessHistory {
       move += '#';
     }
 
-    if (!this._moveList[this._fullNumberOfMoves - 1]) {
-      this._moveList[this._fullNumberOfMoves - 1] = [move];
+    if (!this._moveList[movesNumber - 1]) {
+      this._moveList[movesNumber - 1] = [move];
     } else {
-      this._moveList[this._fullNumberOfMoves - 1].push(move);
+      this._moveList[movesNumber - 1].push(move);
     }
   }
 
@@ -108,14 +104,11 @@ export class ChessHistory {
     const piecesFile = new Set(samePiecesCoords.map((coords) => coords.y));
     const piecesRank = new Set(samePiecesCoords.map((coords) => coords.x));
 
-    // means that all of the pieces are on different files (a, b, c, ...)
+    console.log({ prevX });
     if (piecesFile.size === samePiecesCoords.length) return columns[prevY];
+    if (piecesRank.size === samePiecesCoords.length) return String(8 - prevX);
 
-    // means that all of the pieces are on different rank (1, 2, 3, ...)
-    if (piecesRank.size === samePiecesCoords.length) return String(prevX + 1);
-
-    // in case that there are pieces that shares both rank and a file with multiple or one piece
-    return columns[prevY] + String(prevX + 1);
+    return columns[prevY] + String(8 - prevX);
   }
 
   public get lastMove() {
@@ -132,13 +125,6 @@ export class ChessHistory {
 
   public get moveList() {
     return this._moveList;
-  }
-
-  public get fullNumberOfMoves() {
-    return this._fullNumberOfMoves;
-  }
-  public sumFullNumberOfMoves() {
-    this._fullNumberOfMoves++;
   }
 
   public setCheckState(updated: CheckState) {
@@ -167,5 +153,19 @@ export class ChessHistory {
 
   public resetHistory() {
     this._gameHistory = [];
+  }
+
+  public advanceHistoryPointer() {
+    this._gameHistoryPointer++;
+  }
+  public goBackHistoryPointer() {
+    this._gameHistoryPointer--;
+  }
+  public moveHistoryPointerTo(to: number) {
+    this._gameHistoryPointer = to;
+  }
+
+  public get gameHistoryPointer() {
+    return this._gameHistoryPointer;
   }
 }

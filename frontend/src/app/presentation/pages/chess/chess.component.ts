@@ -1,5 +1,18 @@
-import { CommonModule, NgClass } from '@angular/common';
-import { Component, OnInit, Type, inject, signal } from '@angular/core';
+import {
+  CommonModule,
+  DOCUMENT,
+  NgClass,
+  isPlatformBrowser,
+} from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  PLATFORM_ID,
+  Type,
+  inject,
+  signal,
+} from '@angular/core';
 import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
 import { Piece } from '@app/data/services/chess/Piece';
 import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
@@ -12,10 +25,14 @@ import { RookPieceComponent } from '@app/presentation/components/chess-pieces/ro
 import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import { ChessGameOverType } from '@app/data/models/chess/chess-gameOverType';
 import { Coords } from '@app/data/models/chess/chess-coords';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, filter, fromEvent, tap } from 'rxjs';
 import { ChessBoardConverter } from '@app/data/services/chess/ChessBoardConverter.service';
 import { QueenPieceComponent } from '@app/presentation/components/chess-pieces/queen.component';
 import { ChessCardPlayer } from '@app/presentation/components/chess-card-player/chess-card-player.component';
+import { LastMove } from '@app/data/models/chess/chess-lastmove';
+import { CheckState } from '@app/data/models/chess/chess-checkstate';
+import { ChessMoveListComponent } from '@app/presentation/components/chess-move-list/chess-move-list.component';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 export type SelectedSquare = {
   symbol: PieceSymbol;
@@ -38,22 +55,64 @@ export type SelectedSquare = {
     BishopPieceComponent,
     KingPieceComponent,
     ChessCardPlayer,
+    ChessMoveListComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChessComponent implements OnInit {
   protected controller = inject(ChessController);
-  protected selectedSquare: SelectedSquare = { symbol: PieceSymbol.UNKNOWN };
-  private pieceSafeCoords: Coords[] = [];
-  public isPromotionActive: boolean = false;
-  private promotionCoords: Coords | null = null;
-  private promotedPiece: PieceSymbol = PieceSymbol.UNKNOWN;
-  public boardView = signal(this.chessBoardView);
-  public gameHistoryPointer: number = 0;
-  public chessBoardState$ = new BehaviorSubject<string>(
-    ChessBoardConverter.DEFAULT_INITIAL_POSITION
-  );
+  private document = inject(DOCUMENT);
+  private platformId = inject(PLATFORM_ID);
+  protected selectedSquare: SelectedSquare;
+  private pieceSafeCoords: Coords[];
+  public isPromotionActive: boolean;
+  private promotionCoords: Coords | null;
+  private promotedPiece: PieceSymbol;
+  public chessBoardState$: BehaviorSubject<string>;
+  public chessBoardView: PieceSymbol[][];
 
-  ngOnInit(): void {
+  constructor() {
+    this.chessBoardView = this.controller.currentChessBoardView;
+    this.selectedSquare = { symbol: PieceSymbol.UNKNOWN };
+    this.pieceSafeCoords = [];
+    this.isPromotionActive = false;
+    this.promotionCoords = null;
+    this.promotedPiece = PieceSymbol.UNKNOWN;
+    this.chessBoardState$ = new BehaviorSubject(
+      ChessBoardConverter.DEFAULT_INITIAL_POSITION
+    );
+    if (isPlatformBrowser(this.platformId)) {
+      fromEvent<KeyboardEvent>(this.document, 'keyup')
+        .pipe(
+          filter(
+            (event) => event.key === 'ArrowRight' || event.key === 'ArrowLeft'
+          ),
+          tap((event) => {
+            const pointer = this.controller.gameHistory.gameHistoryPointer;
+            const historySize =
+              this.controller.gameHistory.gameHistory.length - 1;
+            switch (event.key) {
+              case 'ArrowRight':
+                if (pointer === historySize) return;
+                this.controller.gameHistory.advanceHistoryPointer();
+                break;
+              case 'ArrowLeft':
+                if (pointer === 0) return;
+                this.controller.gameHistory.goBackHistoryPointer();
+                break;
+              default:
+                break;
+            }
+
+            this.showPreviousPosition(pointer);
+          }),
+          takeUntilDestroyed()
+        )
+        .subscribe();
+    }
+  }
+
+  public ngOnInit(): void {
     this.controller.restartGame();
   }
 
@@ -244,16 +303,21 @@ export class ChessComponent implements OnInit {
     promotedPiece: PieceSymbol | null
   ): void {
     this.controller.movePiece(prevX, prevY, newX, newY, promotedPiece);
-    this.boardView.set(this.chessBoardView);
-    this.markLastMoveAndCheckState();
+    this.chessBoardView = this.controller.currentChessBoardView;
+    this.markLastMoveAndCheckState(this.lastMove, this.checkState);
     this.unmarkingPreviouslySlectedAndSafeSquares();
 
     this.chessBoardState$.next(this.controller.boardAsSymbols);
 
-    this.gameHistoryPointer++;
+    this.controller.gameHistory.advanceHistoryPointer();
   }
 
-  private markLastMoveAndCheckState(): void {
+  private markLastMoveAndCheckState(
+    lastMove: LastMove | undefined,
+    checkState: CheckState
+  ): void {
+    this.controller.gameHistory.setLastMove(lastMove);
+    this.controller.gameHistory.setCheckState(checkState);
     if (this.lastMove) {
       //this.moveSound(this.lastMove.moveType);
     } else {
@@ -266,15 +330,20 @@ export class ChessComponent implements OnInit {
     this.placingPiece(x, y);
   }
 
+  public showPreviousPosition(moveIndex: number): void {
+    const { board, checkState, lastMove } = this.controller.history[moveIndex];
+    this.chessBoardView = board;
+    this.markLastMoveAndCheckState(lastMove, checkState);
+    this.controller.gameHistory.moveHistoryPointerTo(moveIndex);
+  }
+
   protected get currentPlayer() {
     return this.controller.playerGo;
   }
   protected get gameOverType() {
     return this.controller.gameOverType;
   }
-  protected get chessBoardView() {
-    return this.controller.currentChessBoardView;
-  }
+
   protected get safeCoords() {
     return this.controller.safeCoords;
   }

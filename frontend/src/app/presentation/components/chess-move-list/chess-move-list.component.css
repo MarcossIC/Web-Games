@@ -1,0 +1,54 @@
+.move-list {
+  min-height: 360px;
+  max-height: 360px;
+  overflow-y: scroll;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: #ddddddad var(--chess-side-color);
+  scrollbar-gutter: stable;
+}
+
+.row {
+  display: flex;
+  justify-content: flex-start;
+  column-gap: 1.35rem;
+  font-weight: 600;
+  height: 100%;
+  min-height: 35px;
+  max-height: 35px;
+  color: white;
+  line-height: 30px;
+  overflow: hidden;
+  padding: 0 15px 0 15px;
+  position: relative;
+  width: 100%;
+
+  .row-moves {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    column-gap: 5.5rem;
+    width: 100%;
+  }
+}
+.row:nth-child(even) {
+  background-color: var(--chess-side-even-color);
+}
+
+.move-number {
+  width: 50px;
+}
+
+.current-move {
+  background-color: #1e1f34b5;
+}
+
+.move {
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 30px;
+  min-width: 65px;
+  padding-inline: 5px;
+}
