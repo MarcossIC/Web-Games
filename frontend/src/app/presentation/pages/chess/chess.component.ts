@@ -36,6 +36,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ChessGameBoard } from '@app/presentation/components/chess-board/chess-board.component';
 import { ChessSquare } from '@app/presentation/components/chess-square/chess-square.component';
 import { ChessPromotionDialog } from '@app/presentation/components/chess-promotion-dialog/chess-promotion-dialog.component';
+import { ChessSideController } from '@app/presentation/components/chess-side-controller/chess-side-controller.component';
 
 export type SelectedSquare = {
   symbol: PieceSymbol;
@@ -62,6 +63,7 @@ export type SelectedSquare = {
     ChessGameBoard,
     ChessSquare,
     ChessPromotionDialog,
+    ChessSideController,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -119,7 +121,17 @@ export class ChessComponent implements OnInit {
   }
 
   public ngOnInit(): void {
+    this.restartGame();
+  }
+
+  public restartGame() {
     this.controller.restartGame();
+    this.chessBoardView = this.controller.currentChessBoardView;
+    this.selectedSquare = { symbol: PieceSymbol.UNKNOWN };
+    this.pieceSafeCoords = [];
+    this.isPromotionActive = false;
+    this.promotionCoords = null;
+    this.promotedPiece = PieceSymbol.UNKNOWN;
   }
 
   public isSquareLastMove(x: number, y: number) {

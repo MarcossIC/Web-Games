@@ -27,49 +27,15 @@
     </ng-container>
     <chess-card-player white [player]="1"></chess-card-player>
   </chess-game-board>
-  <div class="chess-side-board">
-    <div class="chess-side-board-container">
-      <div class="player-controller-moves">
-        <div class="controller-title"><span>Game moves</span></div>
-        <div class="move-controller-container">
-          <div class="flex justify-around items-start">
-            <button
-              class="inline-flex border-0 overflow-hidden rounded-lg max-w-full max-h-[30px] px-3"
-            >
-              <svg
-                height="30px"
-                width="30px"
-                viewBox="0 -960 960 960"
-                fill="#e8eaed"
-              >
-                <path
-                  d="M400-80 0-480l400-400 61 61.67L122.67-480 461-141.67 400-80Z"
-                />
-              </svg>
-            </button>
-            <button
-              class="inline-flex border-0 overflow-hidden rounded-lg max-w-full max-h-[30px]"
-            >
-              <svg
-                height="30px"
-                width="30px"
-                viewBox="0 -960 960 960"
-                fill="#e8eaed"
-              >
-                <path
-                  d="m309.67-81.33-61-61.67L587-481.33 248.67-819.67l61-61.66 400 400-400 400Z"
-                />
-              </svg>
-            </button>
-          </div>
-          <chess-move-list
-            [moveList]="controller.gameHistory.moveList"
-            [pointer]="controller.gameHistory.gameHistoryPointer"
-            (showPreviousPositionEvent)="showPreviousPosition($event)"
-          ></chess-move-list>
-        </div>
-      </div>
-      <div></div>
-    </div>
-  </div>
+  <chess-side-controller
+    (forward)="restartGame()"
+    (goBack)="restartGame()"
+    (reset)="restartGame()"
+  >
+    <chess-move-list
+      [moveList]="controller.gameHistory.moveList"
+      [pointer]="controller.gameHistory.gameHistoryPointer"
+      (showPreviousPositionEvent)="showPreviousPosition($event)"
+    ></chess-move-list>
+  </chess-side-controller>
 </section>

@@ -1,0 +1,19 @@
+.chess-btn {
+  display: inline-flex;
+  width: var(--chess-button-w);
+  border: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  max-width: 100%;
+  max-height: var(--chess-button-h);
+  background: #383a55;
+  justify-content: center;
+  padding-block: 5px;
+  margin-block: 10px;
+}
+
+.chess-btn ::ng-deep svg {
+  color: #e8eaed;
+  width: var(--chess-button-icon-size);
+  height: var(--chess-button-icon-size);
+}

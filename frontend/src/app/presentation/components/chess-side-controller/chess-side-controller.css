@@ -1,0 +1,46 @@
+.chess-side-board {
+  display: flex;
+  flex-direction: column;
+  width: var(--chess-side-w);
+  background-color: var(--chess-side-color);
+}
+
+.chess-side-board-container {
+  border-radius: 0.6rem;
+  color: var(--chess-side-text-color);
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.move-controller-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column-reverse;
+}
+.player-controller-moves {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.controller-title {
+  display: flex;
+  flex-shrink: 0;
+  height: 2.5rem;
+  justify-content: space-between;
+  align-items: center;
+
+  span {
+    display: inline-block;
+    font-size: var(--chess-side-text-size);
+    line-height: 1.25rem;
+    overflow: hidden;
+    padding-left: 1.6rem;
+    padding-right: 1rem;
+    position: relative;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: pre;
+  }
+}
