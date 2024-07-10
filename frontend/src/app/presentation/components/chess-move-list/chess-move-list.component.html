@@ -1,24 +1,24 @@
-
-  <div class="move-list">
-    @for (MOVE of moveList(); track 'mc-'+moveNumber; let moveNumber = $index) {
-    <div class="row">
-      <div class="move-number">{{ moveNumber + 1 }}.</div>
-      <div class="row-moves">
-        <div
-          class="move"
-          [ngClass]="[getCurrentMove(moveNumber, 1)]"
-          (click)="showPreviousPosition(moveNumber * 2 + 1)"
-        >
-          {{ MOVE[0] }}
-        </div>
-        <div
-          class="move"
-          [ngClass]="[getCurrentMove(moveNumber, 2)]"
-          (click)="showPreviousPosition(moveNumber * 2 + 2)"
-        >
-          {{ MOVE[1] }}
-        </div>
+<div class="move-list">
+  @for (MOVE of moveList(); track 'mc-'+moveNumber; let moveNumber = $index) {
+  <div class="row">
+    <div class="move-number">{{ moveNumber + 1 }}.</div>
+    <div class="row-moves">
+      <div
+        class="move"
+        [ngClass]="[getCurrentMove(moveNumber, 1)]"
+        (click)="showPreviousPosition(moveNumber * 2 + 1)"
+      >
+        {{ MOVE[0] }}
+      </div>
+      <div
+        class="move"
+        [ngClass]="[getCurrentMove(moveNumber, 2)]"
+        (click)="showPreviousPosition(moveNumber * 2 + 2)"
+      >
+        {{ MOVE[1] }}
       </div>
     </div>
-    }
   </div>
+  }
+  <div scrollTo [trigger]="updateList"></div>
+</div>

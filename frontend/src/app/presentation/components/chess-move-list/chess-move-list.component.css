@@ -6,7 +6,6 @@
   flex-direction: column;
   scrollbar-width: thin;
   scrollbar-color: #ddddddad var(--chess-side-color);
-  scrollbar-gutter: stable;
 }
 
 .row {
