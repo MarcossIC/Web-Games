@@ -24,7 +24,7 @@ import { KingPieceComponent } from '@app/presentation/components/chess-pieces/ki
 import { RookPieceComponent } from '@app/presentation/components/chess-pieces/rook.component';
 import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import { ChessGameOverType } from '@app/data/models/chess/chess-gameOverType';
-import { Coords } from '@app/data/models/chess/chess-coords';
+import { Coords, CoordsInARow } from '@app/data/models/chess/chess-coords';
 import { BehaviorSubject, filter, fromEvent, tap } from 'rxjs';
 import { ChessBoardConverter } from '@app/data/services/chess/ChessBoardConverter.service';
 import { QueenPieceComponent } from '@app/presentation/components/chess-pieces/queen.component';
@@ -33,6 +33,9 @@ import { LastMove } from '@app/data/models/chess/chess-lastmove';
 import { CheckState } from '@app/data/models/chess/chess-checkstate';
 import { ChessMoveListComponent } from '@app/presentation/components/chess-move-list/chess-move-list.component';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChessGameBoard } from '@app/presentation/components/chess-board/chess-board.component';
+import { ChessSquare } from '@app/presentation/components/chess-square/chess-square.component';
+import { ChessPromotionDialog } from '@app/presentation/components/chess-promotion-dialog/chess-promotion-dialog.component';
 
 export type SelectedSquare = {
   symbol: PieceSymbol;
@@ -56,6 +59,9 @@ export type SelectedSquare = {
     KingPieceComponent,
     ChessCardPlayer,
     ChessMoveListComponent,
+    ChessGameBoard,
+    ChessSquare,
+    ChessPromotionDialog,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -116,76 +122,33 @@ export class ChessComponent implements OnInit {
     this.controller.restartGame();
   }
 
-  public getPromotionPieces(): PieceSymbol[] {
-    return this.controller.playerGo === ChessPlayers.WHITE
-      ? [
-          PieceSymbol.WHITE_KNIGHT,
-          PieceSymbol.WHITE_BISHOP,
-          PieceSymbol.WHITE_ROOK,
-          PieceSymbol.WHITE_QUEEN,
-        ]
-      : [
-          PieceSymbol.BLACK_KNIGHT,
-          PieceSymbol.BLACK_BISHOP,
-          PieceSymbol.BLACK_ROOK,
-          PieceSymbol.BLACK_QUEEN,
-        ];
-  }
-
-  public getSquareColor(row: number, column: number): string {
-    return ChessBoard.isSquareWhite(row, column)
-      ? 'square-white'
-      : 'square-black';
-  }
-
-  public getPiecePlayer(pieceSymbol: PieceSymbol) {
-    if (pieceSymbol === PieceSymbol.UNKNOWN) {
-      return 'empty-piece';
-    }
-    return pieceSymbol === pieceSymbol.toUpperCase()
-      ? 'white-piece'
-      : 'black-piece';
-  }
-
-  public getPiece(symbol: PieceSymbol): Type<any> | null {
-    return Piece.SYMBOL_TO_COMPONENT[symbol];
-  }
-
   public isSquareLastMove(x: number, y: number) {
-    if (!this.lastMove) return '';
+    if (!this.lastMove) return false;
     const { prevX, prevY, currX, currY } = this.lastMove;
-    const isLastMove =
-      (x === prevX && y === prevY) || (x === currX && y === currY);
 
-    return isLastMove ? 'piece-last-move' : '';
+    return (x === prevX && y === prevY) || (x === currX && y === currY);
   }
   public isSquareChecked(x: number, y: number) {
-    const isCheckedSquare =
+    return (
       this.checkState.isInCheck &&
       this.checkState.x === x &&
-      this.checkState.y === y;
-    return isCheckedSquare ? 'king-in-check' : '';
+      this.checkState.y === y
+    );
   }
 
   public isSquarePromotionSquare(x: number, y: number) {
-    if (!this.promotionCoords) return '';
-    const isPromotion =
-      this.promotionCoords.x === x && this.promotionCoords.y === y;
-    return isPromotion ? 'promotion-square' : '';
+    if (!this.promotionCoords) return false;
+    return this.promotionCoords.x === x && this.promotionCoords.y === y;
   }
 
   public isSquareSelected(x: number, y: number) {
     if (
       !this.selectedSquare.symbol ||
       this.selectedSquare.symbol === PieceSymbol.UNKNOWN
-    ) {
-      return '';
-    }
+    )
+      return false;
 
-    const isSelected =
-      this.selectedSquare.x === x && this.selectedSquare.y === y;
-
-    return isSelected ? 'square-selected' : '';
+    return this.selectedSquare.x === x && this.selectedSquare.y === y;
   }
 
   public isSquareSafeForSelectedPiece(x: number, y: number): boolean {
@@ -325,7 +288,7 @@ export class ChessComponent implements OnInit {
     }
   }
 
-  public move(x: number, y: number): void {
+  public move([x, y]: CoordsInARow): void {
     this.selectingPiece(x, y);
     this.placingPiece(x, y);
   }

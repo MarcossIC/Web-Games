@@ -4,6 +4,7 @@ import {
   Component,
   inject,
   input,
+  Type,
 } from '@angular/core';
 import {
   CaptureCounter,
@@ -21,141 +22,18 @@ import { Observable } from 'rxjs';
 
 @Component({
   standalone: true,
-  imports: [AsyncPipe, NgClass],
-  selector: 'chess-captured-pieces',
+  imports: [NgClass],
+  selector: 'chess-game-board',
   template: `
-    <div class="chess-board">
-      @for(ROW of chessBoardView(); track "x-"+x; let x = $index){ @for(PIECE of
-      ROW; track "y-"+y; let y = $index){
-      <div
-        class="chess-square"
-        [id]="'square-' + x + '-' + y"
-        [ngClass]="[
-          getSquareColor(x, y),
-          getPiecePlayer(PIECE),
-          isSquarePromotionSquare(x, y),
-          isSquareChecked(x, y),
-          isSquareSelected(x, y),
-          isSquareLastMove(x, y)
-        ]"
-        (click)="move(x, y)"
-      >
-        <div
-          [ngClass]="{ 'safe-square': isSquareSafeForSelectedPiece(x, y) }"
-        ></div>
-        <div class="piece">
-          @if(getPiece(PIECE); as piece){
-          <ng-container *ngComponentOutlet="piece"></ng-container>
-          }
-        </div>
+    <div class="chess-game-container">
+      <ng-content select="[black]"></ng-content>
+      <div class="chess-board">
+        <ng-content></ng-content>
       </div>
-      } } @if(isPromotionActive()){
-      <div class="promotion-dialog">
-        <div
-          class="close-promotion-dialog"
-          (click)="closePawnPromotionDialog()"
-        >
-          &times;
-        </div>
-        @for(PIECE_SYMBOL of getPromotionPieces(); track "pp-"+$index){
-        @if(getPiece(PIECE_SYMBOL); as piece){
-        <div
-          class="piece w-full h-[22%] piece-promotion-style cursor-pointer"
-          [ngClass]="[getPiecePlayer(PIECE_SYMBOL)]"
-          (click)="promotePiece(PIECE_SYMBOL)"
-        >
-          <ng-container *ngComponentOutlet="piece"></ng-container>
-        </div>
-        } }
-      </div>
-      }
+      <ng-content select="[white]"></ng-content>
     </div>
   `,
   styleUrl: './chess-board.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChessCapturedPieces {
-  public chessBoardView = input<PieceSymbol[][]>([]);
-  public lastMove = input<LastMove | undefined>();
-  public checkState = input<CheckState>({ isInCheck: false });
-  public pieceSafeCoords = input<Coords[]>([]);
-  public isPromotionActive = input<boolean>(false);
-  public player = input<ChessPlayers>(ChessPlayers.WHITE);
-
-  public getPromotionPieces(): PieceSymbol[] {
-    return this.player() === ChessPlayers.WHITE
-      ? [
-          PieceSymbol.WHITE_KNIGHT,
-          PieceSymbol.WHITE_BISHOP,
-          PieceSymbol.WHITE_ROOK,
-          PieceSymbol.WHITE_QUEEN,
-        ]
-      : [
-          PieceSymbol.BLACK_KNIGHT,
-          PieceSymbol.BLACK_BISHOP,
-          PieceSymbol.BLACK_ROOK,
-          PieceSymbol.BLACK_QUEEN,
-        ];
-  }
-  public isSquareLastMove(x: number, y: number) {
-    if (!this.lastMove) return '';
-    const { prevX, prevY, currX, currY } = this.lastMove()!;
-    const isLastMove =
-      (x === prevX && y === prevY) || (x === currX && y === currY);
-
-    return isLastMove ? 'piece-last-move' : '';
-  }
-  public isSquareChecked(x: number, y: number) {
-    const isCheckedSquare =
-      this.checkState().isInCheck &&
-      this.checkState().x === x &&
-      this.checkState().y === y;
-    return isCheckedSquare ? 'king-in-check' : '';
-  }
-
-  public isSquarePromotionSquare(x: number, y: number) {
-    if (!this.promotionCoords) return '';
-    const isPromotion =
-      this.promotionCoords.x === x && this.promotionCoords.y === y;
-    return isPromotion ? 'promotion-square' : '';
-  }
-
-  public isSquareSelected(x: number, y: number) {
-    if (
-      !this.selectedSquare.symbol ||
-      this.selectedSquare.symbol === PieceSymbol.UNKNOWN
-    ) {
-      return '';
-    }
-
-    const isSelected =
-      this.selectedSquare.x === x && this.selectedSquare.y === y;
-
-    return isSelected ? 'square-selected' : '';
-  }
-
-  public isSquareSafeForSelectedPiece(x: number, y: number): boolean {
-    return this.pieceSafeCoords().some(
-      (coords) => coords.x === x && coords.y === y
-    );
-  }
-
-  public getSquareColor(row: number, column: number): string {
-    return ChessBoard.isSquareWhite(row, column)
-      ? 'square-white'
-      : 'square-black';
-  }
-
-  public getPiecePlayer(pieceSymbol: PieceSymbol) {
-    if (pieceSymbol === PieceSymbol.UNKNOWN) {
-      return 'empty-piece';
-    }
-    return pieceSymbol === pieceSymbol.toUpperCase()
-      ? 'white-piece'
-      : 'black-piece';
-  }
-
-  public getPiece(symbol: PieceSymbol): Type<any> | null {
-    return Piece.SYMBOL_TO_COMPONENT[symbol];
-  }
-}
+export class ChessGameBoard {}

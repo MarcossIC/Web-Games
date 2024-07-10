@@ -3,4 +3,6 @@ export type Coords = {
   y: number;
 };
 
+export type CoordsInARow = [number, number];
+
 export type SafeCoords = Map<string, Coords[]>;

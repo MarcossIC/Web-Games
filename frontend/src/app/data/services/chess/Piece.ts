@@ -70,6 +70,13 @@ export class Piece {
     return piece;
   }
 
+  public static getPiecePlayer(piece: PieceSymbol) {
+    if (piece === PieceSymbol.UNKNOWN) {
+      return 'empty-piece';
+    }
+    return piece === piece.toUpperCase() ? 'white-piece' : 'black-piece';
+  }
+
   public get weight(): number {
     return this._weight;
   }

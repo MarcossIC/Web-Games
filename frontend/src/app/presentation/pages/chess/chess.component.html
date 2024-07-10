@@ -1,56 +1,32 @@
 <section
   class="shared-container relative justify-center chess-container flex !flex-row gap-x-4"
 >
-  <div class="chess-game-container">
-    <chess-card-player [player]="2"></chess-card-player>
-    <div class="chess-board">
+  <chess-game-board>
+    <chess-card-player black [player]="2"></chess-card-player>
+    <ng-container>
       @for(ROW of chessBoardView; track "x-"+x; let x = $index){ @for(PIECE of
       ROW; track "y-"+y; let y = $index){
-      <div
-        class="chess-square"
-        [id]="'square-' + x + '-' + y"
-        [ngClass]="[
-          getSquareColor(x, y),
-          getPiecePlayer(PIECE),
-          isSquarePromotionSquare(x, y),
-          isSquareChecked(x, y),
-          isSquareSelected(x, y),
-          isSquareLastMove(x, y)
-        ]"
-        (click)="move(x, y)"
-      >
-        <div
-          [ngClass]="{ 'safe-square': isSquareSafeForSelectedPiece(x, y) }"
-        ></div>
-        <div class="piece">
-          @if(getPiece(PIECE); as piece){
-          <ng-container *ngComponentOutlet="piece"></ng-container>
-          }
-        </div>
-      </div>
+      <chess-square
+        (clickSquare)="move($event)"
+        [row]="x"
+        [column]="y"
+        [piece]="PIECE"
+        [isSquarePromotionSquare]="isSquarePromotionSquare(x, y)"
+        [isSquareChecked]="isSquareChecked(x, y)"
+        [isSquareSelected]="isSquareSelected(x, y)"
+        [isSquareLastMove]="isSquareLastMove(x, y)"
+        [isSquareSafeForSelectedPiece]="isSquareSafeForSelectedPiece(x, y)"
+      ></chess-square>
       } } @if(isPromotionActive){
-      <div class="promotion-dialog">
-        <div
-          class="close-promotion-dialog"
-          (click)="closePawnPromotionDialog()"
-        >
-          &times;
-        </div>
-        @for(PIECE_SYMBOL of getPromotionPieces(); track "pp-"+$index){
-        @if(getPiece(PIECE_SYMBOL); as piece){
-        <div
-          class="piece w-full h-[22%] piece-promotion-style cursor-pointer"
-          [ngClass]="[getPiecePlayer(PIECE_SYMBOL)]"
-          (click)="promotePiece(PIECE_SYMBOL)"
-        >
-          <ng-container *ngComponentOutlet="piece"></ng-container>
-        </div>
-        } }
-      </div>
+      <chess-promotion-dialog
+        [player]="currentPlayer"
+        (closeDialog)="closePawnPromotionDialog()"
+        (promote)="promotePiece($event)"
+      ></chess-promotion-dialog>
       }
-    </div>
-    <chess-card-player [player]="1" />
-  </div>
+    </ng-container>
+    <chess-card-player white [player]="1"></chess-card-player>
+  </chess-game-board>
   <div class="chess-side-board">
     <div class="chess-side-board-container">
       <div class="player-controller-moves">
