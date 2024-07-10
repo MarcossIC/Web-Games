@@ -4,7 +4,13 @@ section.chess-container {
 
   --chess-board-white-color: #e8edf9;
   --chess-board-black-color: #b7c0d8;
-  --chess-square-size: 45px;
+  --chess-square-size: 60px;
+  --chess-player-name-size: 0.975rem;
+
+  --chess-side-w: 400px;
+  --chess-side-text-size: 1rem;
+  --chess-side-h: 360px;
+  --chess-side-move-text-size: 1rem;
 }
 
 .chess-board {
@@ -23,17 +29,13 @@ section.chess-container {
 .chess-side-board {
   --chess-side-color: #2c2e43;
   --chess-side-even-color: #2e3046;
-  --chess-side-w: 400px;
   --chess-side-text-color: hsla(0, 0%, 100%, 0.72);
   display: flex;
   flex-direction: column;
   width: var(--chess-side-w);
-  position: absolute;
-  left: 80%;
-  top: 10%;
-  translate: -60% 0%;
   background-color: var(--chess-side-color);
 }
+
 .chess-side-board-container {
   border-radius: 0.6rem;
   color: var(--chess-side-text-color);
@@ -62,7 +64,7 @@ section.chess-container {
 
   span {
     display: inline-block;
-    font-size: 1rem;
+    font-size: var(--chess-side-text-size);
     line-height: 1.25rem;
     overflow: hidden;
     padding-left: 1.6rem;
@@ -79,11 +81,6 @@ section.chess-container {
   flex-direction: column;
   row-gap: 1rem;
   height: 100%;
-  max-height: 500px;
-  position: absolute;
-  left: 50%;
-  translate: -60% -60%;
-  top: 50%;
 }
 
 .chess-square {
@@ -96,7 +93,6 @@ section.chess-container {
   user-select: none;
   pointer-events: none;
   -webkit-touch-callout: none;
-  float: left;
 
   --piece-border-color: var(--chess-piece-white-color);
   --piece-bg-color: var(--chess-piece-black-color);
@@ -121,8 +117,8 @@ section.chess-container {
 }
 .chess-square > .safe-square {
   position: absolute;
-  height: 20px;
-  width: 20px;
+  height: calc(var(--chess-square-size) / 2);
+  width: calc(var(--chess-square-size) / 2);
   background-color: #4a596c70;
   border-radius: 50%;
   z-index: 100;

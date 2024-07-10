@@ -1,6 +1,7 @@
 .move-list {
-  min-height: 360px;
-  max-height: 360px;
+  height: 100%;
+  min-height: var(--chess-side-h);
+  max-height: var(--chess-side-h);
   overflow-y: scroll;
   display: flex;
   flex-direction: column;
@@ -48,6 +49,7 @@
   cursor: pointer;
   white-space: nowrap;
   line-height: 30px;
+  font-size: var(--chess-side-move-text-size);
   min-width: 65px;
   padding-inline: 5px;
 }

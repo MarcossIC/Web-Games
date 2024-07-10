@@ -16,14 +16,12 @@ export class ScrollToDirective implements OnChanges {
   @Input({ required: true }) trigger: any;
 
   ngOnChanges(changes: SimpleChanges) {
-    console.log('Execute?');
-    if (changes['trigger']) {
+    if (changes['trigger'] && this.trigger >= 5) {
       this.scrollIntoView();
     }
   }
 
   private scrollIntoView(): void {
-    console.log('Enter?');
     this.el.nativeElement.scrollIntoView({ behavior: 'smooth' });
   }
 }
