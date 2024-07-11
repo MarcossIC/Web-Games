@@ -21,7 +21,7 @@ section.chess-container {
   --chess-side-moves-gap: 10cqw;
   --chess-side-moves-move-gap: 25cqw;
   --chess-side-moves-size: 25cqw;
-  --chess-side-move-row-h: 35px;
+  --chess-side-move-row-h: 37px;
   --chess-side-color: #2c2e43;
   --chess-side-even-color: #2e3046;
   --chess-side-text-color: hsla(0, 0%, 100%, 0.72);
@@ -39,7 +39,14 @@ section.chess-container {
   section.chess-container {
     padding-block: 1.5rem;
     --chess-square-size: 48px;
+    --chess-side-w: 85dvw;
     --chess-side-move-text-size: 0.875rem;
+    --chess-side-moves-gap: 10cqw;
+    --chess-side-moves-move-gap: 25cqw;
+    --chess-side-moves-size: 13cqw;
+    --chess-button-w: 28cqw;
+    --chess-button-h: 45px;
+    --chess-button-icon-size: 35px;
   }
 }
 
@@ -60,7 +67,7 @@ section.chess-container {
     --chess-side-moves-size: 40px;
     --chess-button-w: 80px;
     --chess-button-h: 35px;
-    --chess-button-icon-size: 28px;
+    --chess-button-icon-size: 25px;
   }
 }
 
