@@ -1,6 +1,6 @@
 [build]
   base = "/"
-  command = "ng build"
+  command = "pnpm build"
   publish = "dist/frontend/browser"
 
 [[redirects]]
