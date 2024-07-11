@@ -1,6 +1,6 @@
 [build]
   base = "/frontend/"
-  command = "npm run build"
+  command = "pnpm run build"
   publish = "dist/frontend/browser"
 
 [[redirects]]
