@@ -213,6 +213,11 @@ export class ChessComponent implements OnInit {
     }
 
     const { x: prevX, y: prevY } = this.selectedSquare;
+    const realPointer = this.realHistoryPointer;
+    if (realPointer !== this.controller.gameHistory.gameHistoryPointer) {
+      this.controller.gameHistory.moveHistoryPointerTo(realPointer);
+    }
+
     this.updateBoard(prevX!, prevY!, newX, newY, this.promotedPiece);
   }
 
@@ -310,6 +315,17 @@ export class ChessComponent implements OnInit {
     this.chessBoardView = board;
     this.markLastMoveAndCheckState(lastMove, checkState);
     this.controller.gameHistory.moveHistoryPointerTo(moveIndex);
+  }
+
+  private get realHistoryPointer() {
+    const list = this.controller.gameHistory.moveList;
+    const listSize = list.length;
+    if (listSize === 1 || listSize === 0) {
+      return listSize === 0 ? 0 : list[0]?.length;
+    }
+    return this.currentPlayer === ChessPlayers.BLACK
+      ? listSize * 2 - 1
+      : listSize * 2;
   }
 
   protected get currentPlayer() {

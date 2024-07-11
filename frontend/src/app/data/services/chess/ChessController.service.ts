@@ -106,6 +106,7 @@ export class ChessController {
     );
     this.swapPlyer();
     this.updateMoveHistory(prevX, prevY, newX, newY, moveType);
+
     const updatedSafeCoords = this.pieceMover.findSafeCoords(
       this.chessBoard.board,
       {
