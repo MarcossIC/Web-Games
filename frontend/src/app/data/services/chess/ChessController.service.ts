@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
 import { Piece } from '@app/data/services/chess/Piece';
 import { ChessPlayers } from '@app/data/models/chess/chess-players';
@@ -27,6 +27,7 @@ export class ChessController {
   private _playerTurn: ChessPlayers;
   private _boardAsSymbols: string;
   private _gameOverType: ChessGameOverType;
+  private _isPaused = signal(true);
 
   constructor() {
     this._isGameOver = false;
@@ -345,6 +346,12 @@ export class ChessController {
   }
   public get isGameOver() {
     return this._isGameOver;
+  }
+  public get isPaused() {
+    return this._isPaused();
+  }
+  public set isPaused(updated) {
+    this._isPaused.set(updated);
   }
 
   public get boardAsSymbols() {

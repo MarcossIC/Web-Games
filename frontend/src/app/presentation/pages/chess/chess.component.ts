@@ -7,6 +7,7 @@ import {
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   PLATFORM_ID,
   Type,
@@ -37,6 +38,7 @@ import { ChessGameBoard } from '@app/presentation/components/chess-board/chess-b
 import { ChessSquare } from '@app/presentation/components/chess-square/chess-square.component';
 import { ChessPromotionDialog } from '@app/presentation/components/chess-promotion-dialog/chess-promotion-dialog.component';
 import { ChessSideController } from '@app/presentation/components/chess-side-controller/chess-side-controller.component';
+import { WelcomeChessModal } from '@app/presentation/components/welcome-chess-modal/welcome-chessmodal.component';
 
 export type SelectedSquare = {
   symbol: PieceSymbol;
@@ -64,6 +66,7 @@ export type SelectedSquare = {
     ChessSquare,
     ChessPromotionDialog,
     ChessSideController,
+    WelcomeChessModal,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -71,6 +74,7 @@ export class ChessComponent implements OnInit {
   protected controller = inject(ChessController);
   private document = inject(DOCUMENT);
   private platformId = inject(PLATFORM_ID);
+  private detroy$ = inject(DestroyRef);
   protected selectedSquare: SelectedSquare;
   private pieceSafeCoords: Coords[];
   public isPromotionActive: boolean;
@@ -93,13 +97,18 @@ export class ChessComponent implements OnInit {
       fromEvent<KeyboardEvent>(this.document, 'keyup')
         .pipe(
           filter(
-            (event) => event.key === 'ArrowRight' || event.key === 'ArrowLeft'
+            (event) =>
+              event.key === 'ArrowRight' ||
+              event.key === 'ArrowLeft' ||
+              event.key === 'p' ||
+              event.key === 'Escape'
           ),
-          tap((event) => {
+          tap(({ key }) => {
+            console.log({ key });
             const pointer = this.controller.gameHistory.gameHistoryPointer;
             const historySize =
               this.controller.gameHistory.gameHistory.length - 1;
-            switch (event.key) {
+            switch (key) {
               case 'ArrowRight':
                 if (pointer === historySize) return;
                 this.controller.gameHistory.advanceHistoryPointer();
@@ -108,13 +117,20 @@ export class ChessComponent implements OnInit {
                 if (pointer === 0) return;
                 this.controller.gameHistory.goBackHistoryPointer();
                 break;
+              case 'p':
+              case 'Escape':
+                console.log('isBe', this.controller.isPaused);
+                if (this.controller.isPaused) return;
+                this.controller.isPaused = true;
+                console.log('isAf', this.controller.isPaused);
+                break;
               default:
                 break;
             }
 
             this.showPreviousPosition(pointer);
           }),
-          takeUntilDestroyed()
+          takeUntilDestroyed(this.detroy$)
         )
         .subscribe();
     }
@@ -306,8 +322,11 @@ export class ChessComponent implements OnInit {
   }
 
   public move([x, y]: CoordsInARow): void {
-    this.selectingPiece(x, y);
-    this.placingPiece(x, y);
+    console.log('paused: ', this.controller.isPaused);
+    if (!this.controller.isPaused) {
+      this.selectingPiece(x, y);
+      this.placingPiece(x, y);
+    }
   }
 
   public showPreviousPosition(moveIndex: number): void {

@@ -1,3 +1,13 @@
+<aside>
+  <button
+    class="text-format menu-logo"
+    role="button"
+    [disabled]="controller.isPaused"
+    (click)="controller.isPaused = true"
+  >
+    ||
+  </button>
+</aside>
 <section class="shared-container relative justify-center chess-container">
   <chess-game-board>
     <chess-card-player black [player]="2"></chess-card-player>
@@ -40,3 +50,7 @@
     ></chess-move-list>
   </chess-side-controller>
 </section>
+
+@if(controller.isPaused){
+<welcome-chess-modal></welcome-chess-modal>
+}
