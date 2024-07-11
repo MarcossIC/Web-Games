@@ -1,14 +1,16 @@
-<aside>
-  <button
-    class="text-format menu-logo"
-    role="button"
-    [disabled]="controller.isPaused"
-    (click)="controller.isPaused = true"
-  >
-    ||
-  </button>
-</aside>
 <section class="shared-container relative justify-center chess-container">
+  <aside
+    class="absolute top-[1%] right-[6%] min-[740px]:right-0 min-[740px]:left-[1%]"
+  >
+    <button
+      class="text-format menu-logo"
+      role="button"
+      [disabled]="controller.isPaused"
+      (click)="controller.isPaused = true"
+    >
+      ||
+    </button>
+  </aside>
   <chess-game-board>
     <chess-card-player black [player]="2"></chess-card-player>
     <ng-container>
