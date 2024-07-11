@@ -28,7 +28,8 @@ section.chess-container {
 
   --promotion-dialog-w: 16%;
   --promotion-dialog-h: 60%;
-  --promotion-dialog-close-size: 30px;
+
+  --promotion-dialog-close-size: 6cqw;
 
   --chess-button-w: 30cqw;
   --chess-button-h: 35px;
@@ -47,6 +48,7 @@ section.chess-container {
     --chess-button-w: 28cqw;
     --chess-button-h: 45px;
     --chess-button-icon-size: 35px;
+    --promotion-dialog-close-size: 30px;
   }
 }
 

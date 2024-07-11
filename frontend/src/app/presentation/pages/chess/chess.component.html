@@ -26,8 +26,11 @@
     <chess-card-player white [player]="1"></chess-card-player>
   </chess-game-board>
   <chess-side-controller
-    (forward)="restartGame()"
-    (goBack)="restartGame()"
+    [pointer]="controller.gameHistory.gameHistoryPointer"
+    [fullMoveSize]="controller.gameHistory.moveList.length"
+    [moveList]="controller.gameHistory.moveList"
+    (forward)="showPreviousPosition($event)"
+    (goBack)="showPreviousPosition($event)"
     (reset)="restartGame()"
   >
     <chess-move-list

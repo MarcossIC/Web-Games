@@ -58,6 +58,7 @@ export class ChessController {
       lastMove: this.chessHistory.lastMove,
       currentPlayer: this._playerTurn,
     });
+    this.chessHistory.updateHistory(this.chessBoard.chessBoardView());
   }
 
   public movePiece(

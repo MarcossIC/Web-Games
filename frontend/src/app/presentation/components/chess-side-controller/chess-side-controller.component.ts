@@ -2,18 +2,16 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
+  effect,
   EventEmitter,
-  Input,
   input,
+  model,
   Output,
-  Type,
+  Signal,
 } from '@angular/core';
-import { CheckState } from '@app/data/models/chess/chess-checkstate';
-import { Coords, CoordsInARow } from '@app/data/models/chess/chess-coords';
-import { ChessPlayers } from '@app/data/models/chess/chess-players';
-import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
-import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
-import { Piece } from '@app/data/services/chess/Piece';
+import { createWatch, SIGNAL } from '@angular/core/primitives/signals';
+import { MoveList } from '@app/data/models/chess/chess-history-move';
 import { ChessButton } from '@app/presentation/components/chess-button/chess-button.component';
 
 @Component({
@@ -26,7 +24,7 @@ import { ChessButton } from '@app/presentation/components/chess-button/chess-but
         <div class="controller-title"><p>Game moves</p></div>
         <div class="move-controller-container">
           <div class="flex justify-around items-start">
-            <chess-button (click)="reset.emit()">
+            <chess-button (click)="reset.emit(0)" [disabled]="pointer() < 0">
               <svg
                 fill="none"
                 viewBox="0 0 24 24"
@@ -41,7 +39,10 @@ import { ChessButton } from '@app/presentation/components/chess-button/chess-but
               </svg>
             </chess-button>
 
-            <chess-button (click)="goBack.emit()">
+            <chess-button
+              (click)="goBack.emit(pointer() - 1)"
+              [disabled]="pointer() === 0"
+            >
               <svg
                 fill="none"
                 viewBox="0 0 24 24"
@@ -56,7 +57,10 @@ import { ChessButton } from '@app/presentation/components/chess-button/chess-but
               </svg>
             </chess-button>
 
-            <chess-button (click)="forward.emit()">
+            <chess-button
+              (click)="forward.emit(pointer() + 1)"
+              [disabled]="pointerIsInLast()"
+            >
               <svg
                 fill="none"
                 viewBox="0 0 24 24"
@@ -80,7 +84,23 @@ import { ChessButton } from '@app/presentation/components/chess-button/chess-but
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChessSideController {
-  @Output() reset = new EventEmitter();
-  @Output() forward = new EventEmitter();
-  @Output() goBack = new EventEmitter();
+  public pointer = input.required<number>();
+  public fullMoveSize = input.required<number>();
+  public moveList = input<MoveList>([]);
+  @Output() reset = new EventEmitter<number>();
+  @Output() forward = new EventEmitter<number>();
+  @Output() goBack = new EventEmitter<number>();
+
+  constructor() {}
+
+  public pointerIsInLast() {
+    const last = this.moveList()[this.fullMoveSize() - 1]?.length;
+    if (this.pointer() === 0 && !last) return true;
+
+    if (last === 2) {
+      return this.pointer() === this.fullMoveSize() * 2;
+    }
+
+    return this.pointer() === this.fullMoveSize() * 2 - 1;
+  }
 }

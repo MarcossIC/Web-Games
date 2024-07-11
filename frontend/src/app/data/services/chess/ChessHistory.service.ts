@@ -106,7 +106,6 @@ export class ChessHistory {
     const piecesFile = new Set(samePiecesCoords.map((coords) => coords.y));
     const piecesRank = new Set(samePiecesCoords.map((coords) => coords.x));
 
-    console.log({ prevX });
     if (piecesFile.size === samePiecesCoords.length) return columns[prevY];
     if (piecesRank.size === samePiecesCoords.length) return String(8 - prevX);
 

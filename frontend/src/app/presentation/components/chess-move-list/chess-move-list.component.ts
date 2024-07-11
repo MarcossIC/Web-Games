@@ -1,21 +1,14 @@
-import { CommonModule, NgClass } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  EventEmitter,
-  Output,
-  input,
-} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Output, input } from '@angular/core';
 import { MoveList } from '@app/data/models/chess/chess-history-move';
 import { ScrollToDirective } from '@app/shared/directives/ScrollTo.directive';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, NgClass, ScrollToDirective],
   selector: 'chess-move-list',
   templateUrl: './chess-move-list.component.html',
   styleUrl: './chess-move-list.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, ScrollToDirective],
 })
 export class ChessMoveListComponent {
   public moveList = input.required<MoveList>();
