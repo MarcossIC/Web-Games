@@ -1,6 +1,6 @@
 [build]
-  base = "/"
-  command = "pnpm build"
+  base = "/frontend/"
+  command = "npm build"
   publish = "dist/frontend/browser"
 
 [[redirects]]
