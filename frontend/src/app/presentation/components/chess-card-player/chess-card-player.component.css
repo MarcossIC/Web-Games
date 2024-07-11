@@ -3,7 +3,7 @@
 
   img {
     width: calc(var(--chess-square-size) + 15px);
-    max-width: 100%;
+    max-width: var(--chess-player-img-max-w);
     aspect-ratio: 1/1;
     object-fit: cover;
     object-position: center;

@@ -1,4 +1,5 @@
 .chess-side-board {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   width: var(--chess-side-w);
@@ -27,14 +28,14 @@
 .controller-title {
   display: flex;
   flex-shrink: 0;
-  height: 2.5rem;
+  height: var(--chess-side-title-h);
   justify-content: space-between;
   align-items: center;
 
-  span {
+  p {
     display: inline-block;
     font-size: var(--chess-side-text-size);
-    line-height: 1.25rem;
+    line-height: calc(var(--chess-side-text-size) + 0.25rem);
     overflow: hidden;
     padding-left: 1.6rem;
     padding-right: 1rem;
@@ -42,5 +43,6 @@
     text-decoration: none;
     text-overflow: ellipsis;
     white-space: pre;
+    font-weight: 500;
   }
 }

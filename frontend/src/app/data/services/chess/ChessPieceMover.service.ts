@@ -20,6 +20,10 @@ export class ChessPieceMover {
     this._safeCoords = new Map();
   }
 
+  public resetSafeCoords() {
+    this._safeCoords = new Map();
+  }
+
   public isValidMove(prevX: number, prevY: number, newX: number, newY: number) {
     return (
       this._validator.areCoordsValid(prevX, prevY) &&

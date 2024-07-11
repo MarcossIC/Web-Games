@@ -23,7 +23,7 @@ import { ChessButton } from '@app/presentation/components/chess-button/chess-but
   template: ` <div class="chess-side-board">
     <div class="chess-side-board-container">
       <div class="player-controller-moves">
-        <div class="controller-title"><span>Game moves</span></div>
+        <div class="controller-title"><p>Game moves</p></div>
         <div class="move-controller-container">
           <div class="flex justify-around items-start">
             <chess-button (click)="reset.emit()">

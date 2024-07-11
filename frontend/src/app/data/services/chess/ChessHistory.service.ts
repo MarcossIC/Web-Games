@@ -28,9 +28,11 @@ export class ChessHistory {
   }
 
   public resetAllHistory() {
-    this._gameHistory = [];
+    this._lastMove = undefined;
     this._checkState = { isInCheck: false };
+    this._gameHistory = [];
     this._moveList = [];
+    this._gameHistoryPointer = 0;
   }
 
   public storeMove(

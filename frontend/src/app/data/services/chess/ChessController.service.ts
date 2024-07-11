@@ -45,15 +45,19 @@ export class ChessController {
     this._gameOverType = ChessGameOverType.IN_GAME;
     this._isGameOver = false;
     this._playerTurn = ChessPlayers.WHITE;
-    this.moveCounter.resetState();
-    this.chessHistory.resetAllHistory();
+    this._boardAsSymbols = ChessBoardConverter.DEFAULT_INITIAL_POSITION;
+
     this.chessBoard.restart();
+    this.chessHistory.resetAllHistory();
+    this.moveCounter.resetState();
+    this.pieceMover.resetSafeCoords();
+    this.captureCounter.resetCaptureCounter();
+
     this.pieceMover.updateSafeCoords(this.chessBoard.board, {
       isInCheck: this.chessHistory.checkState.isInCheck,
       lastMove: this.chessHistory.lastMove,
       currentPlayer: this._playerTurn,
     });
-    this._boardAsSymbols = ChessBoardConverter.DEFAULT_INITIAL_POSITION;
   }
 
   public movePiece(

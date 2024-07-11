@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   CaptureCounter,
@@ -21,6 +21,7 @@ type CaptureKey = keyof CaptureCounter;
 
 @Injectable()
 export class ChessCaptureCounter {
+  private destroy$ = inject(DestroyRef);
   private subject$: BehaviorSubject<PieceCaptureCounter>;
   private state$: Observable<PieceCaptureCounter>;
   private readonly LIMIT_COUNT: CaptureCounter = {
@@ -36,11 +37,20 @@ export class ChessCaptureCounter {
       white: { ...DEFAULT_COUNTER },
       black: { ...DEFAULT_COUNTER },
     });
-    this.state$ = this.subject$.asObservable().pipe(takeUntilDestroyed());
+    this.state$ = this.subject$
+      .asObservable()
+      .pipe(takeUntilDestroyed(this.destroy$));
   }
 
-  getDefault() {
+  public getDefault() {
     return DEFAULT_COUNTER;
+  }
+
+  public resetCaptureCounter() {
+    this.subject$.next({
+      white: { ...DEFAULT_COUNTER },
+      black: { ...DEFAULT_COUNTER },
+    });
   }
 
   public updateCounter(

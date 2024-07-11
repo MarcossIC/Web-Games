@@ -1,16 +1,27 @@
 section.chess-container {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1.75rem;
+  padding-block: 1rem;
   --chess-piece-white-color: #f4f7fa;
   --chess-piece-black-color: #34364c;
 
   --chess-board-white-color: #e8edf9;
   --chess-board-black-color: #b7c0d8;
-  --chess-square-size: 60px;
+  --chess-square-size: 11.25dvw;
   --chess-player-name-size: 0.975rem;
+  --chess-player-img-max-w: 40px;
 
-  --chess-side-w: 400px;
+  --chess-side-w: 90dvw;
+  --chess-side-h: 225px;
+  --chess-side-title-h: 2.5rem;
   --chess-side-text-size: 1rem;
-  --chess-side-h: 360px;
-  --chess-side-move-text-size: 1rem;
+
+  --chess-player-name-size: 0.8rem;
+  --chess-side-moves-gap: 10cqw;
+  --chess-side-moves-move-gap: 25cqw;
+  --chess-side-moves-size: 25cqw;
+  --chess-side-move-row-h: 35px;
   --chess-side-color: #2c2e43;
   --chess-side-even-color: #2e3046;
   --chess-side-text-color: hsla(0, 0%, 100%, 0.72);
@@ -19,7 +30,90 @@ section.chess-container {
   --promotion-dialog-h: 60%;
   --promotion-dialog-close-size: 30px;
 
-  --chess-button-w: 110px;
-  --chess-button-h: 40px;
-  --chess-button-icon-size: 32px;
+  --chess-button-w: 30cqw;
+  --chess-button-h: 35px;
+  --chess-button-icon-size: 30px;
+}
+
+@media only screen and (min-width: 440px) and (min-height: 535px) {
+  section.chess-container {
+    padding-block: 1.5rem;
+    --chess-square-size: 48px;
+    --chess-side-move-text-size: 0.875rem;
+  }
+}
+
+@media only screen and (min-width: 740px) {
+  section.chess-container {
+    flex-direction: row;
+    column-gap: 1rem;
+    padding-block: 0rem;
+    --chess-square-size: 49px;
+    --chess-player-img-max-w: 100%;
+    --chess-side-w: 280px;
+    --chess-side-h: 340px;
+    --chess-side-title-h: 2.5rem;
+    --chess-side-text-size: 1.115rem;
+    --chess-side-move-text-size: 1rem;
+    --chess-side-moves-gap: 1rem;
+    --chess-side-moves-move-gap: 5.5rem;
+    --chess-side-moves-size: 40px;
+    --chess-button-w: 80px;
+    --chess-button-h: 35px;
+    --chess-button-icon-size: 28px;
+  }
+}
+
+@media only screen and (min-width: 940px) and (min-height: 680px) {
+  section.chess-container {
+    --chess-square-size: 60px;
+    --chess-player-name-size: 1.35rem;
+    --chess-side-w: 400px;
+    --chess-side-h: 430px;
+    --chess-side-title-h: 2.5rem;
+    --chess-side-text-size: 1.25rem;
+    --chess-side-move-text-size: 1.115rem;
+    --chess-side-moves-gap: 2rem;
+    --chess-side-moves-size: 75px;
+    --chess-side-move-row-h: 45px;
+    --chess-button-w: 115px;
+    --chess-button-h: 50px;
+    --chess-button-icon-size: 40px;
+  }
+}
+
+@media only screen and (min-width: 1440px) and (min-height: 820px) {
+  section.chess-container {
+    --chess-square-size: 70px;
+    --chess-side-w: 450px;
+    --chess-side-h: 530px;
+    --chess-side-title-h: 2.75rem;
+    --chess-side-text-size: 1.5rem;
+    --chess-side-move-text-size: 1.35rem;
+    --chess-side-moves-gap: 2rem;
+    --chess-side-moves-size: 100px;
+    --chess-side-move-row-h: 45px;
+    --chess-button-w: 130px;
+    --chess-button-h: 50px;
+    --chess-button-icon-size: 40px;
+  }
+}
+
+@media only screen and (min-width: 1840px) {
+  section.chess-container {
+    --chess-square-size: 85px;
+    --chess-player-name-size: 1.5rem;
+    --chess-side-w: 500px;
+    --chess-side-h: 650px;
+    --chess-side-title-h: 3.5rem;
+    --chess-side-text-size: 1.75rem;
+    --chess-side-move-text-size: 1.5rem;
+    --chess-side-moves-gap: 3rem;
+    --chess-side-moves-size: 120px;
+    --chess-side-move-row-h: 50px;
+
+    --chess-button-w: 150px;
+    --chess-button-h: 55px;
+    --chess-button-icon-size: 45px;
+  }
 }
