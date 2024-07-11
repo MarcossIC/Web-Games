@@ -1,4 +1,6 @@
 import {
+  AfterViewChecked,
+  ChangeDetectorRef,
   Directive,
   ElementRef,
   inject,
@@ -11,19 +13,23 @@ import {
   standalone: true,
   selector: '[scrollToBottom]',
 })
-export class ScrollToBottomDirective implements OnChanges {
+export class ScrollToBottomDirective implements AfterViewChecked {
   private el = inject(ElementRef);
   @Input({ required: true }) trigger: any;
+  private prevTrigger: any;
 
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['trigger']) {
+  ngAfterViewChecked() {
+    if (this.trigger !== this.prevTrigger) {
       this.scrollToBottom();
+      this.prevTrigger = this.trigger;
     }
   }
 
   private scrollToBottom(): void {
     try {
-      this.el.nativeElement.scrollTop = this.el.nativeElement.scrollHeight;
+      const { scrollHeight, clientHeight } = this.el.nativeElement;
+      const extra = scrollHeight - clientHeight;
+      this.el.nativeElement.scrollTop = clientHeight + extra + 37;
     } catch (err) {
       console.error('Scroll to bottom failed:', err);
     }

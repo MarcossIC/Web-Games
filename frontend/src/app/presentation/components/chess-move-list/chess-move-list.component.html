@@ -1,4 +1,4 @@
-<div class="move-list">
+<div class="move-list" scrollToBottom [trigger]="moveList().length">
   @for (MOVE of moveList(); track 'mc-'+moveNumber; let moveNumber = $index) {
   <div class="row">
     <div class="move-number">{{ moveNumber + 1 }}.</div>
@@ -20,5 +20,4 @@
     </div>
   </div>
   }
-  <div scrollTo [trigger]="moveList().length" class="h-[2px] w-full"></div>
 </div>

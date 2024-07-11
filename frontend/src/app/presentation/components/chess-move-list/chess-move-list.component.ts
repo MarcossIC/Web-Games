@@ -2,13 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Output, input } from '@angular/core';
 import { MoveList } from '@app/data/models/chess/chess-history-move';
 import { ScrollToDirective } from '@app/shared/directives/ScrollTo.directive';
+import { ScrollToBottomDirective } from '@app/shared/directives/ScrollToBottom.directive';
 
 @Component({
   standalone: true,
   selector: 'chess-move-list',
   templateUrl: './chess-move-list.component.html',
   styleUrl: './chess-move-list.component.css',
-  imports: [CommonModule, ScrollToDirective],
+  imports: [CommonModule, ScrollToDirective, ScrollToBottomDirective],
 })
 export class ChessMoveListComponent {
   public moveList = input.required<MoveList>();
