@@ -2,7 +2,7 @@
   height: 100%;
   min-height: var(--chess-side-h);
   max-height: var(--chess-side-h);
-  overflow-y: scroll;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   scrollbar-width: thin;
