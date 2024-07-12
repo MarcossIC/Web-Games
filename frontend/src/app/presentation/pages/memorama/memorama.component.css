@@ -28,15 +28,6 @@
   justify-self: center;
 }
 
-.pause {
-  grid-area: 1 / 1 / 2 / 2;
-  display: flex;
-  margin-inline-start: 2rem;
-  font-size: 2.5rem;
-  font-weight: bold;
-  letter-spacing: 0.3rem;
-  cursor: pointer;
-}
 .memorama-title {
   grid-area: 1 / 1 / 2 / 3;
   justify-self: center;

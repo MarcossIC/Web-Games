@@ -1,6 +1,16 @@
 <section class="shared-container justify-center relative">
   <app-particles></app-particles>
-
+  <aside class="absolute top-[2%] left-[2%] z-50">
+    <button
+      class="text-format menu-logo"
+      role="button"
+      (click)="this.controller.reset()"
+      tabindex="0"
+      title="Reset button"
+    >
+      ||
+    </button>
+  </aside>
   <main class="tictactoe-wrapper">
     <h2 class="tictactoe-title">Tic Tac Toe</h2>
 
