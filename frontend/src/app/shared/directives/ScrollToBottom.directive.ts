@@ -1,3 +1,4 @@
+import { isPlatformBrowser } from '@angular/common';
 import {
   AfterViewChecked,
   ChangeDetectorRef,
@@ -6,6 +7,7 @@ import {
   inject,
   Input,
   OnChanges,
+  PLATFORM_ID,
   SimpleChanges,
 } from '@angular/core';
 
@@ -15,11 +17,12 @@ import {
 })
 export class ScrollToBottomDirective implements AfterViewChecked {
   private el = inject(ElementRef);
+  private platform = inject(PLATFORM_ID);
   @Input({ required: true }) trigger: any;
   private prevTrigger: any;
 
   ngAfterViewChecked() {
-    if (this.trigger !== this.prevTrigger) {
+    if (this.trigger !== this.prevTrigger && isPlatformBrowser(this.platform)) {
       this.scrollToBottom();
       this.prevTrigger = this.trigger;
     }

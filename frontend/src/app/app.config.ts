@@ -11,6 +11,10 @@ import {
   provideClientHydration,
   withHttpTransferCacheOptions,
 } from '@angular/platform-browser';
+import {
+  PRECONNECT_CHECK_BLOCKLIST,
+  provideCloudinaryLoader,
+} from '@angular/common';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -23,5 +27,10 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(
       withHttpTransferCacheOptions({ includePostRequests: true })
     ),
+    {
+      provide: PRECONNECT_CHECK_BLOCKLIST,
+      useValue: 'https://res.cloudinary.com',
+    },
+    provideCloudinaryLoader('https://res.cloudinary.com/dd8ep4kjo'),
   ],
 };
