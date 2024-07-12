@@ -5,3 +5,9 @@
 
 [images]
   remote_images = ["https://res.cloudinary.com/dd8ep4kjo/image/upload/.*"]
+
+
+[[redirects]]
+  from = "/*"
+  to = "/browser/index.csr.html"
+  status = 200
