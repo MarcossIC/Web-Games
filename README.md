@@ -16,10 +16,16 @@ Right now the site has three games available:
   <li>
     Snake Game
   </li>
+  <li>
+    Memorama
+  </li>
+  <li>
+    Chess
+  </li>
 </ul>
 
 ## 🛠 Stack
-The project was developed in Angular 16 with the technologies of:
+The project was developed in Angular 18 with the technologies of:
 <p align="left"> 
    <a href="#" rel="noreferrer"> <img src="https://skillicons.dev/icons?i=angular,ts,tailwind,html,css,reactivex"/> </a>
 </p>
@@ -27,8 +33,8 @@ The project was developed in Angular 16 with the technologies of:
 ## ℹ️ Development server
 In order to deploy a local version of the project you must:
 - Download the project from github
-- Run `npm install` at the root of the project
-- Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`.
+- Run `npm install` or `pnpm install` at the root of the project
+- Run `ng s -o` for a dev server. Navigate to `http://localhost:4200/` (Add `--port=XXXX` for change default port).
 The application will automatically reload if you change any of the source files.
 
 ## ℹ️ Build
