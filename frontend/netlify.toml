@@ -1,9 +1,4 @@
 [build]
   base = "/frontend/"
   command = "pnpm run build"
-  publish = "dist/frontend/server"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.server.html"
-  status = 200
+  publish = "dist/frontend/browser"
