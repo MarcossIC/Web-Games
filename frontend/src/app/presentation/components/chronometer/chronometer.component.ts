@@ -77,12 +77,12 @@ export class ChronometerComponent implements OnInit {
     this.point.updateTime(currentTime);
 
     if (
-      this.maxMinute < this.minutes ||
-      (this.maxMinute === this.minutes && this.maxSecond < this.seconds)
+      this.maxMinute() < this.minutes() ||
+      (this.maxMinute() === this.minutes() && this.maxSecond() < this.seconds())
     ) {
-      this.maxMinute = this.minutes;
-      this.maxSecond = this.seconds;
-      this.point.updateMaxTime(currentTime);
+      this.maxMinute.set(this.minutes());
+      this.maxSecond.set(this.seconds());
+      this.point.maxTime = currentTime;
     }
   }
 

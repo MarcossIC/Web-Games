@@ -35,7 +35,6 @@ export class PointsService {
 
   updateMaxTime(updateMaxTime: string) {
     this.maxTime = updateMaxTime;
-    localStorage.setItem('tetris-maxTime', this.maxTime);
   }
 
   updateMaxScore() {
