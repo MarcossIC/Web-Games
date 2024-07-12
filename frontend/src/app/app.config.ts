@@ -27,10 +27,6 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(
       withHttpTransferCacheOptions({ includePostRequests: true })
     ),
-    {
-      provide: PRECONNECT_CHECK_BLOCKLIST,
-      useValue: 'https://res.cloudinary.com',
-    },
     provideCloudinaryLoader('https://res.cloudinary.com/dd8ep4kjo'),
   ],
 };
