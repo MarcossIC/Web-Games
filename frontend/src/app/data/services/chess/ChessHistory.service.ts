@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Piece } from '@app/data/services/chess/Piece';
 import { CheckState } from '@app/data/models/chess/chess-checkstate';
 import { SafeCoords } from '@app/data/models/chess/chess-coords';
@@ -18,13 +18,12 @@ export class ChessHistory {
   private _checkState: CheckState;
   private _gameHistory: GameHistory[];
   private _moveList: MoveList;
-  private _gameHistoryPointer: number;
+  private _gameHistoryPointer = signal(0);
 
   constructor() {
     this._gameHistory = [];
     this._checkState = { isInCheck: false };
     this._moveList = [];
-    this._gameHistoryPointer = 0;
   }
 
   public resetAllHistory() {
@@ -32,7 +31,7 @@ export class ChessHistory {
     this._checkState = { isInCheck: false };
     this._gameHistory = [];
     this._moveList = [];
-    this._gameHistoryPointer = 0;
+    this.moveHistoryPointerTo(0);
   }
 
   public storeMove(
@@ -112,22 +111,6 @@ export class ChessHistory {
     return columns[prevY] + String(8 - prevX);
   }
 
-  public get lastMove() {
-    return this._lastMove;
-  }
-
-  public get gameHistory() {
-    return this._gameHistory;
-  }
-
-  public get checkState() {
-    return this._checkState;
-  }
-
-  public get moveList() {
-    return this._moveList;
-  }
-
   public setCheckState(updated: CheckState) {
     this._checkState = updated;
   }
@@ -157,16 +140,32 @@ export class ChessHistory {
   }
 
   public advanceHistoryPointer() {
-    this._gameHistoryPointer++;
+    this._gameHistoryPointer.update((val) => val + 1);
   }
   public goBackHistoryPointer() {
-    this._gameHistoryPointer--;
+    this._gameHistoryPointer.update((val) => val - 1);
   }
   public moveHistoryPointerTo(to: number) {
-    this._gameHistoryPointer = to;
+    this._gameHistoryPointer.set(to);
   }
 
   public get gameHistoryPointer() {
-    return this._gameHistoryPointer;
+    return this._gameHistoryPointer.asReadonly()();
+  }
+
+  public get lastMove() {
+    return this._lastMove;
+  }
+
+  public get gameHistory() {
+    return this._gameHistory;
+  }
+
+  public get checkState() {
+    return this._checkState;
+  }
+
+  public get moveList() {
+    return this._moveList;
   }
 }

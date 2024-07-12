@@ -14,6 +14,7 @@ import { ChessGameOverType } from '@app/data/models/chess/chess-gameOverType';
 import { ChessMoveCounter } from '@app/data/services/chess/ChessMoveCounter.service';
 import { ChessPieceMover } from '@app/data/services/chess/ChessPieceMover.service';
 import { ChessCaptureCounter } from '@app/data/services/chess/ChessCaptureCounter.service';
+import { BehaviorSubject, Subject } from 'rxjs';
 
 @Injectable()
 export class ChessController {
@@ -23,29 +24,28 @@ export class ChessController {
   private moveCounter = inject(ChessMoveCounter);
   private pieceMover = inject(ChessPieceMover);
   public captureCounter = inject(ChessCaptureCounter);
-  private _isGameOver: boolean;
-  private _playerTurn: ChessPlayers;
   private _boardAsSymbols: string;
-  private _gameOverType: ChessGameOverType;
+
+  private _isGameOver = signal(false);
+  private _playerTurn = signal(ChessPlayers.WHITE);
+  private _gameOverType = signal(ChessGameOverType.IN_GAME);
   private _isPaused = signal(true);
+  public restartActive = new Subject<boolean>();
 
   constructor() {
-    this._isGameOver = false;
-    this._playerTurn = ChessPlayers.WHITE;
     this.pieceMover.updateSafeCoords(this.chessBoard.board, {
       isInCheck: this.chessHistory.checkState.isInCheck,
       lastMove: this.chessHistory.lastMove,
-      currentPlayer: this._playerTurn,
+      currentPlayer: this._playerTurn(),
     });
     this.chessHistory.updateHistory(this.currentChessBoardView);
     this._boardAsSymbols = ChessBoardConverter.DEFAULT_INITIAL_POSITION;
-    this._gameOverType = ChessGameOverType.IN_GAME;
   }
 
   public restartGame() {
-    this._gameOverType = ChessGameOverType.IN_GAME;
-    this._isGameOver = false;
-    this._playerTurn = ChessPlayers.WHITE;
+    this.gameOverType = ChessGameOverType.IN_GAME;
+    this.isGameOver = false;
+    this.playerTurn = ChessPlayers.WHITE;
     this._boardAsSymbols = ChessBoardConverter.DEFAULT_INITIAL_POSITION;
 
     this.chessBoard.restart();
@@ -57,9 +57,10 @@ export class ChessController {
     this.pieceMover.updateSafeCoords(this.chessBoard.board, {
       isInCheck: this.chessHistory.checkState.isInCheck,
       lastMove: this.chessHistory.lastMove,
-      currentPlayer: this._playerTurn,
+      currentPlayer: this._playerTurn(),
     });
     this.chessHistory.updateHistory(this.chessBoard.chessBoardView());
+    this.isPaused = false;
   }
 
   public movePiece(
@@ -69,14 +70,14 @@ export class ChessController {
     newY: number,
     promotedPieceType: PieceSymbol | null
   ) {
-    if (this._isGameOver) throw new Error('Game is over, you cant play move');
+    if (this._isGameOver()) throw new Error('Game is over, you cant play move');
 
     if (!this.pieceMover.isValidMove(prevX, prevY, newX, newY)) {
       return;
     }
 
     const piece: Piece = this.chessBoard.board[prevX][prevY];
-    if (!piece.isPieceMovable(this._playerTurn)) return;
+    if (!piece.isPieceMovable(this.playerTurn)) return;
 
     const newPositionPiece: Piece = this.chessBoard.board[newX][newY];
     this.pieceMover.checkSafeCoords(prevX, prevY, newX, newY);
@@ -84,7 +85,7 @@ export class ChessController {
     const moveType = this.getMoveType(newX, newY);
     this.captureCounter.updateCounter(
       moveType,
-      this._playerTurn,
+      this._playerTurn(),
       promotedPieceType || PieceSymbol.UNKNOWN,
       newPositionPiece.symbol
     );
@@ -94,7 +95,7 @@ export class ChessController {
     this.pieceMover.updateMoveState(piece);
     const prometedPiece = this.chessBoard.promotedPiece(
       promotedPieceType,
-      this._playerTurn
+      this._playerTurn()
     );
 
     this.chessBoard.applyMove(
@@ -113,7 +114,7 @@ export class ChessController {
       {
         isInCheck: this.chessHistory.checkState.isInCheck,
         lastMove: this.chessHistory.lastMove,
-        currentPlayer: this._playerTurn,
+        currentPlayer: this._playerTurn(),
       }
     );
     const checkMove = this.updateCheckState(
@@ -139,7 +140,7 @@ export class ChessController {
   private updateCheckState(moveTypeSize: number, safeCoordsSize: number) {
     const checkState = this.pieceMover.validator.isInCheck(
       this.chessBoard.board,
-      this._playerTurn
+      this._playerTurn()
     );
     this.chessHistory.setCheckState(checkState);
 
@@ -164,10 +165,10 @@ export class ChessController {
     this.chessHistory.updateHistory(this.currentChessBoardView);
 
     this.pieceMover.setSafeCoords(updatedSafeCoords);
-    this.moveCounter.updateFullMoveCounter(this._playerTurn);
+    this.moveCounter.updateFullMoveCounter(this._playerTurn());
     this.updateBoardAsSymbols();
 
-    this._isGameOver = this.isGameFinished();
+    this.isGameOver = this.isGameFinished();
   }
 
   /**
@@ -264,7 +265,7 @@ export class ChessController {
 
     // Verifica material insuficiente
     if (this.chessBoard.insufficientMaterial()) {
-      this._gameOverType = ChessGameOverType.DRAW_BY_INSUFFICIENT_MATERIAL;
+      this.gameOverType = ChessGameOverType.DRAW_BY_INSUFFICIENT_MATERIAL;
       return true;
     }
 
@@ -272,13 +273,13 @@ export class ChessController {
     if (!safeCoords.size) {
       if (checkState.isInCheck) {
         // Jaque mate
-        this._gameOverType =
-          this._playerTurn === ChessPlayers.WHITE
+        this.gameOverType =
+          this._playerTurn() === ChessPlayers.WHITE
             ? ChessGameOverType.CHECK_MATE_BLACK
             : ChessGameOverType.CHECK_MATE_WHITE;
       } else {
         // Ahogado
-        this._gameOverType = ChessGameOverType.DRAW_BY_DROWNED;
+        this.gameOverType = ChessGameOverType.DRAW_BY_DROWNED;
       }
 
       return true;
@@ -286,13 +287,13 @@ export class ChessController {
 
     // Verifica la regla de tres repeticiones
     if (this.moveCounter.threeFoldRepetitionFlag) {
-      this._gameOverType = ChessGameOverType.DRAW_BY_REPETITION;
+      this.gameOverType = ChessGameOverType.DRAW_BY_REPETITION;
       return true;
     }
 
     // Verifica la regla de los cincuenta movimientos
     if (this.moveCounter.isFulfilledFiftyRuleCounter()) {
-      this._gameOverType = ChessGameOverType.DRAW_BY_FIFTYMOVES_RULE;
+      this.gameOverType = ChessGameOverType.DRAW_BY_FIFTYMOVES_RULE;
       return true;
     }
 
@@ -320,7 +321,7 @@ export class ChessController {
   private updateBoardAsSymbols(): void {
     this._boardAsSymbols = this.converter.convertBoardToSymbol(
       this.chessBoard.board,
-      this._playerTurn,
+      this._playerTurn(),
       this.chessHistory.lastMove,
       this.moveCounter.fiftyMoveRuleCounter,
       this.moveCounter.fullNumberOfMoves
@@ -329,23 +330,31 @@ export class ChessController {
   }
 
   public swapPlyer() {
-    const whiteIsPlaying = this._playerTurn === ChessPlayers.WHITE;
-    this._playerTurn = whiteIsPlaying ? ChessPlayers.BLACK : ChessPlayers.WHITE;
+    const whiteIsPlaying = this._playerTurn() === ChessPlayers.WHITE;
+    this.playerTurn = whiteIsPlaying ? ChessPlayers.BLACK : ChessPlayers.WHITE;
   }
 
   public get board(): Piece[][] {
     return this.chessBoard.board;
   }
 
-  public get playerGo(): ChessPlayers {
-    return this._playerTurn;
+  public get playerTurn() {
+    return this._playerTurn.asReadonly()();
   }
-
+  private set playerTurn(updated: ChessPlayers) {
+    this._playerTurn.set(updated);
+  }
   public get gameOverType() {
-    return this._gameOverType;
+    return this._gameOverType();
+  }
+  private set gameOverType(updated: ChessGameOverType) {
+    this._gameOverType.set(updated);
   }
   public get isGameOver() {
-    return this._isGameOver;
+    return this._isGameOver.asReadonly()();
+  }
+  private set isGameOver(updated: boolean) {
+    this._isGameOver.set(updated);
   }
   public get isPaused() {
     return this._isPaused();

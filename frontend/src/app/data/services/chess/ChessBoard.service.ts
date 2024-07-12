@@ -6,7 +6,7 @@ import { Piece } from '@app/data/services/chess/Piece';
 import QueenPiece from '@app/data/services/chess/QueenPiece';
 import RookPiece from '@app/data/services/chess/RookPiece';
 import { ChessPlayers } from '@app/data/models/chess/chess-players';
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
 import { MoveType } from '@app/data/models/chess/chess-lastmove';
 import { BOARD_ROW_SIZE } from 'assets/constants/chess';
@@ -16,10 +16,10 @@ type PieceWithCoords = { piece: Piece; x: number; y: number };
 
 @Injectable()
 export class ChessBoard {
-  protected _chessBoard: Piece[][];
+  private _chessBoard = signal(this.defaultBoard());
 
   constructor() {
-    this._chessBoard = this.defaultBoard();
+    this.board = this.defaultBoard();
   }
 
   public defaultBoard() {
@@ -116,10 +116,10 @@ export class ChessBoard {
     moveType: Set<MoveType>
   ): void {
     if (!promotedPiece.isEmpty()) {
-      this._chessBoard[newX][newY] = promotedPiece;
+      this.addOrMovePiece(newX, newY, promotedPiece);
       moveType.add(MoveType.Promotion);
     } else {
-      this._chessBoard[newX][newY] = this._chessBoard[prevX][prevY];
+      this.addOrMovePiece(newX, newY, this.board[prevX][prevY]);
     }
     this.removePiece(prevX, prevY);
   }
@@ -162,7 +162,7 @@ export class ChessBoard {
     // Clasifica las piezas por color && Guarda sus coordenadas
     for (let x = 0; x < BOARD_ROW_SIZE; x++) {
       for (let y = 0; y < BOARD_ROW_SIZE; y++) {
-        const piece: Piece | null = this._chessBoard[x][y];
+        const piece: Piece | null = this.board[x][y];
         if (!piece || piece.isEmpty()) continue;
 
         if (piece.player === ChessPlayers.WHITE)
@@ -306,26 +306,30 @@ export class ChessBoard {
   }
 
   public restart() {
-    this._chessBoard = this.defaultBoard();
+    this.board = this.defaultBoard();
   }
 
   public chessBoardView() {
-    return this._chessBoard.map((row) => row.map((piece) => piece.symbol));
+    return this.board.map((row) => row.map((piece) => piece.symbol));
   }
 
   public removePiece(removedX: number, removedY: number) {
-    this._chessBoard[removedX][removedY] = Piece.createEmpty();
+    const currentBoard = this.board;
+    currentBoard[removedX][removedY] = Piece.createEmpty();
+    this.board = currentBoard;
   }
   public addOrMovePiece(updatedX: number, updatedY: number, piece: Piece) {
-    this._chessBoard[updatedX][updatedY] = piece;
+    const currentBoard = this.board;
+    currentBoard[updatedX][updatedY] = piece;
+    this.board = currentBoard;
   }
 
   public get board() {
-    return this._chessBoard;
+    return this._chessBoard.asReadonly()();
   }
 
   public set board(updated: Piece[][]) {
-    this._chessBoard = updated;
+    this._chessBoard.set(updated);
   }
 
   public static isSquareWhite(x: number, y: number): boolean {

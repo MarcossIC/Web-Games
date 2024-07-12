@@ -157,7 +157,9 @@ export class ChessMoveValidator {
       return null;
     }
 
-    if (!kingSideCastle && board[kingPositionX][1]) return null;
+    if (!kingSideCastle && !board[kingPositionX][1].isEmpty()) {
+      return null;
+    }
 
     return {
       kingPositionX,

@@ -80,6 +80,11 @@ export class ChessComponent implements OnInit {
   public chessBoardView: PieceSymbol[][];
 
   constructor() {
+    this.controller.restartActive
+      .pipe(takeUntilDestroyed(this.detroy$))
+      .subscribe((reason) => {
+        if (this.controller.isGameOver && reason) this.restartGame();
+      });
     this.chessBoardView = this.controller.currentChessBoardView;
     this.selectedSquare = { symbol: PieceSymbol.UNKNOWN };
     this.pieceSafeCoords = [];
@@ -303,11 +308,6 @@ export class ChessComponent implements OnInit {
   ): void {
     this.controller.gameHistory.setLastMove(lastMove);
     this.controller.gameHistory.setCheckState(checkState);
-    if (this.lastMove) {
-      //this.moveSound(this.lastMove.moveType);
-    } else {
-      //this.moveSound(new Set<MoveType>([MoveType.BasicMove]));
-    }
   }
 
   public move([x, y]: CoordsInARow): void {
@@ -336,7 +336,7 @@ export class ChessComponent implements OnInit {
   }
 
   protected get currentPlayer() {
-    return this.controller.playerGo;
+    return this.controller.playerTurn;
   }
   protected get gameOverType() {
     return this.controller.gameOverType;

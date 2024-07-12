@@ -177,7 +177,6 @@ export class ChessPieceMover {
           if (this.canCastle(piece, true, game.isInCheck, board)) {
             pieceSafeCoords.push({ x, y: 6 });
           }
-
           if (this.canCastle(piece, false, game.isInCheck, board)) {
             pieceSafeCoords.push({ x, y: 2 });
           }

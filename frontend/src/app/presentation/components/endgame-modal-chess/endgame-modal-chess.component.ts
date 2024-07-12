@@ -27,8 +27,8 @@ export class EndGameModalChess {
       'The game has ended by the 50-move rule without seeing a winner',
     [ChessGameOverType.DRAW_BY_INSUFFICIENT_MATERIAL]:
       'The game is over, there is not enough material for there to be a winner.',
-    [ChessGameOverType.CHECK_MATE_BLACK]: 'White wins!',
-    [ChessGameOverType.CHECK_MATE_WHITE]: 'Black wins!',
+    [ChessGameOverType.CHECK_MATE_BLACK]: 'Black wins!',
+    [ChessGameOverType.CHECK_MATE_WHITE]: 'White wins!',
   };
 
   protected close(): void {
@@ -38,8 +38,7 @@ export class EndGameModalChess {
   }
 
   protected playAgain(): void {
-    this.controller.restartGame();
-    this.controller.isPaused = false;
+    this.controller.restartActive.next(true);
   }
 
   public isWinner() {
