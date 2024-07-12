@@ -1,7 +1,7 @@
 [build]
   base = "/frontend/"
   command = "pnpm run build"
-  publish = "dist/frontend/browser"
+  publish = "dist/frontend/"
 
 [images]
   remote_images = ["https://res.cloudinary.com/dd8ep4kjo/image/upload/.*"]
