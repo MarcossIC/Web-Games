@@ -1,9 +1,9 @@
 [build]
   base = "/frontend/"
   command = "pnpm run build"
-  publish = "dist/frontend/browser"
+  publish = "dist/frontend/server"
 
 [[redirects]]
   from = "/*"
-  to = "/index.csr.html"
+  to = "/index.server.html"
   status = 200
