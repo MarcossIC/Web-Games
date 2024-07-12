@@ -22,8 +22,7 @@ import { RookPieceComponent } from '@app/presentation/components/chess-pieces/ro
 import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import { ChessGameOverType } from '@app/data/models/chess/chess-gameOverType';
 import { Coords, CoordsInARow } from '@app/data/models/chess/chess-coords';
-import { BehaviorSubject, filter, fromEvent, tap } from 'rxjs';
-import { ChessBoardConverter } from '@app/data/services/chess/ChessBoardConverter.service';
+import { filter, fromEvent, tap } from 'rxjs';
 import { QueenPieceComponent } from '@app/presentation/components/chess-pieces/queen.component';
 import { ChessCardPlayer } from '@app/presentation/components/chess-card-player/chess-card-player.component';
 import { LastMove } from '@app/data/models/chess/chess-lastmove';
@@ -78,7 +77,6 @@ export class ChessComponent implements OnInit {
   public isPromotionActive: boolean;
   private promotionCoords: Coords | null;
   private promotedPiece: PieceSymbol;
-  public chessBoardState$: BehaviorSubject<string>;
   public chessBoardView: PieceSymbol[][];
 
   constructor() {
@@ -88,9 +86,7 @@ export class ChessComponent implements OnInit {
     this.isPromotionActive = false;
     this.promotionCoords = null;
     this.promotedPiece = PieceSymbol.UNKNOWN;
-    this.chessBoardState$ = new BehaviorSubject(
-      ChessBoardConverter.DEFAULT_INITIAL_POSITION
-    );
+
     if (isPlatformBrowser(this.platformId)) {
       fromEvent<KeyboardEvent>(this.document, 'keyup')
         .pipe(
@@ -297,8 +293,6 @@ export class ChessComponent implements OnInit {
     this.chessBoardView = this.controller.currentChessBoardView;
     this.markLastMoveAndCheckState(this.lastMove, this.checkState);
     this.unmarkingPreviouslySlectedAndSafeSquares();
-
-    this.chessBoardState$.next(this.controller.boardAsSymbols);
 
     this.controller.gameHistory.advanceHistoryPointer();
   }

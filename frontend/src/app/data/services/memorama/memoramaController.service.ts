@@ -1,10 +1,4 @@
-import {
-  ChangeDetectorRef,
-  Injectable,
-  Renderer2,
-  inject,
-  signal,
-} from '@angular/core';
+import { Injectable, Renderer2, inject, signal } from '@angular/core';
 import { TOTAL_CARDS } from 'assets/constants/memorama';
 import { ramdomNumber } from '../util.service';
 import { CardDiv } from '@app/data/models/memorama/CardDiv';

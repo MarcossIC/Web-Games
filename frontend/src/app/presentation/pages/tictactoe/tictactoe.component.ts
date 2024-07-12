@@ -4,7 +4,6 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  OnInit,
   PLATFORM_ID,
   ViewChild,
   inject,

@@ -1,13 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import {
-  afterNextRender,
-  ChangeDetectorRef,
-  Inject,
-  inject,
-  Injectable,
-  Injector,
-  PLATFORM_ID,
-} from '@angular/core';
+import { inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { WINDOW } from '@app/data/services/Window.service';
 import {
   BOARD_HEIGHT as B_SNAKE_HEIGHT,

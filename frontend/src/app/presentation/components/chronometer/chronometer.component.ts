@@ -4,18 +4,14 @@ import {
   Component,
   DestroyRef,
   inject,
-  OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ChronometerUpdated } from '@app/data/models/ChronometerUpdated';
 import { GameName } from '@app/data/models/GameName.enum';
 import { ChronometerServiceService } from '@app/data/services/chronometerService.service';
 import { PointsService } from '@app/data/services/tetris/Points.service';
-import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
-import { destroy } from '@app/data/services/util.service';
-import { Observable, Subscription, interval } from 'rxjs';
+import { interval } from 'rxjs';
 
 @Component({
   standalone: true,
