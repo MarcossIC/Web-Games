@@ -1,20 +1,17 @@
-import { Injectable, Renderer2 } from '@angular/core';
+import { inject, Injectable, Renderer2 } from '@angular/core';
 import { ramdomNumber } from '../util.service';
-import {
-  BOARD_HEIGHT_SCREEN,
-  BOARD_WIDTH_SCREEN,
-} from 'assets/constants/snakeling';
+import { BoardSizeService } from '@app/data/services/BoardSize.service';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class FoodService {
+  private boardSize = inject(BoardSizeService);
   public foodX: number;
   public foodY: number;
 
   constructor() {
-    this.foodX = ramdomNumber(false, BOARD_WIDTH_SCREEN);
-    this.foodY = ramdomNumber(false, BOARD_HEIGHT_SCREEN);
+    this.boardSize.typeToSnake();
+    this.foodX = ramdomNumber(false, this.boardSize.WIDTH);
+    this.foodY = ramdomNumber(false, this.boardSize.HEIGHT);
   }
 
   /**
@@ -23,8 +20,8 @@ export class FoodService {
    * La nueva posición se determina aleatoriamente dentro de los límites del tablero.
    */
   public foodChangePosition(): void {
-    this.foodX = ramdomNumber(false, BOARD_WIDTH_SCREEN);
-    this.foodY = ramdomNumber(false, BOARD_HEIGHT_SCREEN);
+    this.foodX = ramdomNumber(false, this.boardSize.WIDTH);
+    this.foodY = ramdomNumber(false, this.boardSize.HEIGHT);
   }
 
   /**

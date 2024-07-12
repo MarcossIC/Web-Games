@@ -1,15 +1,15 @@
 import { Injectable } from '@angular/core';
 import { Piece } from '@app/data/models/tetris/Piece';
 import { PieceColor } from '@app/data/models/tetris/PieceColor';
-import { PieceImage } from '@app/data/models/tetris/PieceImage';
 import { PieceType } from '@app/data/models/tetris/PieceType.enum';
-import { ALL_COLOR_PIECE, DEFAULT_PIECE } from 'assets/constants/tetrisConstanst';
+import {
+  ALL_COLOR_PIECE,
+  DEFAULT_PIECE,
+} from 'assets/constants/tetrisConstanst';
 import { ramdomNumber } from '../util.service';
 import { Axis } from '@app/data/models/Axis';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable()
 export class PieceService {
   //Mapa que: relaciona un tipo de pieza con su funcion
   private allPieces: Record<PieceType, () => number[][]> = {
@@ -19,41 +19,47 @@ export class PieceService {
     [PieceType.STAIRCASE]: this.generateStaircase.bind(this),
     [PieceType.ELE]: this.generateEle.bind(this),
     [PieceType.INVERTED_STAIRCASE]: this.generateInvertedStaircase.bind(this),
-    [PieceType.INVERTED_ELE]: this.generateInvertedEle.bind(this)
+    [PieceType.INVERTED_ELE]: this.generateInvertedEle.bind(this),
   };
 
   private _current: Piece;
 
-  constructor() { 
+  constructor() {
     this._current = DEFAULT_PIECE;
   }
 
-  public get current(): Piece{
+  public get current(): Piece {
     return this._current;
   }
-  public set current(updatePiece: Piece){
+  public set current(updatePiece: Piece) {
     this._current = updatePiece;
   }
 
-  public generateDefaultPiece(shape?: number[][], position?: Axis, type?: PieceType, isMovable?: boolean, color?: PieceColor): Piece{
+  public generateDefaultPiece(
+    shape?: number[][],
+    position?: Axis,
+    type?: PieceType,
+    isMovable?: boolean,
+    color?: PieceColor
+  ): Piece {
     return {
       shape: shape ? shape : this._current.shape,
       type: type ? type : this._current.type,
       isMovable: isMovable ? isMovable : true,
       position: position ? position : this._current.position,
-      color: color ? color : this._current.color
+      color: color ? color : this._current.color,
     };
   }
   public moveToLeft(): void {
-      this._current.position.x--;
+    this._current.position.x--;
   }
 
   public moveToRight(): void {
-      this._current.position.x++;
+    this._current.position.x++;
   }
 
   public moveToDown(): void {
-      this._current.position.y++;
+    this._current.position.y++;
   }
 
   solidify(): void {
@@ -73,22 +79,18 @@ export class PieceService {
     return ALL_COLOR_PIECE[colorIndex];
   }
 
-  private generateSquare(): number[][]{
-    return [ 
-      [1]
-     ];
+  private generateSquare(): number[][] {
+    return [[1]];
   }
 
-  private generateBar(): number[][]{
-    return [
-      [1, 1, 1]
-    ];
+  private generateBar(): number[][] {
+    return [[1, 1, 1]];
   }
 
-  private generateTriangle(): number[][]{
+  private generateTriangle(): number[][] {
     return [
       [0, 1, 0],
-      [1, 1, 1]
+      [1, 1, 1],
     ];
   }
 
@@ -96,30 +98,29 @@ export class PieceService {
     return [
       [1, 0],
       [1, 0],
-      [1, 1]
+      [1, 1],
     ];
   }
 
-  private generateInvertedEle(): number[][]{
+  private generateInvertedEle(): number[][] {
     return [
       [0, 1],
       [0, 1],
-      [1, 1]
+      [1, 1],
     ];
   }
 
-  private generateStaircase(): number[][]{
+  private generateStaircase(): number[][] {
     return [
       [0, 1],
-      [1, 1]
+      [1, 1],
     ];
   }
 
-  private generateInvertedStaircase(): number[][]{
+  private generateInvertedStaircase(): number[][] {
     return [
       [1, 0],
-      [1, 1]
+      [1, 1],
     ];
   }
-
 }

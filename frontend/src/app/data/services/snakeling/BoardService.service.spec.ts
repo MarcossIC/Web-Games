@@ -6,11 +6,14 @@ import { BoardServiceService } from './BoardService.service';
 describe('Service: BoardService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [BoardServiceService]
+      providers: [BoardServiceService],
     });
   });
 
-  it('should ...', inject([BoardServiceService], (service: BoardServiceService) => {
-    expect(service).toBeTruthy();
-  }));
+  it('should ...', inject(
+    [BoardServiceService],
+    (service: BoardServiceService) => {
+      expect(service).toBeTruthy();
+    }
+  ));
 });

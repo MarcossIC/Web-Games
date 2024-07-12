@@ -1,20 +1,18 @@
-import { Injectable, Renderer2 } from '@angular/core';
+import { inject, Injectable, Renderer2 } from '@angular/core';
 import { fillMatrix } from '../util.service';
-import {
-  BOARD_HEIGHT_SCREEN,
-  BOARD_WIDTH_SCREEN,
-} from 'assets/constants/snakeling';
 
-@Injectable({
-  providedIn: 'root',
-})
+import { BoardSizeService } from '@app/data/services/BoardSize.service';
+
+@Injectable()
 export class BoardServiceService {
+  private boardSize = inject(BoardSizeService);
   private board: number[][];
 
   constructor() {
+    this.boardSize.typeToSnake();
     this.board = fillMatrix(
-      BOARD_HEIGHT_SCREEN,
-      BOARD_WIDTH_SCREEN,
+      this.boardSize.HEIGHT,
+      this.boardSize.WIDTH,
       0
     ) as number[][];
   }

@@ -3,6 +3,7 @@ import {
   Injectable,
   Renderer2,
   inject,
+  signal,
 } from '@angular/core';
 import { TOTAL_CARDS } from 'assets/constants/memorama';
 import { ramdomNumber } from '../util.service';
@@ -10,22 +11,21 @@ import { CardDiv } from '@app/data/models/memorama/CardDiv';
 import { ChronometerServiceService } from '../chronometerService.service';
 import { delay, take } from 'rxjs/operators';
 import { of } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Injectable()
 export class MemoramaControllerService {
+  private chronometerService = inject(ChronometerServiceService);
   public currentMove: number;
   public valueUsed: number[];
   public selectedCards: CardDiv[];
-  public currentAttempts: number;
-  public success: number;
-  public isGameOver: boolean;
-  public isWin: boolean = true;
-  public isPaused: boolean;
-  private chronometerService = inject(ChronometerServiceService);
-  private cdr = inject(ChangeDetectorRef);
   public gameContainer!: HTMLElement;
   public cards: CardDiv[] = [];
+
+  private _isPaused = signal<boolean>(true);
+  private _isGameOver = signal<boolean>(false);
+  private _isWin = signal<boolean>(true);
+  private _success = signal<number>(0);
+  private _currentAttempts = signal<number>(0);
 
   constructor() {
     this.currentMove = 0;
@@ -42,10 +42,6 @@ export class MemoramaControllerService {
       this.isGameOver = true;
       this.isWin = false;
       this.chronometerService.minutes = 0;
-      this.chronometerService.updated.next({
-        gameOver: this.isGameOver,
-        isPaused: this.isPaused,
-      });
     }
   }
 
@@ -62,10 +58,6 @@ export class MemoramaControllerService {
     this.resetCardsClass(renderer);
     this.isGameOver = false;
     this.resume();
-    this.chronometerService.updated.next({
-      gameOver: this.isGameOver,
-      isPaused: this.isPaused,
-    });
   }
 
   /**
@@ -152,7 +144,6 @@ export class MemoramaControllerService {
       .subscribe(() => {
         this.deactivateCards(renderer);
         this.resetMove();
-        this.cdr.detectChanges();
       });
   }
 
@@ -171,10 +162,6 @@ export class MemoramaControllerService {
   private endGame() {
     this.isWin = true;
     this.isGameOver = true;
-    this.chronometerService.updated.next({
-      gameOver: this.isGameOver,
-      isPaused: this.isPaused,
-    });
   }
 
   private cardsAreEven(): boolean {
@@ -202,16 +189,50 @@ export class MemoramaControllerService {
 
   public resume(): void {
     this.isPaused = false;
-    this.chronometerService.updated.next({
-      gameOver: this.isGameOver,
-      isPaused: this.isPaused,
-    });
   }
   public pause(): void {
     this.isPaused = true;
-    this.chronometerService.updated.next({
-      gameOver: this.isGameOver,
-      isPaused: this.isPaused,
-    });
+  }
+
+  public get isPaused(): boolean {
+    return this._isPaused();
+  }
+
+  public set isPaused(value: boolean) {
+    this._isPaused.set(value);
+    this.chronometerService.isPaused = value;
+  }
+
+  public get isGameOver(): boolean {
+    return this._isGameOver();
+  }
+
+  public set isGameOver(value: boolean) {
+    this._isGameOver.set(value);
+    this.chronometerService.gameOver = value;
+  }
+
+  public set isWin(value: boolean) {
+    this._isWin.set(value);
+  }
+
+  public get isWin(): boolean {
+    return this._isWin();
+  }
+
+  public set currentAttempts(value: number) {
+    this._currentAttempts.set(value);
+  }
+
+  public get currentAttempts() {
+    return this._currentAttempts();
+  }
+
+  public set success(value: number) {
+    this._success.set(value);
+  }
+
+  public get success() {
+    return this._success();
   }
 }

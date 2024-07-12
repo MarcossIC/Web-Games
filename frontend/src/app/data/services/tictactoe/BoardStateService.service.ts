@@ -1,21 +1,11 @@
-import { Injectable } from '@angular/core';
-import { EndGameResult } from '@app/data/models/tictactoe/EndGameResult';
+import { Injectable, signal } from '@angular/core';
 import { GameStatus } from '@app/data/models/tictactoe/GameStatus.enum';
 import { Player } from '@app/data/models/tictactoe/Player.enum';
-import { Subject } from 'rxjs';
 
 @Injectable()
 export class BoardStateService {
-  public updateGameState: Subject<GameStatus> = new Subject<GameStatus>();
+  private _gameStatus = signal(GameStatus.WAITING);
 
-  private gameStatus: GameStatus;
-  constructor() {
-    this.gameStatus = GameStatus.WAITING;
-  }
-
-  get gameResult() {
-    return this.gameStatus;
-  }
   public countEmptyCell(board: string[][]): number {
     return board.flat().filter((cell) => cell === '0').length;
   }
@@ -36,13 +26,13 @@ export class BoardStateService {
     for (let rowIndex = 0; rowIndex < boardLength; rowIndex++) {
       // Verifica si todas las celdas en la fila actual son 'X'
       if (board[rowIndex].every((cell) => cell === 'X')) {
-        this.gameStatus = GameStatus.X_WON;
+        this.gameResult = GameStatus.X_WON;
         return true;
       }
 
       // Verifica si todas las celdas en la fila actual son 'O'
       if (board[rowIndex].every((cell) => cell === 'O')) {
-        this.gameStatus = GameStatus.O_WON;
+        this.gameResult = GameStatus.O_WON;
         return true;
       }
     }
@@ -75,13 +65,13 @@ export class BoardStateService {
 
       // Si todas las celdas en la columna son 'X'
       if (countXColumns === boardLength) {
-        this.gameStatus = GameStatus.X_WON;
+        this.gameResult = GameStatus.X_WON;
         return true;
       }
 
       // Si todas las celdas en la columna son 'O'
       if (countOColumns === boardLength) {
-        this.gameStatus = GameStatus.O_WON;
+        this.gameResult = GameStatus.O_WON;
         return true;
       }
     }
@@ -111,12 +101,15 @@ export class BoardStateService {
 
     for (let i = 0; i < boardSize; i++) {
       // Verifica la diagonal principal (de izquierda a derecha)
-      if (board[i][i] !== mainDiagonalSymbol) {
+      if (board[i][i] !== mainDiagonalSymbol || mainDiagonalSymbol === '0') {
         mainDiagonalComplete = false;
       }
 
       // Verifica la diagonal secundaria (de derecha a izquierda)
-      if (board[i][boardSize - 1 - i] !== antiDiagonalSymbol) {
+      if (
+        board[i][boardSize - 1 - i] !== antiDiagonalSymbol ||
+        antiDiagonalSymbol === '0'
+      ) {
         antiDiagonalComplete = false;
       }
 
@@ -127,14 +120,14 @@ export class BoardStateService {
     }
 
     // Verifica si hay un ganador en alguna diagonal
-    if (mainDiagonalComplete && mainDiagonalSymbol !== '') {
-      this.gameStatus =
+    if (mainDiagonalComplete && mainDiagonalSymbol !== '0') {
+      this.gameResult =
         mainDiagonalSymbol === 'X' ? GameStatus.X_WON : GameStatus.O_WON;
       return true;
     }
 
-    if (antiDiagonalComplete && antiDiagonalSymbol !== '') {
-      this.gameStatus =
+    if (antiDiagonalComplete && antiDiagonalSymbol !== '0') {
+      this.gameResult =
         antiDiagonalSymbol === 'X' ? GameStatus.X_WON : GameStatus.O_WON;
       return true;
     }
@@ -171,8 +164,8 @@ export class BoardStateService {
 
     if (isAWinner) {
       const isCurrentPlayerWinner =
-        (player === Player.X && this.gameStatus === GameStatus.X_WON) ||
-        (player === Player.O && this.gameStatus === GameStatus.O_WON);
+        (player === Player.X && this._gameStatus() === GameStatus.X_WON) ||
+        (player === Player.O && this._gameStatus() === GameStatus.O_WON);
 
       // Asignar puntuación basado en el estado del ganador
       score = isCurrentPlayerWinner ? 10 : -10;
@@ -181,11 +174,17 @@ export class BoardStateService {
 
     //Empate
     if (emptyCellCount === 0) {
-      this.gameStatus = GameStatus.DRAW;
+      this.gameResult = GameStatus.DRAW;
       return 0;
     }
 
     // Puntuación por defecto si el juego aún está en curso
     return 1000;
+  }
+  public get gameResult() {
+    return this._gameStatus();
+  }
+  public set gameResult(updated: GameStatus) {
+    this._gameStatus.set(updated);
   }
 }

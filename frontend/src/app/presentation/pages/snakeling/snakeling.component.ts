@@ -4,6 +4,7 @@ import {
   DestroyRef,
   ElementRef,
   OnInit,
+  PLATFORM_ID,
   Renderer2,
   ViewChild,
   inject,
@@ -12,7 +13,7 @@ import { SnakelingControllerService } from '@app/data/services/snakeling/Snakeli
 import { Observable, fromEvent, interval, throttleTime } from 'rxjs';
 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { WelcomeSnakelingModalComponent } from '@app/presentation/components/welcome-snakeling-modal/welcome-snakeling-modal.component';
 import { EndgameModalSnakelingComponent } from '@app/presentation/components/endgame-modal-snakeling/endgame-modal-snakeling.component';
 
@@ -34,10 +35,20 @@ export class SnakelingComponent implements OnInit {
   private renderer = inject(Renderer2);
   protected controller = inject(SnakelingControllerService);
   private destroy = inject(DestroyRef);
+  private PLATFORM = inject(PLATFORM_ID);
+  private document = inject(DOCUMENT);
   private cronometro$: Observable<number>;
 
   constructor() {
     this.cronometro$ = interval(180);
+    if (isPlatformBrowser(this.PLATFORM)) {
+      const throttleDuration = 90;
+      fromEvent<KeyboardEvent>(this.document, 'keydown')
+        .pipe(throttleTime(throttleDuration), takeUntilDestroyed(this.destroy))
+        .subscribe((event: any) => {
+          this.controller.executeAction(event.key);
+        });
+    }
   }
 
   ngOnInit(): void {
@@ -45,15 +56,6 @@ export class SnakelingComponent implements OnInit {
       this.boardRef.nativeElement
     );
     this.controller.initGame(boardDiv, this.renderer);
-
-    const keyboardEvents$ = fromEvent<KeyboardEvent>(window, 'keydown');
-    const throttleDuration = 90;
-
-    keyboardEvents$
-      .pipe(throttleTime(throttleDuration), takeUntilDestroyed(this.destroy))
-      .subscribe((event: any) => {
-        this.controller.executeAction(event.key);
-      });
 
     this.cronometro$.pipe(takeUntilDestroyed(this.destroy)).subscribe(() => {
       this.controller.runGame();

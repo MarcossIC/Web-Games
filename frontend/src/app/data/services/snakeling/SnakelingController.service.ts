@@ -1,4 +1,4 @@
-import { Injectable, Renderer2, inject } from '@angular/core';
+import { Injectable, Renderer2, inject, signal } from '@angular/core';
 import { BoardServiceService } from './BoardService.service';
 import { ACTIONS } from 'assets/constants/snakeling';
 import { SnakeService } from './Snake.service';
@@ -6,12 +6,10 @@ import { FoodService } from './Food.service';
 import { ACTION } from '@app/data/models/snakeling/Actions';
 import { ScoreService } from './Score.service';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class SnakelingControllerService {
-  private _isPaused: boolean = true;
-  public _isGameOver: boolean = false;
+  private _isPaused = signal(true);
+  private _isGameOver = signal(false);
 
   private renderer!: Renderer2;
   private boardService = inject(BoardServiceService);
@@ -47,7 +45,7 @@ export class SnakelingControllerService {
    * El juego termina si se detecta una colisión de la serpiente.
    */
   public runGame(): void {
-    if (!this._isGameOver && !this._isPaused) {
+    if (!this._isGameOver() && !this._isPaused()) {
       this.snakeService.removeSnake(this.boardDiv, this.renderer);
       this.snakeService.moveBody();
       this.snakeService.moveSnake();
@@ -57,7 +55,7 @@ export class SnakelingControllerService {
       );
 
       //Si la serpiente colisiona con su propio cuerpo
-      if (isCollision) this._isGameOver = true;
+      if (isCollision) this.isGameOver = true;
 
       //Si la serpiente come la comida
       if (this.snakeAndFoodCollision()) {
@@ -97,12 +95,13 @@ export class SnakelingControllerService {
 
     this.foodService.foodChangePosition();
     this.initSnakeAndFood();
-    this._isPaused = false;
-    this._isGameOver = false;
+    this._isPaused.set(false);
+    this.isGameOver = false;
   }
 
   public changePause(): void {
-    this._isPaused = !this._isPaused;
+    const current = this._isPaused();
+    this._isPaused.set(!current);
   }
 
   public snakeAndFoodCollision(): boolean {
@@ -120,10 +119,13 @@ export class SnakelingControllerService {
   }
 
   public get isPaused(): boolean {
-    return this._isPaused;
+    return this._isPaused();
   }
 
   public get isGameOver(): boolean {
-    return this._isGameOver;
+    return this._isGameOver();
+  }
+  public set isGameOver(updated: boolean) {
+    this._isGameOver.set(updated);
   }
 }

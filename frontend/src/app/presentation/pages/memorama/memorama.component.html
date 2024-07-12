@@ -1,8 +1,17 @@
 <section class="shared-container justify-center relative">
   <app-particles></app-particles>
-
-  <div class="memorama-wrapper">
-    <span class="pause" (click)="this.controller.pause()" tabindex="0">||</span>
+  <aside class="absolute top-[2%] left-[2%] z-50">
+    <button
+      class="text-format menu-logo"
+      role="button"
+      [disabled]="controller.isPaused"
+      (click)="this.controller.pause()"
+      tabindex="0"
+    >
+      ||
+    </button>
+  </aside>
+  <div class="memorama-wrapper" [ngClass]="{ paused: controller.isPaused }">
     <h2 class="text-4xl mb-4 font-bold memorama-title min-[1500px]:text-6xl">
       Memorama Game
     </h2>

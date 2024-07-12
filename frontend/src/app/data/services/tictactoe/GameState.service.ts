@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { fillMatrix } from '../util.service';
 import { Player } from '@app/data/models/tictactoe/Player.enum';
 import { GameStatus } from '@app/data/models/tictactoe/GameStatus.enum';
@@ -7,23 +7,20 @@ import { BoardStateService } from './BoardStateService.service';
 
 @Injectable()
 export class GameStateService {
-  private _board: string[][];
+  private _board = signal(this.emptyBoard());
   public turn: Player;
-  public gameStatus: GameStatus;
-  public partyStatus: PartyStatus;
-  private boardStateService: BoardStateService = inject(BoardStateService);
+  private _gameStatus = signal(GameStatus.WAITING);
+  private _partyStatus = signal(PartyStatus.BEGGING);
+  private boardStateService = inject(BoardStateService);
 
   constructor() {
-    this._board = this.emptyBoard();
     this.turn = Player.X;
-    this.gameStatus = GameStatus.WAITING;
-    this.partyStatus = PartyStatus.BEGGING;
   }
   public resetGameState(): void {
-    this._board = this.emptyBoard();
+    this._board.set(this.emptyBoard());
     this.turn = Player.X;
-    this.gameStatus = GameStatus.WAITING;
-    this.partyStatus = PartyStatus.BEGGING;
+    this._gameStatus.set(GameStatus.WAITING);
+    this._partyStatus.set(PartyStatus.BEGGING);
   }
 
   public emptyBoard(): string[][] {
@@ -35,12 +32,14 @@ export class GameStateService {
   }
 
   public getBoard(): string[][] {
-    return this._board;
+    return this._board();
   }
 
   public updateBoard(rowX: number, cellY: number): void {
-    if (this._board[rowX][cellY] === '0') {
-      this._board[rowX][cellY] = this.turn === Player.X ? 'X' : 'O';
+    const currentBoard = this._board();
+    if (currentBoard[rowX][cellY] === '0') {
+      currentBoard[rowX][cellY] = this.turn === Player.X ? 'X' : 'O';
+      this._board.set([...currentBoard]);
     }
   }
 
@@ -54,12 +53,10 @@ export class GameStateService {
    * @returns {boolean} Retorna true si el juego ha terminado, false en caso contrario.
    */
   public isEndGame(): boolean {
-    const BOARD = this._board;
+    const BOARD = this._board();
     const emptyCellCount = this.boardStateService.countEmptyCell(BOARD);
-
     // Verificar si hay un ganador
     const isAWinner = this.boardStateService.checkBoardForWinner(BOARD);
-
     // Si hay un ganador, actualizar el estado del juego y terminar
     if (isAWinner) {
       this.gameStatus = this.boardStateService.gameResult;
@@ -74,5 +71,18 @@ export class GameStateService {
 
     // Si no se cumplen las condiciones anteriores, el juego continúa
     return false;
+  }
+
+  public get gameStatus() {
+    return this._gameStatus();
+  }
+  public set gameStatus(updated: GameStatus) {
+    this._gameStatus.set(updated);
+  }
+  public get partyStatus() {
+    return this._partyStatus();
+  }
+  public set partyStatus(updated: PartyStatus) {
+    this._partyStatus.set(updated);
   }
 }

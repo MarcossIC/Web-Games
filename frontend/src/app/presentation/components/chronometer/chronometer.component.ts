@@ -2,9 +2,13 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  inject,
   OnDestroy,
   OnInit,
+  signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ChronometerUpdated } from '@app/data/models/ChronometerUpdated';
 import { GameName } from '@app/data/models/GameName.enum';
 import { ChronometerServiceService } from '@app/data/services/chronometerService.service';
@@ -21,88 +25,73 @@ import { Observable, Subscription, interval } from 'rxjs';
   styleUrls: ['./chronometer.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChronometerComponent implements OnInit, OnDestroy {
-  private seconds = 0;
-  private minutes = 0;
-  public time: string = '00:00';
-  private cronometro$: Observable<number>;
-  private timer$!: Subscription;
-  protected maxSecond: number = 0;
-  public maxMinute: number = 0;
-  public isUpdated: boolean = true;
-  private destroy$ = destroy();
+export class ChronometerComponent implements OnInit {
+  private seconds = signal(0);
+  private minutes = signal(0);
+  public time = signal('00:00');
+  protected maxSecond = signal(0);
+  public maxMinute = signal(0);
+  public isUpdated = signal(true);
 
-  constructor(
-    private point: PointsService,
-    private controller: ChronometerServiceService
-  ) {
-    this.cronometro$ = interval(1000);
-  }
+  private destroy$ = inject(DestroyRef);
+  private controller = inject(ChronometerServiceService);
+  private point = inject(PointsService);
 
-  ngOnInit(): void {
-    this.controller.updated.pipe(this.destroy$()).subscribe((data: any) => {
-      this.controller.gameOver = data.gameOver;
-      this.controller.isPaused = data.isPaused;
-    });
-
-    this.timer$ = this.cronometro$.pipe(this.destroy$()).subscribe(() => {
-      if (!this.controller.gameOver && !this.controller.isPaused) {
-        this.isUpdated = true;
-        this.seconds++;
-        if (this.seconds >= 60) {
-          this.seconds = 0;
-          this.minutes++;
-          this.controller.minutes = this.minutes;
+  constructor() {
+    interval(1000)
+      .pipe(takeUntilDestroyed(this.destroy$))
+      .subscribe(() => {
+        if (!this.controller.gameOver && !this.controller.isPaused) {
+          this.isUpdated.set(true);
+          this.seconds.update((seconds) => {
+            if (seconds >= 59) {
+              this.minutes.update((minutes) => minutes + 1);
+              this.controller.minutes = this.minutes();
+              return 0;
+            }
+            return seconds + 1;
+          });
+          this.updateTime();
+        } else if (this.controller.gameOver && this.isUpdated()) {
+          if (this.controller.gameType === GameName.TETRIS) {
+            this.updateMaximumsTimes();
+          }
+          this.reset();
+          this.isUpdated.set(false);
         }
-        this.updateTime();
-      } else if (this.controller.gameOver && this.isUpdated) {
-        if (this.controller.gameType == GameName.TETRIS)
-          this.updateMaximumsTimes();
-        this.reset();
-        this.isUpdated = false;
-      }
-    });
+      });
   }
 
-  ngOnDestroy(): void {
-    this.timer$.unsubscribe();
-    this.cronometro$.pipe();
-  }
+  ngOnInit(): void {}
 
   private updateTime() {
-    const minutosStr = this.formatTime(this.minutes);
-    const segundosStr = this.formatTime(this.seconds);
-    this.time = minutosStr + ':' + segundosStr;
+    const minutosStr = this.formatTime(this.minutes());
+    const segundosStr = this.formatTime(this.seconds());
+    this.time.set(`${minutosStr}:${segundosStr}`);
   }
 
   public updateMaximumsTimes() {
-    let minutosStr = this.formatTime(this.minutes);
-    let segundosStr = this.formatTime(this.seconds);
-    this.point.updateTime(minutosStr + ':' + segundosStr);
+    const currentTime = `${this.formatTime(this.minutes())}:${this.formatTime(
+      this.seconds()
+    )}`;
+    this.point.updateTime(currentTime);
 
-    if (this.maxMinute < this.minutes) {
-      minutosStr = this.formatTime(this.minutes);
-      segundosStr = this.formatTime(this.seconds);
+    if (
+      this.maxMinute < this.minutes ||
+      (this.maxMinute === this.minutes && this.maxSecond < this.seconds)
+    ) {
       this.maxMinute = this.minutes;
       this.maxSecond = this.seconds;
-      this.point.updateMaxTime(minutosStr + ':' + segundosStr);
-    } else if (
-      this.maxMinute === this.minutes &&
-      this.maxSecond < this.seconds
-    ) {
-      minutosStr = this.formatTime(this.minutes);
-      segundosStr = this.formatTime(this.seconds);
-      this.maxSecond = this.seconds;
-      this.point.updateMaxTime(minutosStr + ':' + segundosStr);
+      this.point.updateMaxTime(currentTime);
     }
   }
 
-  private formatTime(time: number) {
+  private formatTime(time: number): string {
     return time < 10 ? '0' + time : time.toString();
   }
 
   public reset() {
-    this.seconds = 0;
-    this.minutes = 0;
+    this.seconds.set(0);
+    this.minutes.set(0);
   }
 }

@@ -1,10 +1,11 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
   ElementRef,
   OnInit,
+  PLATFORM_ID,
   ViewChild,
   inject,
 } from '@angular/core';
@@ -14,7 +15,7 @@ import { DisplayInfoComponent } from '@app/presentation/components/display-info/
 import { EndgameModalTttComponent } from '@app/presentation/components/endgame-modal-ttt/endgame-modal-ttt.component';
 import { ParticlesComponent } from '@app/presentation/components/particles/particles.component';
 import { SelectModalTttComponent } from '@app/presentation/components/select-modal-ttt/select-modal-ttt.component';
-import { delay } from 'rxjs';
+import { delay, filter, fromEvent } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -35,8 +36,18 @@ export class TictactoeComponent {
 
   protected controller = inject(TicTacToeControllerService);
   private destroy = inject(DestroyRef);
+  private PLATFORM = inject(PLATFORM_ID);
+  private document = inject(DOCUMENT);
 
   constructor() {
+    if (isPlatformBrowser(this.PLATFORM)) {
+      fromEvent<KeyboardEvent>(this.document, 'keyup')
+        .pipe(
+          takeUntilDestroyed(this.destroy),
+          filter(({ key }) => key === 'p' || key === 'Escape')
+        )
+        .subscribe((_) => this.controller.reset());
+    }
     this.controller._notifyBot
       .pipe(delay(500), takeUntilDestroyed(this.destroy))
       .subscribe(() => this.controller.playBot());
@@ -44,9 +55,7 @@ export class TictactoeComponent {
 
   protected cellSelected(row: number, cell: number): void {
     if (!this.controller.isOccupied(row, cell)) {
-      setTimeout(() => {
-        this.controller.runGame(row, cell);
-      }, 120);
+      this.controller.runGame(row, cell);
     }
   }
 }

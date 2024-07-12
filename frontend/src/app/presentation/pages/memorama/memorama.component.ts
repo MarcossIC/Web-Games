@@ -1,10 +1,10 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  OnInit,
+  PLATFORM_ID,
   Renderer2,
   inject,
 } from '@angular/core';
@@ -16,7 +16,7 @@ import { EndgameModalMemoramaComponent } from '@app/presentation/components/endg
 import { ParticlesComponent } from '@app/presentation/components/particles/particles.component';
 import { WelcomeMomeramaModalComponent } from '@app/presentation/components/welcome-momerama-modal/welcome-momerama-modal.component';
 import { TOTAL_CARDS } from 'assets/constants/memorama';
-import { interval } from 'rxjs';
+import { filter, fromEvent, interval } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -32,27 +32,38 @@ import { interval } from 'rxjs';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MemoramaComponent implements OnInit, AfterViewInit {
+export class MemoramaComponent implements AfterViewInit {
   protected renderer = inject(Renderer2);
   protected controller = inject(MemoramaControllerService);
-  private destroy = inject(DestroyRef);
+  private destroy$ = inject(DestroyRef);
+  private platform = inject(PLATFORM_ID);
+  private document = inject(DOCUMENT);
   public cards: number[] = [];
 
-  ngAfterViewInit(): void {
-    const gameCards = document.querySelectorAll('#game-memorama .game-card');
-    gameCards.forEach((card: any) => {
-      const content = card.querySelector('.content') as HTMLElement;
-      this.controller.cards.push({ card, content });
-    });
-  }
-
-  ngOnInit(): void {
+  constructor() {
     this.controller.valueUsed = [];
     this.cards = fillArray(TOTAL_CARDS, 0);
     this.cards.forEach(() => this.controller.ramdomValues());
     interval(1000)
-      .pipe(takeUntilDestroyed(this.destroy))
+      .pipe(takeUntilDestroyed(this.destroy$))
       .subscribe(() => this.controller.verifyTime());
+  }
+
+  ngAfterViewInit(): void {
+    if (isPlatformBrowser(this.platform)) {
+      fromEvent<KeyboardEvent>(this.document, 'keyup')
+        .pipe(
+          takeUntilDestroyed(this.destroy$),
+          filter(({ key }) => key === 'p' || key === 'Escape')
+        )
+        .subscribe((_) => this.controller.pause());
+
+      const gameCards = document.querySelectorAll('#game-memorama .game-card');
+      gameCards.forEach((card: any) => {
+        const content = card.querySelector('.content') as HTMLElement;
+        this.controller.cards.push({ card, content });
+      });
+    }
   }
 }
 

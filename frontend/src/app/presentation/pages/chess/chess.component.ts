@@ -10,12 +10,8 @@ import {
   DestroyRef,
   OnInit,
   PLATFORM_ID,
-  Type,
   inject,
-  signal,
 } from '@angular/core';
-import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
-import { Piece } from '@app/data/services/chess/Piece';
 import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
 import { ChessController } from '@app/data/services/chess/ChessController.service';
 import { BishopPieceComponent } from '@app/presentation/components/chess-pieces/bishop.component';
@@ -39,6 +35,7 @@ import { ChessSquare } from '@app/presentation/components/chess-square/chess-squ
 import { ChessPromotionDialog } from '@app/presentation/components/chess-promotion-dialog/chess-promotion-dialog.component';
 import { ChessSideController } from '@app/presentation/components/chess-side-controller/chess-side-controller.component';
 import { WelcomeChessModal } from '@app/presentation/components/welcome-chess-modal/welcome-chessmodal.component';
+import { EndGameModalChess } from '@app/presentation/components/endgame-modal-chess/endgame-modal-chess.component';
 
 export type SelectedSquare = {
   symbol: PieceSymbol;
@@ -67,6 +64,7 @@ export type SelectedSquare = {
     ChessPromotionDialog,
     ChessSideController,
     WelcomeChessModal,
+    EndGameModalChess,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -104,7 +102,6 @@ export class ChessComponent implements OnInit {
               event.key === 'Escape'
           ),
           tap(({ key }) => {
-            console.log({ key });
             const pointer = this.controller.gameHistory.gameHistoryPointer;
             const historySize =
               this.controller.gameHistory.gameHistory.length - 1;
@@ -119,10 +116,8 @@ export class ChessComponent implements OnInit {
                 break;
               case 'p':
               case 'Escape':
-                console.log('isBe', this.controller.isPaused);
                 if (this.controller.isPaused) return;
                 this.controller.isPaused = true;
-                console.log('isAf', this.controller.isPaused);
                 break;
               default:
                 break;
@@ -322,7 +317,6 @@ export class ChessComponent implements OnInit {
   }
 
   public move([x, y]: CoordsInARow): void {
-    console.log('paused: ', this.controller.isPaused);
     if (!this.controller.isPaused) {
       this.selectingPiece(x, y);
       this.placingPiece(x, y);

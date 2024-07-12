@@ -1,34 +1,28 @@
-import { Injectable } from '@angular/core';
-import {
-  BOARD_HEIGHT_SCREEN,
-  BOARD_WIDTH_SCREEN,
-  DEFAULT_COLOR,
-} from '../../../../assets/constants/tetrisConstanst';
+import { inject, Injectable, signal } from '@angular/core';
+import { DEFAULT_COLOR } from '../../../../assets/constants/tetrisConstanst';
 import { Piece } from '@app/data/models/tetris/Piece';
 import { PointsService } from './Points.service';
-import { fillArray, fillMatrix, ramdomNumber } from '../util.service';
+import { fillArray, fillMatrix } from '../util.service';
+import { BoardSizeService } from '@app/data/services/BoardSize.service';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class BoardService {
-  private _board: number[][];
+  private _board = signal<number[][]>([]);
+  private boardSize = inject(BoardSizeService);
+  private points = inject(PointsService);
 
-  constructor(private points: PointsService) {
-    this._board = fillMatrix(
-      BOARD_WIDTH_SCREEN,
-      BOARD_HEIGHT_SCREEN,
-      0
-    ) as number[][];
+  constructor() {
+    this.boardSize.typeToTetris();
+    this._board.set(
+      fillMatrix(this.boardSize.WIDTH, this.boardSize.HEIGHT, 0) as number[][]
+    );
   }
 
-  //Rieniciar el tablero
+  // Reiniciar el tablero
   public reset(): void {
-    this._board = fillMatrix(
-      BOARD_WIDTH_SCREEN,
-      BOARD_HEIGHT_SCREEN,
-      0
-    ) as number[][];
+    this._board.set(
+      fillMatrix(this.boardSize.WIDTH, this.boardSize.HEIGHT, 0) as number[][]
+    );
   }
 
   /**
@@ -49,14 +43,14 @@ export class BoardService {
     context.fillStyle = '#000';
     context.fillRect(0, 0, width, height);
 
-    this._board.forEach((row, x) => {
+    this._board().forEach((row, x) => {
       row.forEach((value, y) => {
         if (value > 0) {
-          //Configuracion
+          // Configuración
           context.fillStyle = DEFAULT_COLOR.fill;
           context.strokeStyle = DEFAULT_COLOR.stroke;
 
-          //Dibujando
+          // Dibujando
           context.fillRect(y, x, 1, 1);
           context.strokeRect(y, x, 1, 1);
         }
@@ -65,12 +59,15 @@ export class BoardService {
   }
 
   public solidifyPieceInBoard(piece: Piece): void {
+    const boardCopy = this._board().map((row) => [...row]);
     piece.shape.forEach((row, x) => {
       row.forEach((value, y) => {
-        if (value > 0)
-          this._board[y + piece.position.y][x + piece.position.x] = 1;
+        if (value > 0) {
+          boardCopy[y + piece.position.y][x + piece.position.x] = 1;
+        }
       });
     });
+    this._board.set(boardCopy);
   }
 
   /**
@@ -82,13 +79,16 @@ export class BoardService {
    * @returns El nuevo nivel del juego basado en la puntuación actual.
    */
   public updateBoardAndScore(): number {
-    this._board.forEach((row, rowX) => {
+    const boardCopy = this._board().map((row) => [...row]);
+    boardCopy.forEach((row, rowX) => {
       if (row.every((cell) => cell > 0)) {
-        this.removeLine(rowX);
-        this.addNewEmptyLine();
+        this.removeLine(boardCopy, rowX);
+        this.addNewEmptyLine(boardCopy);
         this.points.addScore();
       }
     });
+
+    this._board.set(boardCopy);
 
     let score = this.points.score;
     let level;
@@ -101,15 +101,15 @@ export class BoardService {
     return level;
   }
 
-  private removeLine(line: number): void {
-    this._board.splice(line, 1);
+  private removeLine(board: number[][], line: number): void {
+    board.splice(line, 1);
   }
 
-  private addNewEmptyLine(): void {
-    this._board.unshift(fillArray(BOARD_WIDTH_SCREEN, 0));
+  private addNewEmptyLine(board: number[][]): void {
+    board.unshift(fillArray(this.boardSize.WIDTH, 0));
   }
 
   public get board(): number[][] {
-    return this._board;
+    return this._board();
   }
 }

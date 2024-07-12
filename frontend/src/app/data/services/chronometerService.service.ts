@@ -1,31 +1,16 @@
-import { DestroyRef, Injectable, inject } from '@angular/core';
-import { ChronometerUpdated } from '../models/ChronometerUpdated';
-import { Subject } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
 import { GameName } from '../models/GameName.enum';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ChronometerServiceService {
-  public gameOver: boolean;
-  public isPaused: boolean;
-  public gameType: GameName;
-  public updated: Subject<ChronometerUpdated> = new Subject();
-  public minutes: number;
-  private destroy = inject(DestroyRef);
+  private _gameOver = signal(false);
+  private _isPaused = signal(true);
+  private _gameType = signal<GameName>(GameName.NONE);
+  private _minutes = signal(0);
 
-  constructor() {
-    this.gameOver = false;
-    this.isPaused = true;
-    this.gameType = GameName.NONE;
-    this.minutes = 0;
-
-    this.updated.pipe(takeUntilDestroyed(this.destroy)).subscribe((obj) => {
-      this.gameOver = obj.gameOver;
-      this.isPaused = obj.isPaused;
-    });
-  }
+  constructor() {}
 
   public reset() {
     this.gameOver = false;
@@ -34,5 +19,37 @@ export class ChronometerServiceService {
 
   public updateGameName(gameName: GameName) {
     this.gameType = gameName;
+  }
+
+  get gameOver(): boolean {
+    return this._gameOver.asReadonly()();
+  }
+
+  set gameOver(value: boolean) {
+    this._gameOver.set(value);
+  }
+
+  get isPaused(): boolean {
+    return this._isPaused.asReadonly()();
+  }
+
+  set isPaused(value: boolean) {
+    this._isPaused.set(value);
+  }
+
+  get gameType(): GameName {
+    return this._gameType();
+  }
+
+  set gameType(value: GameName) {
+    this._gameType.set(value);
+  }
+
+  get minutes(): number {
+    return this._minutes();
+  }
+
+  set minutes(value: number) {
+    this._minutes.set(value);
   }
 }

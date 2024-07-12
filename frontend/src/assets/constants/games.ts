@@ -22,6 +22,7 @@ export const GAMES: iGAMES[] = [
     NAME: 'Snake Clasic',
     ALT: 'Snake Clasic front page image',
     PATH: '/snakeling',
+    priority: true,
   },
   {
     ID: 'TTT-GAME',
@@ -29,6 +30,7 @@ export const GAMES: iGAMES[] = [
     NAME: 'Tic Tac Toe',
     ALT: 'Tic Tac Toe front page image',
     PATH: '/tictactoe',
+    priority: true,
   },
   {
     ID: 'MEMORAMA-GAME',

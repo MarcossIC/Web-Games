@@ -5,13 +5,10 @@ import {
   NEXT_PIECE_HEIGHT,
   NEXT_PIECE_WIDTH,
   FULL_SQUARE_SIZE,
-  SHORT_SUQUARE_SIZE,
 } from 'assets/constants/tetrisConstanst';
 import { fillMatrix } from '../util.service';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class NextPieceBoardService {
   nextPiece!: Piece;
   nextPieceBoard: number[][];

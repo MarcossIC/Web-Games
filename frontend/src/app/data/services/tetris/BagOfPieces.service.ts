@@ -2,22 +2,20 @@ import { Injectable, inject } from '@angular/core';
 import { PieceService } from './Piece.service';
 import { Piece } from '@app/data/models/tetris/Piece';
 import { PieceType } from '@app/data/models/tetris/PieceType.enum';
-import {
-  BOARD_WIDTH_SCREEN
-} from 'assets/constants/tetrisConstanst';
 import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
 import { ramdomNumber } from '../util.service';
+import { BoardSizeService } from '@app/data/services/BoardSize.service';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class BagOfPiecesService {
   pieceBag: Piece[] = [];
   allPieceType: PieceType[];
-  
+  private boardSize = inject(BoardSizeService);
+
   public piece = inject(PieceService);
 
   constructor() {
+    this.boardSize.typeToTetris();
     this.allPieceType = this.loadAllPieceType();
     this.loadPieceBag();
     this.recoverNextPiece();
@@ -37,34 +35,35 @@ export class BagOfPiecesService {
 
   public generatePiece(pieceType: PieceType): Piece {
     const shape = this.piece.generateShapePiece(pieceType);
-    let ramsomPositionX = ramdomNumber(true, BOARD_WIDTH_SCREEN-1);
+    let ramsomPositionX = ramdomNumber(true, this.boardSize.WIDTH - 1);
 
     if (ramsomPositionX <= 0) ramsomPositionX += 2;
-    if (ramsomPositionX + shape.length > BOARD_WIDTH_SCREEN - 1) ramsomPositionX -= 2;
+    if (ramsomPositionX + shape.length > this.boardSize.WIDTH - 1)
+      ramsomPositionX -= 2;
 
     return {
       shape: shape,
       type: pieceType,
       isMovable: true,
       color: this.piece.defineColorPiece(),
-      position: { x: ramsomPositionX, y: 0 }
+      position: { x: ramsomPositionX, y: 0 },
     };
   }
 
   private loadPieceBag(): void {
     const totalPiece = this.allPieceType.length;
-    for(let i = 0; i < totalPiece; i++) {
+    for (let i = 0; i < totalPiece; i++) {
       this.addPieceToBag();
     }
 
     this.allPieceType = this.loadAllPieceType();
   }
 
-  public addPieceToBag(): void{
+  public addPieceToBag(): void {
     this.pieceBag.push(this.generatePiece(this.ramdomPieceType));
   }
 
-  public reset():void {
+  public reset(): void {
     const lenght = this.pieceBag.length;
     for (let i = 0; i < lenght; i++) {
       this.pieceBag.pop();
@@ -88,8 +87,8 @@ export class BagOfPiecesService {
     const numberPieceInBag = this.numberPieceInBag;
     if (numberPieceInBag >= 1) {
       this.updateCurrent();
-    } 
-    if(numberPieceInBag === 1){
+    }
+    if (numberPieceInBag === 1) {
       this.loadPieceBag();
     }
   }
@@ -109,7 +108,7 @@ export class BagOfPiecesService {
 
   public get ramdomPieceType(): PieceType {
     return this.allPieceType.splice(
-      ramdomNumber(true, this.allPieceType.length-1),
+      ramdomNumber(true, this.allPieceType.length - 1),
       1
     )[0];
   }

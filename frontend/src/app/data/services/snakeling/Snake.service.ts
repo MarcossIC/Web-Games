@@ -1,18 +1,16 @@
-import { Injectable, Renderer2 } from '@angular/core';
+import { inject, Injectable, Renderer2 } from '@angular/core';
 import { ramdomNumber } from '../util.service';
 import {
-  BOARD_HEIGHT_SCREEN,
-  BOARD_WIDTH_SCREEN,
   NEXT_POSITION,
   NOT_MOVE,
   PREVIOUS_POSITION,
 } from 'assets/constants/snakeling';
 import { Axis } from '@app/data/models/Axis';
+import { BoardSizeService } from '@app/data/services/BoardSize.service';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class SnakeService {
+  private boardSize = inject(BoardSizeService);
   public snakeX: number;
   public snakeY: number;
   public speedSnakeX: number = 1;
@@ -20,8 +18,9 @@ export class SnakeService {
 
   private snakeBody: number[][] = [];
   constructor() {
-    this.snakeX = ramdomNumber(false, BOARD_WIDTH_SCREEN);
-    this.snakeY = ramdomNumber(false, BOARD_HEIGHT_SCREEN);
+    this.boardSize.typeToSnake();
+    this.snakeX = ramdomNumber(false, this.boardSize.WIDTH);
+    this.snakeY = ramdomNumber(false, this.boardSize.HEIGHT);
 
     this.initSnakeBody();
   }
@@ -41,9 +40,9 @@ export class SnakeService {
 
       // Ajusta la posición del cuerpo cuando la serpiente está en los bordes del tablero
       if (xValue <= 0) {
-        xValue += BOARD_WIDTH_SCREEN;
-      } else if (xValue > BOARD_WIDTH_SCREEN) {
-        xValue -= BOARD_WIDTH_SCREEN;
+        xValue += this.boardSize.WIDTH;
+      } else if (xValue > this.boardSize.WIDTH) {
+        xValue -= this.boardSize.WIDTH;
       }
 
       this.snakeBody.push([xValue, this.snakeY]);
@@ -53,8 +52,8 @@ export class SnakeService {
   public resetSnake(): void {
     this.speedSnakeX = 1;
     this.speedSnakeY = 0;
-    this.snakeX = ramdomNumber(false, BOARD_WIDTH_SCREEN);
-    this.snakeY = ramdomNumber(false, BOARD_HEIGHT_SCREEN);
+    this.snakeX = ramdomNumber(false, this.boardSize.WIDTH);
+    this.snakeY = ramdomNumber(false, this.boardSize.HEIGHT);
 
     this.initSnakeBody();
   }
@@ -109,12 +108,12 @@ export class SnakeService {
   public moveSnake(): void {
     // Actualiza la posición de la cabeza de la serpiente según la velocidad
     this.snakeX =
-      (this.snakeX + this.speedSnakeX + BOARD_WIDTH_SCREEN) %
-        BOARD_WIDTH_SCREEN || BOARD_WIDTH_SCREEN;
+      (this.snakeX + this.speedSnakeX + this.boardSize.WIDTH) %
+        this.boardSize.WIDTH || this.boardSize.WIDTH;
 
     this.snakeY =
-      (this.snakeY + this.speedSnakeY + BOARD_HEIGHT_SCREEN) %
-        BOARD_HEIGHT_SCREEN || BOARD_HEIGHT_SCREEN;
+      (this.snakeY + this.speedSnakeY + this.boardSize.HEIGHT) %
+        this.boardSize.HEIGHT || this.boardSize.HEIGHT;
 
     // Actualiza la posición de la cabeza de la serpiente en el cuerpo de la serpiente
     this.snakeBody[0] = [this.snakeX, this.snakeY];

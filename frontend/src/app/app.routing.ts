@@ -7,7 +7,6 @@ import { ChessHistory } from '@app/data/services/chess/ChessHistory.service';
 import { ChessMoveCounter } from '@app/data/services/chess/ChessMoveCounter.service';
 import { ChessMoveValidator } from '@app/data/services/chess/ChessMoveValidator.service';
 import { ChessPieceMover } from '@app/data/services/chess/ChessPieceMover.service';
-import { ChronometerServiceService } from '@app/data/services/chronometerService.service';
 import { MemoramaControllerService } from '@app/data/services/memorama/memoramaController.service';
 import { BoardServiceService } from '@app/data/services/snakeling/BoardService.service';
 import { FoodService } from '@app/data/services/snakeling/Food.service';
@@ -44,13 +43,11 @@ const routes: Routes = [
     loadComponent: () => import('@app-pages/tetris/tetris.component'),
     providers: [
       TetrisControllerService,
-      BoardService,
-      PieceService,
-      BagOfPiecesService,
       PointsService,
+      PieceService,
       NextPieceBoardService,
-      UtilService,
-      ChronometerServiceService,
+      BoardService,
+      BagOfPiecesService,
     ],
   },
   {
@@ -81,7 +78,7 @@ const routes: Routes = [
     path: 'memorama',
     title: 'Game Galaxy - Memorama',
     loadComponent: () => import('@app-pages/memorama/memorama.component'),
-    providers: [MemoramaControllerService, ChronometerServiceService],
+    providers: [MemoramaControllerService],
   },
   {
     path: 'chess',

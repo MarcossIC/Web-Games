@@ -1,11 +1,9 @@
-import { Injectable, NgZone, inject } from '@angular/core';
+import { DestroyRef, Injectable, NgZone, inject, signal } from '@angular/core';
 import { BoardService } from '@app/data/services/tetris/Board.service';
 import { BagOfPiecesService } from './BagOfPieces.service';
 import { Piece } from '@app/data/models/tetris/Piece';
 import {
   ACTIONS,
-  BOARD_HEIGHT_SCREEN,
-  BOARD_WIDTH_SCREEN,
   LINE_WIDTH_SCALE,
   NEXT_POSITION,
   SHADOW_BLUR_SCALE,
@@ -14,33 +12,36 @@ import {
 import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
 import { Subject } from 'rxjs';
 import { NextPieceBoardService } from './NextPieceBoard.service';
-import { destroy } from '../util.service';
+
 import { ChronometerServiceService } from '../chronometerService.service';
 import { GameName } from '@app/data/models/GameName.enum';
+import { BoardSizeService } from '@app/data/services/BoardSize.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class TetrisControllerService {
-  public gameOver: boolean;
+  private _isPaused = signal(true);
+  private _isGameOver = signal(false);
+  private _level = signal(0);
 
-  public isPaused: boolean;
   public nextPiece: Subject<Piece>;
-  public level: number;
+
   public animationFrameId: number;
 
   //Injected services
+  private boardSize = inject(BoardSizeService);
   private boardController = inject(BoardService);
   private bagOfPieces = inject(BagOfPiecesService);
   private nextPieceBoard = inject(NextPieceBoardService);
   private ngZone = inject(NgZone);
   private chronometerService = inject(ChronometerServiceService);
-  private destroy$ = destroy();
+  private detroy$ = inject(DestroyRef);
 
   constructor() {
+    this.boardSize.typeToTetris();
     this.animationFrameId = 0;
     this.gameOver = false;
-    this.isPaused = true;
+    this._isPaused.set(true);
     this.nextPiece = new Subject<Piece>();
     this.level = 1;
   }
@@ -50,13 +51,15 @@ export class TetrisControllerService {
     width: number,
     height: number
   ) =>
-    this.nextPiece.pipe(this.destroy$()).subscribe((nextPiece: any) => {
-      context.lineWidth = LINE_WIDTH_SCALE;
-      context.shadowBlur = SHADOW_BLUR_SCALE;
-      context.fillStyle = '#000';
-      context.fillRect(0, 0, width, height);
-      this.nextPieceBoard.drawNextPiece(context, nextPiece);
-    });
+    this.nextPiece
+      .pipe(takeUntilDestroyed(this.detroy$))
+      .subscribe((nextPiece: any) => {
+        context.lineWidth = LINE_WIDTH_SCALE;
+        context.shadowBlur = SHADOW_BLUR_SCALE;
+        context.fillStyle = '#000';
+        context.fillRect(0, 0, width, height);
+        this.nextPieceBoard.drawNextPiece(context, nextPiece);
+      });
 
   /**
    * Inicia y ejecuta el juego de Tetris.
@@ -84,13 +87,10 @@ export class TetrisControllerService {
     width: number,
     height: number
   ): void {
+    this.chronometerService.updateGameName(GameName.TETRIS);
     this.gameOver = false;
     this.isPaused = true;
-    this.chronometerService.updateGameName(GameName.TETRIS);
-    this.chronometerService.updated.next({
-      gameOver: this.gameOver,
-      isPaused: this.isPaused,
-    });
+
     this.nextPiece.next(this.bagOfPieces.nextPiece());
     context.lineWidth = LINE_WIDTH_SCALE;
     context.shadowBlur = SHADOW_BLUR_SCALE;
@@ -98,7 +98,7 @@ export class TetrisControllerService {
     let lastTime: number = 0;
 
     const update = (time: number = 0) => {
-      if (!this.gameOver && !this.isPaused) {
+      if (!this._isGameOver() && !this._isPaused()) {
         const { newDropCounter, newLastTime } = this.movePieceAuto(
           time,
           dropCounter,
@@ -194,7 +194,7 @@ export class TetrisControllerService {
     const action = ACTIONS[key];
 
     //Las acciones solo se ejecutan si el juego no ha terminado y no está pausado
-    if (!this.gameOver && !this.isPaused) {
+    if (!this._isGameOver() && !this._isPaused()) {
       if (
         action !== undefined &&
         !this.detectedACollision(this.bagOfPieces.piece.current, action)
@@ -216,7 +216,7 @@ export class TetrisControllerService {
     }
 
     if (action === ACTION.PAUSE) {
-      this.isPaused = !this.isPaused;
+      this.isPaused = true;
     }
   }
 
@@ -240,10 +240,6 @@ export class TetrisControllerService {
   public endGame(): void {
     if (this.detectedACollision(this.bagOfPieces.piece.current, ACTION.DOWN)) {
       this.gameOver = true;
-      this.chronometerService.updated.next({
-        gameOver: this.gameOver,
-        isPaused: this.isPaused,
-      });
     }
   }
 
@@ -265,8 +261,8 @@ export class TetrisControllerService {
     const pieceHeight = shape.length;
 
     const isWithinLeftAndTop = x >= 0 && y >= 0;
-    const isWithinRight = x + pieceWidth <= BOARD_WIDTH_SCREEN;
-    const isWithinBottom = y + pieceHeight <= BOARD_HEIGHT_SCREEN;
+    const isWithinRight = x + pieceWidth <= this.boardSize.WIDTH;
+    const isWithinBottom = y + pieceHeight <= this.boardSize.HEIGHT;
 
     return isWithinLeftAndTop && isWithinRight && isWithinBottom;
   }
@@ -350,7 +346,7 @@ export class TetrisControllerService {
         let isOccupied = false;
 
         if (direction === ACTION.RIGHT) {
-          isOutOfBounds = boardX + NEXT_POSITION >= BOARD_WIDTH_SCREEN;
+          isOutOfBounds = boardX + NEXT_POSITION >= this.boardSize.WIDTH;
           isOccupied =
             !isOutOfBounds &&
             this.boardController.board[boardY][boardX + NEXT_POSITION] > 0;
@@ -360,7 +356,7 @@ export class TetrisControllerService {
             !isOutOfBounds &&
             this.boardController.board[boardY][boardX - NEXT_POSITION] > 0;
         } else if (direction === ACTION.DOWN) {
-          isOutOfBounds = boardY + NEXT_POSITION >= BOARD_HEIGHT_SCREEN;
+          isOutOfBounds = boardY + NEXT_POSITION >= this.boardSize.HEIGHT;
           isOccupied =
             !isOutOfBounds &&
             this.boardController.board[boardY + NEXT_POSITION][boardX] > 0;
@@ -398,9 +394,9 @@ export class TetrisControllerService {
         const boardY = y + cellY;
 
         const isOutOfBounds =
-          boardY >= BOARD_HEIGHT_SCREEN ||
+          boardY >= this.boardSize.HEIGHT ||
           boardX < 0 ||
-          boardX >= BOARD_WIDTH_SCREEN;
+          boardX >= this.boardSize.WIDTH;
 
         const isOccupied = this.boardController.board[boardY][boardX] === 1;
 
@@ -410,7 +406,7 @@ export class TetrisControllerService {
   }
 
   private isPieceOnRightEdge(numCols: number, xPosition: number): boolean {
-    return xPosition + numCols >= BOARD_WIDTH_SCREEN - 1;
+    return xPosition + numCols >= this.boardSize.WIDTH - 1;
   }
 
   /**
@@ -440,10 +436,6 @@ export class TetrisControllerService {
   public playAgain(): void {
     this.gameOver = false;
     this.isPaused = false;
-    this.chronometerService.updated.next({
-      gameOver: this.gameOver,
-      isPaused: this.isPaused,
-    });
   }
 
   public reset(): void {
@@ -455,17 +447,43 @@ export class TetrisControllerService {
 
   public pause(): void {
     this.isPaused = true;
-    this.chronometerService.updated.next({
-      gameOver: this.gameOver,
-      isPaused: this.isPaused,
-    });
   }
 
   public resume(): void {
     this.isPaused = false;
-    this.chronometerService.updated.next({
-      gameOver: this.gameOver,
-      isPaused: this.isPaused,
-    });
+  }
+  public get WIDTH() {
+    return this.boardSize.WIDTH;
+  }
+  public get HEIGHT() {
+    return this.boardSize.HEIGHT;
+  }
+  public get BLOCK() {
+    return this.boardSize.BLOCK;
+  }
+  public get PIECE_SIZE() {
+    return this.boardSize.PIECE_SIZE;
+  }
+  public get isPaused() {
+    return this._isPaused();
+  }
+  public set isPaused(updated: boolean) {
+    this._isPaused.set(updated);
+    this.chronometerService.isPaused = updated;
+  }
+
+  public get gameOver() {
+    return this._isGameOver();
+  }
+  public set gameOver(updated: boolean) {
+    this._isGameOver.set(updated);
+    this.chronometerService.gameOver = updated;
+  }
+
+  public set level(updated: number) {
+    this._level.set(updated);
+  }
+  public get level() {
+    return this._level();
   }
 }

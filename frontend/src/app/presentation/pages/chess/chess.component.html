@@ -55,4 +55,6 @@
 
 @if(controller.isPaused){
 <welcome-chess-modal></welcome-chess-modal>
+} @if(controller.isGameOver){
+<endgame-modal-chess></endgame-modal-chess>
 }

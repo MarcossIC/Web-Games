@@ -1,0 +1,14 @@
+.modal-bg {
+  background-color: var(--ttt-bg);
+}
+.message {
+  font-size: 2.5rem;
+  font-weight: 500;
+  text-align: center;
+}
+.modal p.message-win {
+  color: rgb(48, 131, 48);
+}
+.modal p.message-loose {
+  color: var(--ttt-select-x-200);
+}

@@ -6,8 +6,16 @@
   grid-template-rows: 1fr 4fr;
   align-items: center;
   justify-content: center;
-}
 
+  --memorama-anim-play-state: running;
+  --memorama-card-opacity-border: 1;
+  --memorama-card-cursor: pointer;
+}
+.memorama-wrapper.paused {
+  --memorama-anim-play-state: paused;
+  --memorama-card-opacity-border: 0;
+  --memorama-card-cursor: default;
+}
 .game {
   height: auto;
   width: 100%;
@@ -19,6 +27,7 @@
   justify-items: center;
   justify-self: center;
 }
+
 .pause {
   grid-area: 1 / 1 / 2 / 2;
   display: flex;
@@ -64,7 +73,7 @@
   overflow: hidden;
   position: relative;
   background-color: #151515;
-  cursor: pointer;
+  cursor: var(--memorama-card-cursor);
 }
 
 .stats-content {
@@ -146,7 +155,7 @@
 }
 
 .game-card.rotate:hover .content::before {
-  opacity: 1;
+  opacity: var(--memorama-card-opacity-border);
 }
 
 .game-card::before {
@@ -183,11 +192,12 @@
     transparent
   );
   animation: rotation_360 6000ms infinite linear;
+  animation-play-state: var(--memorama-anim-play-state);
 }
 
 .game-card.rotate:hover::before {
-  opacity: 1;
-  animation-play-state: running;
+  opacity: var(--memorama-card-opacity-border);
+  animation-play-state: var(--memorama-anim-play-state);
 }
 
 .game-card::after {

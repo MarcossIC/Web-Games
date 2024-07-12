@@ -5,16 +5,13 @@ import {
   ElementRef,
   OnDestroy,
   OnInit,
+  PLATFORM_ID,
   ViewChild,
   inject,
 } from '@angular/core';
 import {
   NEXT_PIECE_WIDTH,
   NEXT_PIECE_HEIGHT,
-  NEXT_PIECE_SIZE,
-  BLOCK_SIZE_SCREEN,
-  BOARD_WIDTH_SCREEN,
-  BOARD_HEIGHT_SCREEN,
 } from '../../../../assets/constants/tetrisConstanst';
 import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
 import { PointsService } from '@app/data/services/tetris/Points.service';
@@ -22,7 +19,7 @@ import { ParticlesComponent } from '@app/presentation/components/particles/parti
 import { WelcomeTetrisModalComponent } from '@app/presentation/components/welcome-tetris-modal/welcome-tetris-modal.component';
 import { ChronometerComponent } from '@app/presentation/components/chronometer/chronometer.component';
 import { EndgameModalTetrisComponent } from '@app/presentation/components/endgame-modal-tetris/endgame-modal-tetris.component';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { fromEvent } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -52,25 +49,36 @@ export class TetrisComponent implements OnInit, OnDestroy {
   protected controller = inject(TetrisControllerService);
   protected point = inject(PointsService);
   private destroy = inject(DestroyRef);
+  private PLATFORM = inject(PLATFORM_ID);
+  private document = inject(DOCUMENT);
 
-  constructor() {}
+  constructor() {
+    if (isPlatformBrowser(this.PLATFORM)) {
+      fromEvent<KeyboardEvent>(this.document, 'keydown')
+        .pipe(takeUntilDestroyed(this.destroy))
+        .subscribe((event: any) => this.controller.executeAction(event.key));
+    }
+  }
 
   ngOnInit(): void {
     //Board
     this.board = this.canvasRef.nativeElement;
     this.boardContext = this.board.getContext('2d') as CanvasRenderingContext2D;
-    this.board.width = BLOCK_SIZE_SCREEN * BOARD_WIDTH_SCREEN;
-    this.board.height = BLOCK_SIZE_SCREEN * BOARD_HEIGHT_SCREEN;
-    this.boardContext.scale(BLOCK_SIZE_SCREEN, BLOCK_SIZE_SCREEN);
+    this.board.width = this.controller.BLOCK * this.controller.WIDTH;
+    this.board.height = this.controller.BLOCK * this.controller.HEIGHT;
+    this.boardContext.scale(this.controller.BLOCK, this.controller.BLOCK);
 
     //Next Piece Board
     this.nextPiece = this.nextPieceRef.nativeElement;
     this.nextPieceContext = this.nextPiece.getContext(
       '2d'
     ) as CanvasRenderingContext2D;
-    this.nextPiece.width = NEXT_PIECE_SIZE * NEXT_PIECE_WIDTH;
-    this.nextPiece.height = NEXT_PIECE_SIZE * NEXT_PIECE_HEIGHT;
-    this.nextPieceContext.scale(NEXT_PIECE_SIZE, NEXT_PIECE_SIZE);
+    this.nextPiece.width = this.controller.PIECE_SIZE * NEXT_PIECE_WIDTH;
+    this.nextPiece.height = this.controller.PIECE_SIZE * NEXT_PIECE_HEIGHT;
+    this.nextPieceContext.scale(
+      this.controller.PIECE_SIZE,
+      this.controller.PIECE_SIZE
+    );
 
     this.controller.updateNextPiece(
       this.nextPieceContext,
@@ -82,11 +90,6 @@ export class TetrisComponent implements OnInit, OnDestroy {
       this.boardWidth,
       this.boardHeight
     );
-
-    const keyboardEvents$ = fromEvent<KeyboardEvent>(window, 'keydown');
-    keyboardEvents$
-      .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe((event: any) => this.controller.executeAction(event.key));
   }
 
   ngOnDestroy(): void {
@@ -109,7 +112,8 @@ export class TetrisComponent implements OnInit, OnDestroy {
   }
 
   isMobile(): boolean {
-    return window.innerWidth <= 500;
+    if (isPlatformBrowser(this.PLATFORM)) return window.innerWidth <= 500;
+    else return false;
   }
 }
 

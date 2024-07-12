@@ -16,7 +16,7 @@ export class SecondPlayerService {
   private _isBotPlaying: boolean;
   private countWins: number;
   private botLevel: BotLevel;
-  private boardStateService: BoardStateService = inject(BoardStateService);
+  private boardStateService = inject(BoardStateService);
 
   constructor() {
     this.player = Player.O;
