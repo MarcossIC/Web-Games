@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { SnakelingControllerService } from '@app/data/services/snakeling/SnakelingController.service';
 
@@ -8,24 +8,22 @@ import { SnakelingControllerService } from '@app/data/services/snakeling/Snakeli
   imports: [CommonModule],
   selector: 'endgame-modal-snakeling',
   templateUrl: './endgame-modal-snakeling.component.html',
-  styleUrls: ['./endgame-modal-snakeling.component.css', '../../../shared/styles/modal.css']
+  styleUrls: [
+    './endgame-modal-snakeling.component.css',
+    '../../../shared/styles/modal.css',
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EndgameModalSnakelingComponent implements OnInit {
-
-  protected controller: SnakelingControllerService = inject(SnakelingControllerService);
-  private router: Router = inject(Router);
-  
-  constructor() { }
-
-  ngOnInit(): void {
-  }
+export class EndgameModalSnakelingComponent {
+  protected controller = inject(SnakelingControllerService);
+  private router = inject(Router);
 
   protected close(): void {
     this.controller.reset();
     this.router.navigate(['/games']);
   }
 
-  protected playAgain(): void{
+  protected playAgain(): void {
     this.controller.reset();
   }
 }

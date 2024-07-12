@@ -1,5 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { PointsService } from '@app/data/services/tetris/Points.service';
 import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
@@ -9,19 +14,23 @@ import { TetrisControllerService } from '@app/data/services/tetris/TetrisControl
   imports: [CommonModule],
   selector: 'welcome-tetris-modal',
   templateUrl: './welcome-tetris-modal.component.html',
-  styleUrls: ['./welcome-tetris-modal.component.css', '../../../shared/styles/modal.css']
+  styleUrls: [
+    './welcome-tetris-modal.component.css',
+    '../../../shared/styles/modal.css',
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WelcomeTetrisModalComponent implements OnInit {
-
-  protected controller: TetrisControllerService = inject(TetrisControllerService);
+  protected controller: TetrisControllerService = inject(
+    TetrisControllerService
+  );
   private point: PointsService = inject(PointsService);
-  private router: Router  = inject(Router);
-  constructor() { }
+  private router: Router = inject(Router);
+  constructor() {}
 
-  ngOnInit(): void {
-  }
+  ngOnInit(): void {}
 
-  close(){
+  close() {
     this.point.resetScore();
     this.point.resetLevel();
     this.controller.reset();
@@ -29,8 +38,7 @@ export class WelcomeTetrisModalComponent implements OnInit {
     this.router.navigate(['/games']);
   }
 
-  playGame(): void{
+  playGame(): void {
     this.controller.resume();
   }
-
 }

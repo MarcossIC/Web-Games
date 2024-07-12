@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   ElementRef,
@@ -25,6 +26,7 @@ import { EndgameModalSnakelingComponent } from '@app/presentation/components/end
     WelcomeSnakelingModalComponent,
     EndgameModalSnakelingComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SnakelingComponent implements OnInit {
   @ViewChild('board', { static: true }) boardRef!: ElementRef;

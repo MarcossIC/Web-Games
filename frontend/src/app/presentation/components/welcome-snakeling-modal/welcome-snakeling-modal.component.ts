@@ -1,5 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { SnakelingControllerService } from '@app/data/services/snakeling/SnakelingController.service';
 
@@ -12,6 +17,7 @@ import { SnakelingControllerService } from '@app/data/services/snakeling/Snakeli
     './welcome-snakeling-modal.component.css',
     '../../../shared/styles/modal.css',
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WelcomeSnakelingModalComponent implements OnInit {
   protected controller: SnakelingControllerService = inject(

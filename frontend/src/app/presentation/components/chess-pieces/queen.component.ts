@@ -1,9 +1,7 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
   standalone: true,
-  imports: [CommonModule],
   selector: 'queen-piece',
   template: `
     <svg width="54" height="54" viewBox="0 0 54 54" fill="none" id="queen">
@@ -18,7 +16,6 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
       />
     </svg>
   `,
-  styles: [``],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QueenPieceComponent {}

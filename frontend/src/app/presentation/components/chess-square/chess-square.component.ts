@@ -7,8 +7,7 @@ import {
   Output,
   Type,
 } from '@angular/core';
-import { CheckState } from '@app/data/models/chess/chess-checkstate';
-import { Coords, CoordsInARow } from '@app/data/models/chess/chess-coords';
+import { CoordsInARow } from '@app/data/models/chess/chess-coords';
 import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
 import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
 import { Piece } from '@app/data/services/chess/Piece';

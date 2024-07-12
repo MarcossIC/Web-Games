@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ChessController } from '@app/data/services/chess/ChessController.service';
 
@@ -12,6 +12,7 @@ import { ChessController } from '@app/data/services/chess/ChessController.servic
     './welcome-chessmodal.component.css',
     '../../../shared/styles/modal.css',
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WelcomeChessModal {
   protected controller = inject(ChessController);

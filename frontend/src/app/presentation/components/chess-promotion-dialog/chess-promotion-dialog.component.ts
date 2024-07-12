@@ -7,25 +7,9 @@ import {
   Output,
   Type,
 } from '@angular/core';
-import { CheckState } from '@app/data/models/chess/chess-checkstate';
-import { Coords, CoordsInARow } from '@app/data/models/chess/chess-coords';
 import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
-import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
 import { Piece } from '@app/data/services/chess/Piece';
-
-function verifyPromotion(is: boolean): string {
-  return is ? 'promotion-square' : '';
-}
-function verifyCheckState(is: boolean): string {
-  return is ? 'king-in-check' : '';
-}
-function verifySelected(is: boolean): string {
-  return is ? 'square-selected' : '';
-}
-function verifyLastmove(is: boolean): string {
-  return is ? 'piece-last-move' : '';
-}
 
 @Component({
   standalone: true,

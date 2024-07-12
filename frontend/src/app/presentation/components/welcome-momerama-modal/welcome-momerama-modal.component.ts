@@ -1,5 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, Renderer2, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Renderer2,
+  inject,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { MemoramaControllerService } from '@app/data/services/memorama/memoramaController.service';
 
@@ -8,18 +13,16 @@ import { MemoramaControllerService } from '@app/data/services/memorama/memoramaC
   imports: [CommonModule],
   selector: 'welcome-momerama-modal',
   templateUrl: './welcome-momerama-modal.component.html',
-  styleUrls: ['./welcome-momerama-modal.component.css', '../../../shared/styles/modal.css']
+  styleUrls: [
+    './welcome-momerama-modal.component.css',
+    '../../../shared/styles/modal.css',
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WelcomeMomeramaModalComponent implements OnInit {
-
-  protected controller: MemoramaControllerService = inject(MemoramaControllerService);
-  protected renderer: Renderer2 = inject(Renderer2);
-  private router: Router = inject(Router);
-  
-  constructor() { }
-
-  ngOnInit(): void {
-  }
+export class WelcomeMomeramaModalComponent {
+  protected controller = inject(MemoramaControllerService);
+  protected renderer = inject(Renderer2);
+  private router = inject(Router);
 
   protected close(): void {
     this.controller.resetGame(this.renderer);
@@ -27,7 +30,7 @@ export class WelcomeMomeramaModalComponent implements OnInit {
     this.router.navigate(['/games']);
   }
 
-  protected playGame(): void{
+  protected playGame(): void {
     this.controller.resume();
   }
 }

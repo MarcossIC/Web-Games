@@ -1,9 +1,7 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
   standalone: true,
-  imports: [CommonModule],
   selector: 'knight-piece',
   template: `
     <svg width="54" height="54" viewBox="0 0 54 54" fill="none" id="knight">
@@ -21,7 +19,6 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
       <circle class="border-fill" cx="21" cy="20.25" r="2.25" fill="#F4F7FA" />
     </svg>
   `,
-  styles: [``],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KnightPieceComponent {}

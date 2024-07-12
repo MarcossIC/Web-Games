@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import {
   CollisionMode,
   Container,
@@ -7,7 +7,6 @@ import {
   IColorAnimation,
   IOptions,
 } from '@tsparticles/engine';
-import { loadSlim } from '@tsparticles/slim';
 import { NgParticlesService, NgxParticlesModule } from '@tsparticles/angular';
 import { loadFull } from 'tsparticles';
 
@@ -17,6 +16,7 @@ import { loadFull } from 'tsparticles';
   selector: 'app-particles',
   templateUrl: './particles.component.html',
   styleUrls: ['./particles.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ParticlesComponent implements OnInit {
   private currenteColor: string = '#fff';

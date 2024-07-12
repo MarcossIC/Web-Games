@@ -1,9 +1,7 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
   standalone: true,
-  imports: [CommonModule],
   selector: 'bishop-piece',
   template: `
     <svg width="54" height="54" viewBox="0 0 54 54" fill="none" id="bishop">
@@ -18,7 +16,6 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
       />
     </svg>
   `,
-  styles: [``],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BishopPieceComponent {}

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   ElementRef,
@@ -27,6 +28,7 @@ import { delay } from 'rxjs';
     DisplayInfoComponent,
     EndgameModalTttComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TictactoeComponent {
   @ViewChild('board', { static: true }) boardRef!: ElementRef;

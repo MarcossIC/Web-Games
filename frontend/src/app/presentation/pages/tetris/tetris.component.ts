@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   ElementRef,
@@ -37,6 +38,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     WelcomeTetrisModalComponent,
     EndgameModalTetrisComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TetrisComponent implements OnInit, OnDestroy {
   @ViewChild('tetris', { static: true }) canvasRef!: ElementRef;

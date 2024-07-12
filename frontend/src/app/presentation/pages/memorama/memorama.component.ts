@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   OnInit,
@@ -29,6 +30,7 @@ import { interval } from 'rxjs';
     EndgameModalMemoramaComponent,
     WelcomeMomeramaModalComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MemoramaComponent implements OnInit, AfterViewInit {
   protected renderer = inject(Renderer2);
