@@ -78,6 +78,13 @@ export class ChessCapturedPieces {
     return this.player() === 1 ? counters.white : counters.black;
   }
 
+  public onLoad(counters: PieceCaptureCounter | null) {
+    const counter = this.getCounter(counters);
+    return Object.keys(counter).some(
+      (key) => counter[key as keyof typeof counter] !== 0
+    );
+  }
+
   public getCapturedClass(use: string, counter: number) {
     return `${use}-${counter}`;
   }

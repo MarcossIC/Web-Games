@@ -21,6 +21,7 @@
             "assets": [
               "src/favicon.ico",
               "src/assets",
+              "src/assets/images/chess/captured-pieces.png",
               {
                 "glob": "**/*",
                 "input": "src/assets",
@@ -28,7 +29,14 @@
               }
             ],
             "styles": ["src/styles.css"],
-            "scripts": []
+            "scripts": [],
+            "server": "src/main.server.ts",
+            "prerender": {
+              "discoverRoutes": false
+            },
+            "ssr": {
+              "entry": "server.ts"
+            }
           },
           "configurations": {
             "production": {
@@ -40,13 +48,25 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumWarning": "4kb",
+                  "maximumError": "20kb"
                 }
               ],
               "outputHashing": "all",
-              "optimization": true,
-              "sourceMap": false,
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": true
+                },
+                "fonts": true
+              },
+              "sourceMap": {
+                "scripts": true,
+                "styles": false,
+                "hidden": true,
+                "vendor": true
+              },
               "namedChunks": false
             },
             "development": {
