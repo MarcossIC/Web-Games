@@ -21,7 +21,6 @@
             "assets": [
               "src/favicon.ico",
               "src/assets",
-              "src/assets/images/chess/captured-pieces.png",
               {
                 "glob": "**/*",
                 "input": "src/assets",

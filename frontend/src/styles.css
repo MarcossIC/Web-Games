@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-:host {
+:root {
   --ttt-cell: #eee;
   --ttt-bg: #fffefb;
 
@@ -26,7 +26,7 @@
 }
 
 html,
-:host {
+:root {
   height: 100%;
 
   font-synthesis: none;
