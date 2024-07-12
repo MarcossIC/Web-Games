@@ -11,6 +11,8 @@
 npm-debug.log
 yarn-error.log
 
+pnpm-lock.yaml
+
 # IDEs and editors
 .idea/
 .project
@@ -21,6 +23,7 @@ yarn-error.log
 *.sublime-workspace
 
 # Visual Studio Code
+.vscode
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
