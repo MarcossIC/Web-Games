@@ -1,10 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  OnInit,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { PointsService } from '@app/data/services/tetris/Points.service';
 import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
@@ -20,15 +15,12 @@ import { TetrisControllerService } from '@app/data/services/tetris/TetrisControl
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WelcomeTetrisModalComponent implements OnInit {
+export class WelcomeTetrisModalComponent {
   protected controller: TetrisControllerService = inject(
     TetrisControllerService
   );
   private point: PointsService = inject(PointsService);
   private router: Router = inject(Router);
-  constructor() {}
-
-  ngOnInit(): void {}
 
   close() {
     this.point.resetScore();

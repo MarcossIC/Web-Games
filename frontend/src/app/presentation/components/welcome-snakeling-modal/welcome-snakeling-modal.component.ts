@@ -1,10 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  OnInit,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { SnakelingControllerService } from '@app/data/services/snakeling/SnakelingController.service';
 
@@ -19,15 +14,11 @@ import { SnakelingControllerService } from '@app/data/services/snakeling/Snakeli
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WelcomeSnakelingModalComponent implements OnInit {
+export class WelcomeSnakelingModalComponent {
   protected controller: SnakelingControllerService = inject(
     SnakelingControllerService
   );
   private router = inject(Router);
-
-  constructor() {}
-
-  ngOnInit(): void {}
 
   protected close(): void {
     this.controller.reset();

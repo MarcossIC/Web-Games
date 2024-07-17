@@ -8,6 +8,7 @@ import {
   Type,
 } from '@angular/core';
 import { CoordsInARow } from '@app/data/models/chess/chess-coords';
+import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
 import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
 import { Piece } from '@app/data/services/chess/Piece';
@@ -41,7 +42,11 @@ function verifyLastmove(is: boolean): string {
         isSquareSelected(),
         isSquareLastMove()
       ]"
+      [draggable]="isDraggable()"
       (click)="move()"
+      (dragstart)="moveDragPiece()"
+      (dragover)="moveDragOver($event)"
+      (drop)="moveDragPiece()"
     >
       <div [ngClass]="{ 'safe-square': isSquareSafeForSelectedPiece() }"></div>
       <div class="piece">
@@ -61,6 +66,7 @@ export class ChessSquare {
   public row = input.required<number>();
   public column = input.required<number>();
   public piece = input.required<PieceSymbol>();
+  public player = input.required<ChessPlayers>();
   public isSquarePromotionSquare = input.required({
     transform: verifyPromotion,
   });
@@ -76,6 +82,7 @@ export class ChessSquare {
   public isSquareSafeForSelectedPiece = input.required<boolean>();
 
   @Output() clickSquare = new EventEmitter<CoordsInARow>();
+  @Output() dragPiece = new EventEmitter<CoordsInARow>();
 
   public getSquareColor(): string {
     return ChessBoard.isSquareWhite(this.row(), this.column())
@@ -87,11 +94,28 @@ export class ChessSquare {
     return Piece.getPiecePlayer(this.piece());
   }
 
+  public isDraggable() {
+    const currentPieceIsWhite = this.piece().toUpperCase() === this.piece();
+    const isCurrentPlayerWhite = this.player() === ChessPlayers.WHITE;
+
+    const playerPiece = isCurrentPlayerWhite
+      ? currentPieceIsWhite
+      : !currentPieceIsWhite;
+    return this.piece() !== PieceSymbol.UNKNOWN && playerPiece;
+  }
+
   public getPiece(): Type<any> | null {
     return Piece.SYMBOL_TO_COMPONENT[this.piece()];
   }
 
   public move() {
     this.clickSquare.emit([this.row(), this.column()]);
+  }
+  public moveDragOver(e: DragEvent) {
+    e.preventDefault();
+  }
+
+  public moveDragPiece() {
+    this.dragPiece.emit([this.row(), this.column()]);
   }
 }

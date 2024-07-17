@@ -310,6 +310,13 @@ export class ChessComponent implements OnInit {
     this.controller.gameHistory.setCheckState(checkState);
   }
 
+  public dragMove([x, y]: CoordsInARow) {
+    const { symbol } = this.selectedSquare;
+    if (!this.controller.isPaused) {
+      this.selectingPiece(x, y);
+      this.placingPiece(x, y);
+    }
+  }
   public move([x, y]: CoordsInARow): void {
     if (!this.controller.isPaused) {
       this.selectingPiece(x, y);

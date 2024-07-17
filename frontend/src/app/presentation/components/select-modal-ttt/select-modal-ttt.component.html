@@ -1,57 +1,93 @@
 <div class="modal modal-bg">
-  <h3 class="modal-title-with-bar ">Welcome</h3>
-  <ul class="flex flex-col gap-y-6 min-[600px]:gap-y-6 min-[1500px]:gap-y-12 mt-4 ">
+  <h3 class="modal-title-with-bar">Welcome</h3>
+  <ul
+    class="flex flex-col gap-y-6 min-[600px]:gap-y-6 min-[1500px]:gap-y-12 mt-4"
+  >
     <li>
       <h4 class="option-text mb-2">Select wich you want to be?</h4>
 
-      <div class=" toggle-container">
+      <div class="toggle-container">
         <div class="toggle-wrapper">
-          <input type="checkbox" id="select-player" [checked]="this.controller.mainPlayerPlaysWithO()" (change)="updatePlayer($event)">
+          <input
+            type="checkbox"
+            id="select-player"
+            [checked]="this.controller.mainPlayerPlaysWithO()"
+            (change)="updatePlayer($event)"
+          />
           <label for="select-player" class="toggle select-player">
-              <span class="toggle-handler select-player-handler">
-              </span>
+            <span class="toggle-handler select-player-handler"> </span>
           </label>
         </div>
       </div>
     </li>
     <li>
       <h4 class="option-text mb-2">Will the bot play?</h4>
-      <div class=" toggle-container">
+      <div class="toggle-container">
         <div class="toggle-wrapper">
-          <input type="checkbox" id="second-player" [checked]="this.controller.isBotPlaying()" (change)="activateSecondPlayer($event)">
+          <input
+            type="checkbox"
+            id="second-player"
+            [checked]="this.controller.isBotPlaying()"
+            (change)="activateSecondPlayer()"
+          />
           <label for="second-player" class="toggle second-player">
-              <span class="toggle-handler second-player-handler">
-              </span>
+            <span class="toggle-handler second-player-handler"> </span>
           </label>
         </div>
       </div>
     </li>
     <li>
-      <h4 class="option-text mb-2" [ngClass]="{'opacity-75': !this.controller.isBotPlaying()}">Bot Level</h4>
+      <h4
+        class="option-text mb-2"
+        [ngClass]="{ 'opacity-75': !this.controller.isBotPlaying() }"
+      >
+        Bot Level
+      </h4>
       <div class="radio-inputs mt-4 mx-auto">
         <label class="radio">
-          <input type="radio" name="radio" [checked]="this.controller.botIsRockie()" (change)="selectBotLevel(1)" [disabled]="!this.controller.isBotPlaying()">
+          <input
+            type="radio"
+            name="radio"
+            [checked]="this.controller.botIsRockie()"
+            (change)="selectBotLevel(1)"
+            [disabled]="!this.controller.isBotPlaying()"
+          />
           <span class="name">Rookie</span>
         </label>
         <label class="radio">
-          <input type="radio" name="radio" [checked]="this.controller.botIsNovice()" (change)="selectBotLevel(2)" [disabled]="!this.controller.isBotPlaying()">
+          <input
+            type="radio"
+            name="radio"
+            [checked]="this.controller.botIsNovice()"
+            (change)="selectBotLevel(2)"
+            [disabled]="!this.controller.isBotPlaying()"
+          />
           <span class="name">Normal</span>
         </label>
         <label class="radio">
-          <input type="radio" name="radio" [checked]="this.controller.botIsMaster()" (change)="selectBotLevel(3)" [disabled]="!this.controller.isBotPlaying()">
+          <input
+            type="radio"
+            name="radio"
+            [checked]="this.controller.botIsMaster()"
+            (change)="selectBotLevel(3)"
+            [disabled]="!this.controller.isBotPlaying()"
+          />
           <span class="name">Master</span>
         </label>
       </div>
     </li>
   </ul>
-  
-
-  
-
-
 
   <div class="w-full flex justify-center items-center mt-4 buttons">
-    <button class="abstract-button exit-button" role="button" (click)="close()">Exit Game</button>
-    <button class="abstract-button play-button" role="button" (click)="playGame()">Play Game</button>
+    <button class="abstract-button exit-button" role="button" (click)="close()">
+      Exit Game
+    </button>
+    <button
+      class="abstract-button play-button"
+      role="button"
+      (click)="playGame()"
+    >
+      Play Game
+    </button>
   </div>
 </div>

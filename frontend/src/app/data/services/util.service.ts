@@ -46,7 +46,7 @@ export function arrayToMatrix(
   rows: number,
   columns: number
 ): string[][] {
-  let matrix = [];
+  let matrix: string[][] = [];
   for (let i = 0; i < rows; i++) {
     matrix[i] = array.slice(i * columns, (i + 1) * columns);
   }

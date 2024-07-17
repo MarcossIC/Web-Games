@@ -96,6 +96,13 @@ const routes: Routes = [
     ],
   },
   {
+    path: 'runner',
+    title: 'Game Galaxy - Retro Runner',
+    loadComponent: () =>
+      import('@app-pages/retro-runner/retro-runner.component'),
+    providers: [],
+  },
+  {
     path: '**',
     title: 'GG - Not found',
     loadComponent: () => import('@app-pages/notfound/notfound.component'),

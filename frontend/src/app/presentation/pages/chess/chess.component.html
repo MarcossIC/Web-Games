@@ -18,9 +18,11 @@
       ROW; track "y-"+y; let y = $index){
       <chess-square
         (clickSquare)="move($event)"
+        (dragPiece)="dragMove($event)"
         [row]="x"
         [column]="y"
         [piece]="PIECE"
+        [player]="controller.playerTurn"
         [isSquarePromotionSquare]="isSquarePromotionSquare(x, y)"
         [isSquareChecked]="isSquareChecked(x, y)"
         [isSquareSelected]="isSquareSelected(x, y)"

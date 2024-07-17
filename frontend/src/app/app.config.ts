@@ -14,14 +14,8 @@ import {
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(
-      routes,
-      withPreloading(PreloadAllModules),
-      withComponentInputBinding()
-    ),
+    provideRouter(routes),
     provideHttpClient(withFetch()),
-    provideClientHydration(
-      withHttpTransferCacheOptions({ includePostRequests: true })
-    ),
+    provideClientHydration(),
   ],
 };

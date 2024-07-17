@@ -1,10 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  OnInit,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BotLevel } from '@app/data/models/tictactoe/BotLevel.enum';
 import { Player } from '@app/data/models/tictactoe/Player.enum';
@@ -21,15 +16,11 @@ import { TicTacToeControllerService } from '@app/data/services/tictactoe/TicTacT
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SelectModalTttComponent implements OnInit {
+export class SelectModalTttComponent {
   protected controller: TicTacToeControllerService = inject(
     TicTacToeControllerService
   );
   private router = inject(Router);
-
-  constructor() {}
-
-  ngOnInit(): void {}
 
   protected playGame(): void {
     this.controller.initGame();
@@ -53,7 +44,7 @@ export class SelectModalTttComponent implements OnInit {
     }
   }
 
-  protected activateSecondPlayer(event: any): void {
+  protected activateSecondPlayer(): void {
     this.controller.changeBotState();
     this.controller.isBotPlaying();
   }

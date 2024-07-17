@@ -8,12 +8,12 @@
 }
 
 .piece {
+  position: relative;
   width: 100%;
   height: 100%;
   pointer-events: all;
   color: var(--piece-bg-color);
   background: transparent;
-  position: relative;
   z-index: 10;
 
   &.piece-promotion-style {
@@ -23,12 +23,9 @@
   }
 }
 
-.piece ::ng-deep path {
-  position: relative;
-  z-index: -10;
-}
-
 .piece ::ng-deep svg {
+  top: 0;
+  left: 0;
   width: var(--chess-square-size);
   height: var(--chess-square-size);
   position: relative;
@@ -38,6 +35,19 @@
   overflow: clip;
 }
 
-::ng-deep .piece .border-fill {
+.piece ::ng-deep path {
+  position: relative;
+  z-index: -10;
+}
+
+.piece ::ng-deep .border-fill {
   fill: var(--piece-border-color);
+}
+
+.piece {
+  cursor: grab;
+}
+
+.piece:active {
+  cursor: grabbing;
 }

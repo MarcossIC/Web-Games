@@ -8,6 +8,8 @@
   user-select: none;
   pointer-events: none;
   -webkit-touch-callout: none;
+  user-select: none;
+  float: left;
 
   --piece-border-color: var(--chess-piece-white-color);
   --piece-bg-color: var(--chess-piece-black-color);

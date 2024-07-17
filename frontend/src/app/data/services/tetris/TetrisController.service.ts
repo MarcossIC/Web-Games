@@ -283,11 +283,12 @@ export class TetrisControllerService {
     numRows: number,
     numCols: number
   ): number[][] {
-    const rotated = [];
+    const rotated: number[][] = [];
 
     for (let col = numCols - 1; col >= 0; col--) {
-      const newRow = [];
+      const newRow: number[] = [];
       for (let row = 0; row < numRows; row++) newRow.push(shape[row][col]);
+
       rotated.push(newRow);
     }
     return rotated;
@@ -299,7 +300,7 @@ export class TetrisControllerService {
     numRows: number,
     numCols: number
   ): number[][] {
-    const rotated = [];
+    const rotated: number[][] = [];
     let curTetrominoBU;
     for (let i = 0; i < shape.length; i++) {
       curTetrominoBU = [...shape];
