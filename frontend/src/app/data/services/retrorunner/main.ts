@@ -1,12 +1,14 @@
 import { AUTO, Game } from 'phaser';
 import { GameScene } from '@app/data/services/retrorunner/scenes/GameScene';
 import { PreloaderScene } from '@app/data/services/retrorunner/scenes/PreloaderScene';
+import GameOverScene from '@app/data/services/retrorunner/scenes/GameOverScene';
 
 export enum SceneKeys {
   GAME = 'Game',
   PRELOADER = 'Preloader',
-  HEIGHT = 244,
-  WIDTH = 256,
+  GAME_OVER = 'GameOver',
+  HEIGHT = 292,
+  WIDTH = 304,
   SCENE_READY = 'current-scene-ready',
 }
 
@@ -27,7 +29,7 @@ const config: Phaser.Types.Core.GameConfig = {
     keyboard: true,
     mouse: false,
   },
-  scene: [PreloaderScene, GameScene],
+  scene: [PreloaderScene, GameScene, GameOverScene],
 };
 
 const StartGame = (parent: string) => {

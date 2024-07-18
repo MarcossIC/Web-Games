@@ -3,7 +3,7 @@ import {
   RetroRunnerMedia,
 } from '@app/data/models/retro-runner/RetroRunnerKeys';
 import { SceneKeys } from '@app/data/services/retrorunner/main';
-import { Scene } from 'phaser';
+import { Scene, GameObjects } from 'phaser';
 
 export class PreloaderScene extends Scene {
   constructor() {
@@ -11,7 +11,6 @@ export class PreloaderScene extends Scene {
   }
 
   init() {
-    this.add.image(512, 384, 'background');
     this.add.rectangle(512, 384, 468, 32).setStrokeStyle(1, 0xffffff);
 
     //  This is the progress bar itself. It will increase in size from the left based on the % of progress.
@@ -29,15 +28,27 @@ export class PreloaderScene extends Scene {
   preload() {
     this.load.setPath('assets/images/retro-runner');
 
-    this.load.spritesheet(RetroRunnerKey.RUNNER, 'entities/mario.png', {
+    /*
+      this.load.spritesheet(RetroRunnerKey.RUNNER, 'entities/mario.png', {
       frameWidth: 18,
       frameHeight: 16,
+      startFrame: 0,
+    });
+    */
+
+    this.load.spritesheet(RetroRunnerKey.RUNNER, 'entities/minicapy.png', {
+      frameWidth: 26,
+      frameHeight: 21,
       startFrame: 0,
     });
 
     this.load.image(
       RetroRunnerMedia.CLOUD_DEFAULT,
       'scenery/overworld/cloud1.png'
+    );
+    this.load.image(
+      RetroRunnerMedia.NATURA_BACKGROUND,
+      'scenery/background.png'
     );
 
     this.load.image(

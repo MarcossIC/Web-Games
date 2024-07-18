@@ -12,6 +12,7 @@ export enum RetroRunnerMedia {
   FLOORBRICKS_DEFAULT = 'floorbricksDefault',
   CLOUD_DEFAULT = 'cloudDefault',
   GAMEOVER_SOUND = 'gameover',
+  NATURA_BACKGROUND = 'naturaBg',
 }
 
 export enum RetroRunnerStates {
@@ -19,4 +20,5 @@ export enum RetroRunnerStates {
   RUNNER_STATE_DEAD = 1,
   RUNNER_STATE_WALK = 2,
   RUNNER_STATE_JUMP = 3,
+  RUNNER_STATE_RUNWALK = 4,
 }
