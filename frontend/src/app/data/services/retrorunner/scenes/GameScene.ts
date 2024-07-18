@@ -150,6 +150,36 @@ export class GameScene extends Scene {
       )
       .setOrigin(0, 0.5)
       .refreshBody();
+    floorSizeX += 100;
+    this.floor
+      .create(
+        floorSizeX,
+        SceneKeys.HEIGHT - 16,
+        RetroRunnerMedia.FLOORGRASS_START,
+        1
+      )
+      .setOrigin(0, 0.5)
+      .refreshBody();
+    floorSizeX += 81;
+    this.floor
+      .create(
+        floorSizeX,
+        SceneKeys.HEIGHT - 16,
+        RetroRunnerMedia.FLOORGRASS_CENTER,
+        1
+      )
+      .setOrigin(0, 0.5)
+      .refreshBody();
+    floorSizeX += 65;
+    this.floor
+      .create(
+        floorSizeX,
+        SceneKeys.HEIGHT - 16,
+        RetroRunnerMedia.FLOORGRASS_END,
+        1
+      )
+      .setOrigin(0, 0.5)
+      .refreshBody();
   }
 
   private startAnimations() {
