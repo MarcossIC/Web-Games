@@ -5,15 +5,15 @@ import {
 } from '@app/data/models/retro-runner/RetroRunnerKeys';
 import { EventBus } from '@app/data/services/phaser/EventBus';
 import { SceneKeys } from '@app/data/services/retrorunner/main';
-import Phaser, { Scene } from 'phaser';
+import { Scene, Types, Physics, GameObjects } from 'phaser';
 
 export class GameScene extends Scene {
-  public floor!: Phaser.Physics.Arcade.StaticGroup;
+  public floor!: Physics.Arcade.StaticGroup;
   public player!: any;
   private keys!: any;
-  private overlay!: Phaser.GameObjects.Graphics;
-  private gameOverText!: Phaser.GameObjects.Text;
-  private gameOverTextContainer!: Phaser.GameObjects.Container;
+  private overlay!: GameObjects.Graphics;
+  private gameOverText!: GameObjects.Text;
+  private gameOverTextContainer!: GameObjects.Container;
 
   constructor() {
     super(SceneKeys.GAME);

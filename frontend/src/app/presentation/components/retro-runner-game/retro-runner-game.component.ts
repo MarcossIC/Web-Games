@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { EventBus } from '@app/data/services/phaser/EventBus';
 import StartGame, { SceneKeys } from '@app/data/services/retrorunner/main';
-import Phaser from 'phaser';
+import { Scene, Game } from 'phaser';
 
 @Component({
   standalone: true,
@@ -9,14 +9,14 @@ import Phaser from 'phaser';
   template: '<div id="retro-runner-game"></div>',
 })
 export class RetroRunnerPhaserGameComponent implements OnInit, OnDestroy {
-  public scene!: Phaser.Scene;
-  public game!: Phaser.Game;
+  public scene!: Scene;
+  public game!: Game;
 
-  public sceneCallback!: (scene: Phaser.Scene) => void;
+  public sceneCallback!: (scene: Scene) => void;
 
   ngOnInit() {
     this.game = StartGame('retro-runner-game');
-    EventBus.on(SceneKeys.SCENE_READY, (scene: Phaser.Scene) => {
+    EventBus.on(SceneKeys.SCENE_READY, (scene: Scene) => {
       this.scene = scene;
 
       if (this.sceneCallback) {
