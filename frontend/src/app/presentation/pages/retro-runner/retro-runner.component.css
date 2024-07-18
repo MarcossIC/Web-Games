@@ -1,3 +1,4 @@
-.test {
-  color: #ee3131;
+div ::ng-deep canvas {
+  margin-block-start: 1rem;
+  border: 2.5px solid rgb(41 116 163);
 }
