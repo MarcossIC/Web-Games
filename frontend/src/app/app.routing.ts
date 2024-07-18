@@ -24,7 +24,6 @@ import { GameStateService } from '@app/data/services/tictactoe/GameState.service
 import { SecondPlayerService } from '@app/data/services/tictactoe/SecondPlayer.service';
 import { TicTacToeControllerService } from '@app/data/services/tictactoe/TicTacToeController.service';
 import { UserPlayerService } from '@app/data/services/tictactoe/UserPlayer.service';
-import { UtilService } from '@app/data/services/util.service';
 
 const routes: Routes = [
   {

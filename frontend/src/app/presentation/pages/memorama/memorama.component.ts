@@ -13,7 +13,6 @@ import { MemoramaControllerService } from '@app/data/services/memorama/memoramaC
 import { fillArray } from '@app/data/services/util.service';
 import { ChronometerComponent } from '@app/presentation/components/chronometer/chronometer.component';
 import { EndgameModalMemoramaComponent } from '@app/presentation/components/endgame-modal-memorama/endgame-modal-memorama.component';
-import { ParticlesComponent } from '@app/presentation/components/particles/particles.component';
 import { WelcomeMomeramaModalComponent } from '@app/presentation/components/welcome-momerama-modal/welcome-momerama-modal.component';
 import { TOTAL_CARDS } from 'assets/constants/memorama';
 import { filter, fromEvent, interval } from 'rxjs';
@@ -25,7 +24,6 @@ import { filter, fromEvent, interval } from 'rxjs';
   styleUrl: './memorama.component.css',
   imports: [
     CommonModule,
-    ParticlesComponent,
     ChronometerComponent,
     EndgameModalMemoramaComponent,
     WelcomeMomeramaModalComponent,

@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class PointsService {
@@ -10,14 +11,17 @@ export class PointsService {
 
   private _time = signal('00:00');
   private _maxTime = signal('00:00');
+  private PLATFORM = inject(PLATFORM_ID);
 
   constructor() {
-    const maxScoreS = localStorage.getItem('tetris-maxScore');
-    const maxLevelS = localStorage.getItem('tetris-maxLevel');
-    const maxTimeS = localStorage.getItem('tetris-maxTime');
-    this._maxScore.set(maxScoreS ? parseInt(maxScoreS, 10) : 0);
-    this._maxLevel.set(maxLevelS ? parseInt(maxLevelS, 10) : 1);
-    this._maxTime.set(maxTimeS ? maxTimeS : '00:00');
+    if (isPlatformBrowser(this.PLATFORM)) {
+      const maxScoreS = localStorage.getItem('tetris-maxScore');
+      const maxLevelS = localStorage.getItem('tetris-maxLevel');
+      const maxTimeS = localStorage.getItem('tetris-maxTime');
+      this._maxScore.set(maxScoreS ? parseInt(maxScoreS, 10) : 0);
+      this._maxLevel.set(maxLevelS ? parseInt(maxLevelS, 10) : 1);
+      this._maxTime.set(maxTimeS ? maxTimeS : '00:00');
+    }
   }
 
   updateMaxPoints() {

@@ -12,7 +12,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TicTacToeControllerService } from '@app/data/services/tictactoe/TicTacToeController.service';
 import { DisplayInfoComponent } from '@app/presentation/components/display-info/display-info.component';
 import { EndgameModalTttComponent } from '@app/presentation/components/endgame-modal-ttt/endgame-modal-ttt.component';
-import { ParticlesComponent } from '@app/presentation/components/particles/particles.component';
 import { SelectModalTttComponent } from '@app/presentation/components/select-modal-ttt/select-modal-ttt.component';
 import { delay, filter, fromEvent } from 'rxjs';
 
@@ -23,7 +22,6 @@ import { delay, filter, fromEvent } from 'rxjs';
   styleUrl: './tictactoe.component.css',
   imports: [
     CommonModule,
-    ParticlesComponent,
     SelectModalTttComponent,
     DisplayInfoComponent,
     EndgameModalTttComponent,

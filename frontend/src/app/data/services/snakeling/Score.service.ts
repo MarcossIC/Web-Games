@@ -1,13 +1,17 @@
-import { Injectable, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 
 @Injectable()
 export class ScoreService {
   private _score = signal(0);
   private _maxScore = signal(0);
+  private PLATFORM = inject(PLATFORM_ID);
 
   constructor() {
-    let max = localStorage.getItem('snakeling-maxScore');
-    this._maxScore.set(max ? parseInt(max) : 0);
+    if (isPlatformBrowser(this.PLATFORM)) {
+      let max = localStorage.getItem('snakeling-maxScore');
+      this._maxScore.set(max ? parseInt(max) : 0);
+    }
   }
 
   public updateMaxScore(): void {

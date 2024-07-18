@@ -15,7 +15,6 @@ import {
 } from '../../../../assets/constants/tetrisConstanst';
 import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
 import { PointsService } from '@app/data/services/tetris/Points.service';
-import { ParticlesComponent } from '@app/presentation/components/particles/particles.component';
 import { WelcomeTetrisModalComponent } from '@app/presentation/components/welcome-tetris-modal/welcome-tetris-modal.component';
 import { ChronometerComponent } from '@app/presentation/components/chronometer/chronometer.component';
 import { EndgameModalTetrisComponent } from '@app/presentation/components/endgame-modal-tetris/endgame-modal-tetris.component';
@@ -30,7 +29,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   styleUrl: './tetris.component.css',
   imports: [
     CommonModule,
-    ParticlesComponent,
     ChronometerComponent,
     WelcomeTetrisModalComponent,
     EndgameModalTetrisComponent,
