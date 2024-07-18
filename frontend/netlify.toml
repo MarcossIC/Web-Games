@@ -8,5 +8,5 @@
 
 [[redirects]]
   from = "/*"
-  to = "/index.csr.html"
+  to = "/index.html"
   status = 200
