@@ -43,6 +43,19 @@ export class PreloaderScene extends Scene {
     });
 
     this.load.image(
+      RetroRunnerMedia.FLOORGRASS_START,
+      'scenery/overworld/floorgrassStart.png'
+    );
+    this.load.image(
+      RetroRunnerMedia.FLOORGRASS_CENTER,
+      'scenery/overworld/floorgrassCenter.png'
+    );
+    this.load.image(
+      RetroRunnerMedia.FLOORGRASS_END,
+      'scenery/overworld/floorgrassEnd.png'
+    );
+
+    this.load.image(
       RetroRunnerMedia.CLOUD_DEFAULT,
       'scenery/overworld/cloud1.png'
     );
@@ -55,6 +68,7 @@ export class PreloaderScene extends Scene {
       RetroRunnerMedia.FLOORBRICKS_DEFAULT,
       'scenery/overworld/floorbricks.png'
     );
+
     this.load.audio(
       RetroRunnerMedia.GAMEOVER_SOUND,
       'sound/music/gameover.mp3'

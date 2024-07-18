@@ -13,6 +13,10 @@ export enum RetroRunnerMedia {
   CLOUD_DEFAULT = 'cloudDefault',
   GAMEOVER_SOUND = 'gameover',
   NATURA_BACKGROUND = 'naturaBg',
+
+  FLOORGRASS_START = 'floorgrassST1',
+  FLOORGRASS_CENTER = 'floorgrassCE1',
+  FLOORGRASS_END = 'floorgrassEN1',
 }
 
 export enum RetroRunnerStates {
@@ -22,3 +26,5 @@ export enum RetroRunnerStates {
   RUNNER_STATE_JUMP = 3,
   RUNNER_STATE_RUNWALK = 4,
 }
+
+export enum FullNaturaFrame {}

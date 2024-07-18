@@ -89,14 +89,65 @@ export class GameScene extends Scene {
 
   private initFloor() {
     this.floor = this.physics.add.staticGroup();
-
+    let floorSizeX = 0;
     this.floor
-      .create(0, SceneKeys.HEIGHT - 16, RetroRunnerMedia.FLOORBRICKS_DEFAULT)
+      .create(
+        floorSizeX,
+        SceneKeys.HEIGHT - 16,
+        RetroRunnerMedia.FLOORGRASS_START,
+        1
+      )
+      .setOrigin(0, 0.5)
+      .refreshBody();
+    floorSizeX += 81;
+    this.floor
+      .create(
+        floorSizeX,
+        SceneKeys.HEIGHT - 16,
+        RetroRunnerMedia.FLOORGRASS_CENTER,
+        1
+      )
       .setOrigin(0, 0.5)
       .refreshBody();
 
+    floorSizeX += 65;
     this.floor
-      .create(150, SceneKeys.HEIGHT - 16, RetroRunnerMedia.FLOORBRICKS_DEFAULT)
+      .create(
+        floorSizeX,
+        SceneKeys.HEIGHT - 16,
+        RetroRunnerMedia.FLOORGRASS_CENTER,
+        1
+      )
+      .setOrigin(0, 0.5)
+      .refreshBody();
+    floorSizeX += 65;
+    this.floor
+      .create(
+        floorSizeX,
+        SceneKeys.HEIGHT - 16,
+        RetroRunnerMedia.FLOORGRASS_CENTER,
+        1
+      )
+      .setOrigin(0, 0.5)
+      .refreshBody();
+    floorSizeX += 65;
+    this.floor
+      .create(
+        floorSizeX,
+        SceneKeys.HEIGHT - 16,
+        RetroRunnerMedia.FLOORGRASS_CENTER,
+        1
+      )
+      .setOrigin(0, 0.5)
+      .refreshBody();
+    floorSizeX += 65;
+    this.floor
+      .create(
+        floorSizeX,
+        SceneKeys.HEIGHT - 16,
+        RetroRunnerMedia.FLOORGRASS_END,
+        1
+      )
       .setOrigin(0, 0.5)
       .refreshBody();
   }
