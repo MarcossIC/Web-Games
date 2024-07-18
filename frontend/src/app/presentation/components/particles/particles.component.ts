@@ -1,5 +1,11 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  OnInit,
+  PLATFORM_ID,
+} from '@angular/core';
 import {
   CollisionMode,
   Container,
@@ -22,8 +28,10 @@ export class ParticlesComponent implements OnInit {
   private currenteColor: string = '#fff';
   protected id: string = 'tsparticles';
   protected particlesOptions: IOptions;
+  private readonly ngParticlesService = inject(NgParticlesService);
+  private PLATFORM = inject(PLATFORM_ID);
 
-  constructor(private readonly ngParticlesService: NgParticlesService) {
+  constructor() {
     this.particlesOptions = {
       autoPlay: true,
       backgroundMask: { enable: false, composite: 'color', cover: '' },
@@ -198,7 +206,9 @@ export class ParticlesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.ngParticlesService.init(this.particlesInit);
+    if (isPlatformBrowser(this.PLATFORM)) {
+      this.ngParticlesService.init(this.particlesInit);
+    }
   }
 
   particlesLoaded(container: Container): void {}
