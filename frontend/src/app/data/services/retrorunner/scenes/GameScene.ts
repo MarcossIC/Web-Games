@@ -11,6 +11,7 @@ import {
 import { SceneKeys } from '@app/data/services/retrorunner/main';
 import GameBackgroundManager from '@app/data/services/retrorunner/utils/GameBackgroundManager';
 import GameFloorManager from '@app/data/services/retrorunner/utils/GameFloorManager';
+import Joystick from '@app/data/services/retrorunner/utils/JoyStick';
 import { PlayerActions } from '@app/data/services/retrorunner/utils/PlayerActions';
 import { Scene, Physics, GameObjects } from 'phaser';
 
@@ -21,14 +22,10 @@ export class GameScene extends Scene {
   public background!: GameObjects.TileSprite;
   public jumpSound!: PhaserSound;
 
-  protected isJumping!: boolean;
-  protected isCrouching!: boolean;
-  protected isMovingLeft!: boolean;
-  protected isMovingRight!: boolean;
-
   public actions!: PlayerActions;
   public backgroundManager!: GameBackgroundManager;
   public floorManager!: GameFloorManager;
+  public joystick!: Joystick;
 
   constructor() {
     super(SceneKeys.GAME);
@@ -47,10 +44,6 @@ export class GameScene extends Scene {
     this.actions = new PlayerActions();
     this.backgroundManager = new GameBackgroundManager();
     this.floorManager = new GameFloorManager();
-    this.isJumping = false;
-    this.isCrouching = false;
-    this.isMovingLeft = false;
-    this.isMovingRight = false;
     this.background = this.add.tileSprite(
       0,
       0,
@@ -66,6 +59,9 @@ export class GameScene extends Scene {
   }
 
   create() {
+    if (this.game.device.input.touch) {
+      this.joystick = new Joystick(this, 100, this.scale.height - 100, 50);
+    }
     this.backgroundManager.scaleBackground(
       this.background,
       this.textures.get(RetroRunnerMedia.NATURA_BACKGROUND).getSourceImage(),
@@ -92,8 +88,6 @@ export class GameScene extends Scene {
       d: Phaser.Input.Keyboard.KeyCodes.D,
       space: Phaser.Input.Keyboard.KeyCodes.SPACE,
     })!;
-
-    this.createMobileControls();
 
     EventBus.emit(SceneKeys.SCENE_READY, this);
   }
@@ -155,118 +149,34 @@ export class GameScene extends Scene {
     });
   }
 
-  createMobileControls() {
-    const radioButton = 17;
-    const buttonSpacing = -1;
-    const buttonVericalX = this.scale.width - 55;
-    const buttonHorizontalY = this.scale.height - 60;
-
-    const buttonJumpY = buttonHorizontalY - radioButton * 2 - buttonSpacing;
-
-    const buttonLextX = buttonVericalX - radioButton * 2 - buttonSpacing;
-
-    const buttonCrouchY = buttonHorizontalY + radioButton * 2 + buttonSpacing;
-
-    const buttonRightX = buttonVericalX + radioButton * 2 + buttonSpacing;
-
-    // Botón de salto
-    let jumpButton = this.add
-      .circle(buttonVericalX, buttonJumpY, radioButton, 0xffff41, 0.5)
-      .setInteractive()
-      .on('pointerdown', () => (this.isJumping = true))
-      .on('pointerup', () => (this.isJumping = false))
-      .on('pointerout', () => (this.isJumping = false));
-
-    // Botón de agacharse
-    let crouchButton = this.add
-      .circle(buttonVericalX, buttonCrouchY, radioButton, 0x0bb80b, 0.5)
-      .setInteractive()
-      .on('pointerdown', () => (this.isCrouching = true))
-      .on('pointerup', () => (this.isCrouching = false))
-      .on('pointerout', () => (this.isCrouching = false));
-
-    // Botón de mover a la izquierda
-    let leftButton = this.add
-      .circle(buttonLextX, buttonHorizontalY, radioButton, 0x2424f5, 0.5)
-
-      .setInteractive()
-      .on('pointerdown', () => (this.isMovingLeft = true))
-      .on('pointerup', () => (this.isMovingLeft = false))
-      .on('pointerout', () => (this.isMovingLeft = false));
-
-    // Botón de mover a la derecha
-    let rightButton = this.add
-      .circle(buttonRightX, buttonHorizontalY, radioButton, 0xf11c1c, 0.5)
-      .setInteractive()
-      .on('pointerdown', () => (this.isMovingRight = true))
-      .on('pointerup', () => (this.isMovingRight = false))
-      .on('pointerout', () => (this.isMovingRight = false));
-
-    // Ajustar la posición de los botones según sea necesario
-    jumpButton.setScrollFactor(0);
-    crouchButton.setScrollFactor(0);
-    leftButton.setScrollFactor(0);
-    rightButton.setScrollFactor(0);
-
-    // Agregar texto en el centro de cada botón
-    this.add
-      .text(buttonVericalX, buttonJumpY, 'W', {
-        fontSize: '20px',
-        color: '#000000',
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0);
-    this.add
-      .text(buttonVericalX, buttonCrouchY, 'S', {
-        fontSize: '20px',
-        color: '#000000',
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0);
-    this.add
-      .text(buttonLextX, buttonHorizontalY, 'A', {
-        fontSize: '20px',
-        color: '#000000',
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0);
-    this.add
-      .text(buttonRightX, buttonHorizontalY, 'D', {
-        fontSize: '20px',
-        color: '#000000',
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0);
-  }
-
   override update() {
     if (this.player.state === RetroRunnerStates.RUNNER_STATE_DEAD) return;
     const keys = this.keys;
+    const isMovingLeft =
+      keys.left.isDown || keys.a.isDown || this.joystick?.isMovingLeft();
 
-    if (keys.left.isDown || keys.a.isDown || this.isMovingLeft) {
+    const isMovingRight =
+      keys.right.isDown || keys.d.isDown || this.joystick?.isMovingRight();
+    const isJumping =
+      keys.up.isDown ||
+      keys.w.isDown ||
+      keys.space.isDown ||
+      this.joystick?.isJumping();
+    const isCrouching =
+      keys.down.isDown || keys.s.isDown || this.joystick?.isCrouching();
+
+    if (isMovingLeft) {
       this.actions.playerLeft(this.player);
-    } else if (keys.right.isDown || keys.d.isDown || this.isMovingRight) {
+    } else if (isMovingRight) {
       this.actions.playerRight(this.player);
-    } else if (
-      (keys.down.isDown || keys.s.isDown || this.isCrouching) &&
-      this.player.body.onFloor()
-    ) {
+    } else if (isCrouching && this.player.body.onFloor()) {
       this.actions.playerCrouch(this.player);
-    } else if (
-      (keys.down.isDown || keys.s.isDown || this.isCrouching) &&
-      !this.player.body.onFloor()
-    ) {
+    } else if (isCrouching && !this.player.body.onFloor()) {
       this.actions.fastFall(this.player);
     } else {
       this.actions.playerStandup(this.player);
     }
-    if (
-      (keys.up.isDown ||
-        keys.w.isDown ||
-        keys.space.isDown ||
-        this.isJumping) &&
-      this.player.body.touching.down
-    ) {
+    if (isJumping && this.player.body.touching.down) {
       this.jumpSound.play();
       this.actions.playerJump(this.player);
     }
