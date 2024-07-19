@@ -5,13 +5,17 @@ import {
 } from '@app/data/models/retro-runner/RetroRunnerKeys';
 import { EventBus } from '@app/data/services/phaser/EventBus';
 import { SceneKeys } from '@app/data/services/retrorunner/main';
-import { Scene, Types, Physics, GameObjects } from 'phaser';
+import { Scene, Sound, Physics, GameObjects } from 'phaser';
 
 export class GameScene extends Scene {
   public floor!: Physics.Arcade.StaticGroup;
   public player!: any;
   private keys!: any;
   public background!: GameObjects.TileSprite;
+  public jumpSound!:
+    | Sound.NoAudioSound
+    | Sound.HTML5AudioSound
+    | Sound.WebAudioSound;
 
   constructor() {
     super(SceneKeys.GAME);
@@ -35,6 +39,10 @@ export class GameScene extends Scene {
       RetroRunnerMedia.NATURA_BACKGROUND
     );
     this.background.setOrigin(0, 0).setScale(1);
+
+    this.jumpSound = this.sound.add(RetroRunnerMedia.BIT_JUMP, {
+      volume: 0.1,
+    });
   }
   scaleBackground() {
     // Obtener dimensiones de la imagen de fondo
@@ -252,6 +260,7 @@ export class GameScene extends Scene {
       (keys.up.isDown || keys.w.isDown || keys.space.isDown) &&
       this.player.body.touching.down
     ) {
+      this.jumpSound.play();
       this.player.setVelocityY(-300);
       this.player.setState(RetroRunnerStates.RUNNER_STATE_JUMP);
       this.player.anims.play(RetroRunnerKey.JUMP_KEY, true);
@@ -260,6 +269,9 @@ export class GameScene extends Scene {
     this.background.displayWidth = this.scale.width;
     this.background.displayHeight = this.scale.height;
     if (this.player.y >= SceneKeys.HEIGHT) {
+      if (this.jumpSound.isPlaying) {
+        this.jumpSound.stop();
+      }
       this.handlePlayerDied();
     }
   }

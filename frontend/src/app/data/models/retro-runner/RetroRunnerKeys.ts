@@ -13,6 +13,8 @@ export enum RetroRunnerMedia {
   CLOUD_DEFAULT = 'cloudDefault',
   GAMEOVER_SOUND = 'gameover',
   NATURA_BACKGROUND = 'naturaBg',
+  BIT_JUMP = '8bitJumpping',
+  WOOSH_JUMP = 'wooshJumpping',
 
   FLOORGRASS_START = 'floorgrassST1',
   FLOORGRASS_CENTER = 'floorgrassCE1',

@@ -71,7 +71,9 @@ export class PreloaderScene extends Scene {
 
     this.load.audio(
       RetroRunnerMedia.GAMEOVER_SOUND,
-      'sound/music/gameover.mp3'
+      'sound/music/capibara-gameover.mp3'
     );
+
+    this.load.audio(RetroRunnerMedia.BIT_JUMP, 'sound/effects/bit-jump.mp3');
   }
 }
