@@ -1,4 +1,4 @@
-import { Sound, Types } from 'phaser';
+import { GameObjects, Sound, Types } from 'phaser';
 
 export type PhaserSound =
   | Sound.NoAudioSound
@@ -6,3 +6,8 @@ export type PhaserSound =
   | Sound.WebAudioSound;
 
 export type PhaserPlayerWithBody = Types.Physics.Arcade.SpriteWithDynamicBody;
+
+export type PhaserSourceImage =
+  | HTMLImageElement
+  | HTMLCanvasElement
+  | GameObjects.RenderTexture;

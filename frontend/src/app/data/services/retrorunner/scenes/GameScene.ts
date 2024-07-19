@@ -9,6 +9,8 @@ import {
   PhaserSound,
 } from '@app/data/services/phaser/types';
 import { SceneKeys } from '@app/data/services/retrorunner/main';
+import GameBackgroundManager from '@app/data/services/retrorunner/utils/GameBackgroundManager';
+import GameFloorManager from '@app/data/services/retrorunner/utils/GameFloorManager';
 import { PlayerActions } from '@app/data/services/retrorunner/utils/PlayerActions';
 import { Scene, Physics, GameObjects } from 'phaser';
 
@@ -19,11 +21,14 @@ export class GameScene extends Scene {
   public background!: GameObjects.TileSprite;
   public jumpSound!: PhaserSound;
 
-  public actions!: PlayerActions;
   protected isJumping!: boolean;
   protected isCrouching!: boolean;
   protected isMovingLeft!: boolean;
   protected isMovingRight!: boolean;
+
+  public actions!: PlayerActions;
+  public backgroundManager!: GameBackgroundManager;
+  public floorManager!: GameFloorManager;
 
   constructor() {
     super(SceneKeys.GAME);
@@ -40,6 +45,8 @@ export class GameScene extends Scene {
 
   init() {
     this.actions = new PlayerActions();
+    this.backgroundManager = new GameBackgroundManager();
+    this.floorManager = new GameFloorManager();
     this.isJumping = false;
     this.isCrouching = false;
     this.isMovingLeft = false;
@@ -57,40 +64,21 @@ export class GameScene extends Scene {
       volume: 0.1,
     });
   }
-  scaleBackground() {
-    // Obtener dimensiones de la imagen de fondo
-    const bgWidth = this.textures
-      .get(RetroRunnerMedia.NATURA_BACKGROUND)
-      .getSourceImage().width;
-    const bgHeight = this.textures
-      .get(RetroRunnerMedia.NATURA_BACKGROUND)
-      .getSourceImage().height;
-
-    // Calcular la escala
-    const scaleX = this.scale.width / bgWidth;
-    const scaleY = this.scale.height / bgHeight;
-    const scale = Math.max(scaleX, scaleY);
-
-    // Ajustar la escala del fondo
-    this.background.setScale(scale).setScrollFactor(0);
-
-    // Ajustar el tamaño del tileSprite para cubrir toda la pantalla
-    this.background.displayWidth = this.scale.width;
-    this.background.displayHeight = SceneKeys.HEIGHT;
-  }
 
   create() {
-    this.scaleBackground();
-
+    this.backgroundManager.scaleBackground(
+      this.background,
+      this.textures.get(RetroRunnerMedia.NATURA_BACKGROUND).getSourceImage(),
+      this.scale
+    );
     this.initFloor();
     this.startPlayer();
-
     this.startAnimations();
 
-    this.physics.world.setBounds(0, 0, 2000, SceneKeys.HEIGHT);
+    this.physics.world.setBounds(0, 0, 2000, this.scale.height);
     this.physics.add.collider(this.player, this.floor);
 
-    this.cameras.main.setBounds(0, 0, 2000, SceneKeys.HEIGHT);
+    this.cameras.main.setBounds(0, 0, 2000, this.scale.height);
     this.cameras.main.startFollow(this.player);
 
     this.keys = this.input.keyboard?.addKeys({
@@ -112,97 +100,8 @@ export class GameScene extends Scene {
 
   private initFloor() {
     this.floor = this.physics.add.staticGroup();
-    let floorSizeX = 0;
-    this.floor
-      .create(
-        floorSizeX,
-        SceneKeys.HEIGHT - 16,
-        RetroRunnerMedia.FLOORGRASS_START,
-        1
-      )
-      .setOrigin(0, 0.5)
-      .refreshBody();
-    floorSizeX += 81;
-    this.floor
-      .create(
-        floorSizeX,
-        SceneKeys.HEIGHT - 16,
-        RetroRunnerMedia.FLOORGRASS_CENTER,
-        1
-      )
-      .setOrigin(0, 0.5)
-      .refreshBody();
-
-    floorSizeX += 65;
-    this.floor
-      .create(
-        floorSizeX,
-        SceneKeys.HEIGHT - 16,
-        RetroRunnerMedia.FLOORGRASS_CENTER,
-        1
-      )
-      .setOrigin(0, 0.5)
-      .refreshBody();
-    floorSizeX += 65;
-    this.floor
-      .create(
-        floorSizeX,
-        SceneKeys.HEIGHT - 16,
-        RetroRunnerMedia.FLOORGRASS_CENTER,
-        1
-      )
-      .setOrigin(0, 0.5)
-      .refreshBody();
-    floorSizeX += 65;
-    this.floor
-      .create(
-        floorSizeX,
-        SceneKeys.HEIGHT - 16,
-        RetroRunnerMedia.FLOORGRASS_CENTER,
-        1
-      )
-      .setOrigin(0, 0.5)
-      .refreshBody();
-    floorSizeX += 65;
-    this.floor
-      .create(
-        floorSizeX,
-        SceneKeys.HEIGHT - 16,
-        RetroRunnerMedia.FLOORGRASS_END,
-        1
-      )
-      .setOrigin(0, 0.5)
-      .refreshBody();
-    floorSizeX += 100;
-    this.floor
-      .create(
-        floorSizeX,
-        SceneKeys.HEIGHT - 16,
-        RetroRunnerMedia.FLOORGRASS_START,
-        1
-      )
-      .setOrigin(0, 0.5)
-      .refreshBody();
-    floorSizeX += 81;
-    this.floor
-      .create(
-        floorSizeX,
-        SceneKeys.HEIGHT - 16,
-        RetroRunnerMedia.FLOORGRASS_CENTER,
-        1
-      )
-      .setOrigin(0, 0.5)
-      .refreshBody();
-    floorSizeX += 65;
-    this.floor
-      .create(
-        floorSizeX,
-        SceneKeys.HEIGHT - 16,
-        RetroRunnerMedia.FLOORGRASS_END,
-        1
-      )
-      .setOrigin(0, 0.5)
-      .refreshBody();
+    const floorSizeY = this.scale.height - 16;
+    this.floorManager.initFloor(this.floor, floorSizeY);
   }
 
   private startAnimations() {
@@ -259,8 +158,8 @@ export class GameScene extends Scene {
   createMobileControls() {
     const radioButton = 17;
     const buttonSpacing = -1;
-    const buttonVericalX = SceneKeys.WIDTH - 55;
-    const buttonHorizontalY = SceneKeys.HEIGHT - 60;
+    const buttonVericalX = this.scale.width - 55;
+    const buttonHorizontalY = this.scale.height - 60;
 
     const buttonJumpY = buttonHorizontalY - radioButton * 2 - buttonSpacing;
 
@@ -374,7 +273,7 @@ export class GameScene extends Scene {
 
     this.background.displayWidth = this.scale.width;
     this.background.displayHeight = this.scale.height;
-    if (this.player.y >= SceneKeys.HEIGHT) {
+    if (this.player.y >= this.scale.height) {
       if (this.jumpSound.isPlaying) {
         this.jumpSound.stop();
       }

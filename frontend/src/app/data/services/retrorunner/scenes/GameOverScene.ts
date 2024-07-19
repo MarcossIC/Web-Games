@@ -102,18 +102,6 @@ class GameOverScene extends Scene {
       [],
       this
     );
-    //Destruimos todo y volvemos al juego despues de 2350ms
-    /*
-    this.time.delayedCall(
-      2350,
-      () => {
-        this.gameOverSound.stop();
-        this.scene.start(SceneKeys.GAME);
-      },
-      [],
-      this
-    );
-   */
   }
 }
 

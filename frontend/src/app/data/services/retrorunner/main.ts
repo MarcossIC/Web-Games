@@ -7,15 +7,15 @@ export enum SceneKeys {
   GAME = 'Game',
   PRELOADER = 'Preloader',
   GAME_OVER = 'GameOver',
-  HEIGHT = 292,
-  WIDTH = 304,
+  MAX_HEIGHT = 330,
+  MAX_WIDTH = 500,
   SCENE_READY = 'current-scene-ready',
 }
 
 const config: Phaser.Types.Core.GameConfig = {
   type: AUTO,
-  width: SceneKeys.WIDTH,
-  height: SceneKeys.HEIGHT,
+  width: Math.min(window.innerWidth, SceneKeys.MAX_WIDTH),
+  height: Math.min(window.innerHeight, SceneKeys.MAX_HEIGHT),
   backgroundColor: '#049cd8',
   parent: 'retro-runner-game',
   physics: {
@@ -29,6 +29,10 @@ const config: Phaser.Types.Core.GameConfig = {
     keyboard: true,
     mouse: true,
     touch: true,
+  },
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   scene: [PreloaderScene, GameScene, GameOverScene],
 };
