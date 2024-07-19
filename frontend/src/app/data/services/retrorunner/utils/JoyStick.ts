@@ -19,15 +19,17 @@ class Joystick {
     this.base = this.scene.add
       .circle(x, y, radius, 0x888888, 0.5)
       .setInteractive()
-      .setScrollFactor(0)
-      .setVisible(false);
+      .setScrollFactor(0);
+
+    this.base.setVisible(false);
 
     // Crear la palanca del joystick
     this.stick = this.scene.add
       .circle(x, y, radius / 2, 0xffffff, 0.5)
       .setInteractive()
-      .setScrollFactor(0)
-      .setVisible(false);
+      .setScrollFactor(0);
+
+    this.stick.setVisible(false);
 
     // Variables para almacenar la posición inicial
     this.baseX = x;
@@ -38,12 +40,13 @@ class Joystick {
     this.direction = { x: 0, y: 0 };
 
     // Manejar los eventos de input
-    this.stick.on('pointerdown', this.onPointerDown, this);
+    this.scene.input.on('pointerdown', this.onPointerDown, this);
     this.scene.input.on('pointermove', this.onPointerMove, this);
     this.scene.input.on('pointerup', this.onPointerUp, this);
   }
 
   protected onPointerDown(pointer) {
+    console.log('Entro a pointerdown?');
     if (this.pointerId === null) {
       this.pointerId = pointer.id;
       this.baseX = pointer.x;
@@ -52,11 +55,13 @@ class Joystick {
       this.stick.setPosition(pointer.x, pointer.y);
       this.base.setVisible(true);
       this.stick.setVisible(true);
+
       this.stick.setFillStyle(0xff0000, 0.5);
     }
   }
 
   protected onPointerMove(pointer) {
+    console.log('Entro a pinterMove?');
     if (pointer.id === this.pointerId) {
       let deltaX = pointer.x - this.baseX;
       let deltaY = pointer.y - this.baseY;
@@ -77,15 +82,16 @@ class Joystick {
   }
 
   protected onPointerUp(pointer) {
+    console.log('Entro a pointerUp?');
     if (pointer.id === this.pointerId) {
       this.pointerId = null;
+      this.base.setVisible(false);
+      this.stick.setVisible(false);
       this.stick.setFillStyle(0xffffff, 0.5);
-     this.stick.x = this.baseX;
-     this.stick.y = this.baseY;
-     this.direction.x = 0;
-     this.direction.y = 0;
-     this.base.setVisible(false);
-     this.stick.setVisible(false);
+      this.stick.x = this.baseX;
+      this.stick.y = this.baseY;
+      this.direction.x = 0;
+      this.direction.y = 0;
     }
   }
 
