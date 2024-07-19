@@ -12,6 +12,7 @@ export enum RetroRunnerMedia {
   FLOORBRICKS_DEFAULT = 'floorbricksDefault',
   CLOUD_DEFAULT = 'cloudDefault',
   GAMEOVER_SOUND = 'gameover',
+  CAPIBARA_SOUND = 'capiBaraGameover',
   NATURA_BACKGROUND = 'naturaBg',
   BIT_JUMP = '8bitJumpping',
   WOOSH_JUMP = 'wooshJumpping',

@@ -28,14 +28,6 @@ export class PreloaderScene extends Scene {
   preload() {
     this.load.setPath('assets/images/retro-runner');
 
-    /*
-      this.load.spritesheet(RetroRunnerKey.RUNNER, 'entities/mario.png', {
-      frameWidth: 18,
-      frameHeight: 16,
-      startFrame: 0,
-    });
-    */
-
     this.load.spritesheet(RetroRunnerKey.RUNNER, 'entities/minicapy.png', {
       frameWidth: 26,
       frameHeight: 21,
@@ -56,21 +48,16 @@ export class PreloaderScene extends Scene {
     );
 
     this.load.image(
-      RetroRunnerMedia.CLOUD_DEFAULT,
-      'scenery/overworld/cloud1.png'
-    );
-    this.load.image(
       RetroRunnerMedia.NATURA_BACKGROUND,
       'scenery/background.png'
     );
 
-    this.load.image(
-      RetroRunnerMedia.FLOORBRICKS_DEFAULT,
-      'scenery/overworld/floorbricks.png'
-    );
-
     this.load.audio(
       RetroRunnerMedia.GAMEOVER_SOUND,
+      'sound/music/cripy-gameover.mp3'
+    );
+    this.load.audio(
+      RetroRunnerMedia.CAPIBARA_SOUND,
       'sound/music/capibara-gameover.mp3'
     );
 

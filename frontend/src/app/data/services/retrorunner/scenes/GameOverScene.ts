@@ -3,14 +3,13 @@ import {
   RetroRunnerMedia,
   RetroRunnerStates,
 } from '@app/data/models/retro-runner/RetroRunnerKeys';
+import { PhaserSound } from '@app/data/services/phaser/types';
 import { SceneKeys } from '@app/data/services/retrorunner/main';
-import { Scene, Sound } from 'phaser';
+import { Scene } from 'phaser';
 
 class GameOverScene extends Scene {
-  public gameOverSound!:
-    | Sound.NoAudioSound
-    | Sound.HTML5AudioSound
-    | Sound.WebAudioSound;
+  public gameOverSound!: PhaserSound;
+  public capibaraSound!: PhaserSound;
   constructor() {
     super(SceneKeys.GAME_OVER);
   }
@@ -19,10 +18,13 @@ class GameOverScene extends Scene {
     this.gameOverSound = this.sound.add(RetroRunnerMedia.GAMEOVER_SOUND, {
       volume: 0.2,
     });
+    this.capibaraSound = this.sound.add(RetroRunnerMedia.CAPIBARA_SOUND, {
+      volume: 0.2,
+    });
   }
 
   create() {
-    this.gameOverSound.play({ loop: true });
+    this.gameOverSound.play();
 
     // overlay
     const overlay = this.add.graphics();
@@ -58,7 +60,7 @@ class GameOverScene extends Scene {
     this.tweens.add({
       targets: clickToContinueText,
       alpha: { from: 1, to: 0 }, // Cambiar de 1 (visible) a 0 (invisible)
-      duration: 1000, // Duración del ciclo de parpadeo
+      duration: 900, // Duración del ciclo de parpadeo
       yoyo: true, // Repetir el tween en reversa (hacer parpadear)
       loop: -1, // Hacer que el tween se repita indefinidamente
     });
@@ -87,8 +89,19 @@ class GameOverScene extends Scene {
     // Agregar listener de clic para reiniciar el juego
     this.input.on('pointerdown', () => {
       this.gameOverSound.stop();
+      this.capibaraSound.stop();
       this.scene.start(SceneKeys.GAME);
     });
+
+    this.time.delayedCall(
+      5000,
+      () => {
+        this.gameOverSound.stop();
+        this.capibaraSound.play({ loop: true });
+      },
+      [],
+      this
+    );
     //Destruimos todo y volvemos al juego despues de 2350ms
     /*
     this.time.delayedCall(
