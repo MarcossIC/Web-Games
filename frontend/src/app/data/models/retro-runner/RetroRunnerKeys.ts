@@ -4,6 +4,7 @@ export enum RetroRunnerKey {
   JUMP_KEY = 'runnerJumping',
   IDLE_KEY = 'runnerIdle',
   DEAD_KEY = 'runnerDead',
+  DOWN_KEY = 'runnerDown',
 
   RUNNER = 'runner',
 }
@@ -28,6 +29,7 @@ export enum RetroRunnerStates {
   RUNNER_STATE_WALK = 2,
   RUNNER_STATE_JUMP = 3,
   RUNNER_STATE_RUNWALK = 4,
+  RUNNER_STATE_DOWN = 5,
 }
 
 export enum FullNaturaFrame {}

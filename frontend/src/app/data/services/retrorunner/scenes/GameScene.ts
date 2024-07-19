@@ -4,18 +4,22 @@ import {
   RetroRunnerStates,
 } from '@app/data/models/retro-runner/RetroRunnerKeys';
 import { EventBus } from '@app/data/services/phaser/EventBus';
+import {
+  PhaserPlayerWithBody,
+  PhaserSound,
+} from '@app/data/services/phaser/types';
 import { SceneKeys } from '@app/data/services/retrorunner/main';
-import { Scene, Sound, Physics, GameObjects } from 'phaser';
+import { PlayerActions } from '@app/data/services/retrorunner/utils/PlayerActions';
+import { Scene, Physics, GameObjects } from 'phaser';
 
 export class GameScene extends Scene {
   public floor!: Physics.Arcade.StaticGroup;
-  public player!: any;
+  public player!: PhaserPlayerWithBody;
   private keys!: any;
   public background!: GameObjects.TileSprite;
-  public jumpSound!:
-    | Sound.NoAudioSound
-    | Sound.HTML5AudioSound
-    | Sound.WebAudioSound;
+  public jumpSound!: PhaserSound;
+
+  public actions!: PlayerActions;
 
   constructor() {
     super(SceneKeys.GAME);
@@ -31,6 +35,7 @@ export class GameScene extends Scene {
   }
 
   init() {
+    this.actions = new PlayerActions();
     this.background = this.add.tileSprite(
       0,
       0,
@@ -230,6 +235,15 @@ export class GameScene extends Scene {
       frameRate: 12,
       repeat: 1,
     });
+    this.anims.create({
+      key: RetroRunnerKey.DOWN_KEY,
+      frames: this.anims.generateFrameNumbers(RetroRunnerKey.RUNNER, {
+        start: 17,
+        end: 18,
+      }),
+      frameRate: 5,
+      repeat: 1,
+    });
   }
 
   override update() {
@@ -237,33 +251,28 @@ export class GameScene extends Scene {
     const keys = this.keys;
 
     if (keys.left.isDown || keys.a.isDown) {
-      if (this.player.state !== RetroRunnerStates.RUNNER_STATE_JUMP) {
-        this.player.setState(RetroRunnerStates.RUNNER_STATE_WALK);
-        this.player.anims.play(RetroRunnerKey.WALK_KEY, true);
-      }
-
-      this.player.x -= 2;
-      this.player.flipX = false;
+      this.actions.playerLeft(this.player);
     } else if (keys.right.isDown || keys.d.isDown) {
-      if (this.player.state !== RetroRunnerStates.RUNNER_STATE_JUMP) {
-        this.player.setState(RetroRunnerStates.RUNNER_STATE_WALK);
-        this.player.anims.play(RetroRunnerKey.WALK_KEY, true);
-      }
-
-      this.player.x += 2;
-      this.player.flipX = true;
+      this.actions.playerRight(this.player);
+    } else if (
+      (keys.down.isDown || keys.s.isDown) &&
+      this.player.body.onFloor()
+    ) {
+      this.actions.playerCrouch(this.player);
+    } else if (
+      (keys.down.isDown || keys.s.isDown) &&
+      !this.player.body.onFloor()
+    ) {
+      this.actions.fastFall(this.player);
     } else {
-      this.player.setState(RetroRunnerStates.RUNNER_STATE_IDLE);
-      this.player.anims.play(RetroRunnerKey.IDLE_KEY, true);
+      this.actions.playerStandup(this.player);
     }
     if (
       (keys.up.isDown || keys.w.isDown || keys.space.isDown) &&
       this.player.body.touching.down
     ) {
       this.jumpSound.play();
-      this.player.setVelocityY(-300);
-      this.player.setState(RetroRunnerStates.RUNNER_STATE_JUMP);
-      this.player.anims.play(RetroRunnerKey.JUMP_KEY, true);
+      this.actions.playerJump(this.player);
     }
 
     this.background.displayWidth = this.scale.width;
