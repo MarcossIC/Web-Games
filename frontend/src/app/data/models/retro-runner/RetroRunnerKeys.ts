@@ -21,6 +21,8 @@ export enum RetroRunnerMedia {
   FLOORGRASS_START = 'floorgrassST1',
   FLOORGRASS_CENTER = 'floorgrassCE1',
   FLOORGRASS_END = 'floorgrassEN1',
+  FLOORGRASS_SMALL = 'floorgrassSmall',
+  GRASS_BLOCK = 'grassBlock',
 }
 
 export enum RetroRunnerStates {
@@ -30,6 +32,11 @@ export enum RetroRunnerStates {
   RUNNER_STATE_JUMP = 3,
   RUNNER_STATE_RUNWALK = 4,
   RUNNER_STATE_DOWN = 5,
+}
+
+export enum RetroRunnerFloor {
+  FLOORGRASS_START_WIDTH = 81,
+  FLOORGRASS_CENTER_WIDTH = 65,
 }
 
 export enum FullNaturaFrame {}

@@ -17,19 +17,21 @@ export class PlayerActions {
   public playerLeft(player: PhaserPlayerWithBody) {
     player.setState(RetroRunnerStates.RUNNER_STATE_WALK);
     player.anims.play(RetroRunnerKey.WALK_KEY, true);
-    player.x -= 2;
+    player.setVelocityX(!player.body.touching.down ? -150 : -190);
+    //player.x -= 2;
     player.flipX = false;
   }
 
   public playerRight(player: PhaserPlayerWithBody) {
     player.setState(RetroRunnerStates.RUNNER_STATE_WALK);
     player.anims.play(RetroRunnerKey.WALK_KEY, true);
-
-    player.x += 2;
+    player.setVelocityX(!player.body.touching.down ? 150 : 190);
+    //player.x += 2;
     player.flipX = true;
   }
 
   public playerStandup(player: PhaserPlayerWithBody) {
+    player.setVelocityX(0);
     if (player.anims?.currentAnim?.key === RetroRunnerKey.DOWN_KEY) {
       player.body.setSize(player.width, player.height);
       player.body.offset.y = 0;
@@ -44,13 +46,13 @@ export class PlayerActions {
       player.setState(RetroRunnerStates.RUNNER_STATE_JUMP);
 
       player.anims.play(RetroRunnerKey.JUMP_KEY, true);
-      player.setVelocityY(-300);
+      player.setVelocityY(-510);
     }
   }
 
   public fastFall(player: PhaserPlayerWithBody) {
     if (player.body.velocity.y > 0) {
-      player.setVelocityY(230);
+      player.setVelocityY(250);
     }
   }
 }

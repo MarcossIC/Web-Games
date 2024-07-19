@@ -10,6 +10,7 @@ import {
 } from '@app/data/services/phaser/types';
 import { SceneKeys } from '@app/data/services/retrorunner/main';
 import GameBackgroundManager from '@app/data/services/retrorunner/utils/GameBackgroundManager';
+import GameCollider from '@app/data/services/retrorunner/utils/GameColliderManager';
 import GameFloorManager from '@app/data/services/retrorunner/utils/GameFloorManager';
 import Joystick from '@app/data/services/retrorunner/utils/JoyStick';
 import { PlayerActions } from '@app/data/services/retrorunner/utils/PlayerActions';
@@ -17,6 +18,7 @@ import { Scene, Physics, GameObjects } from 'phaser';
 
 export class GameScene extends Scene {
   public floor!: Physics.Arcade.StaticGroup;
+  public platforms!: Physics.Arcade.StaticGroup;
   public player!: PhaserPlayerWithBody;
   private keys!: any;
   public background!: GameObjects.TileSprite;
@@ -29,15 +31,6 @@ export class GameScene extends Scene {
 
   constructor() {
     super(SceneKeys.GAME);
-  }
-
-  private startPlayer() {
-    this.player = this.physics.add
-      .sprite(50, 100, RetroRunnerKey.RUNNER)
-      .setOrigin(0, 1)
-      .setCollideWorldBounds(true)
-      .setGravityY(300)
-      .setState(RetroRunnerStates.RUNNER_STATE_IDLE);
   }
 
   init() {
@@ -67,8 +60,9 @@ export class GameScene extends Scene {
       this.textures.get(RetroRunnerMedia.NATURA_BACKGROUND).getSourceImage(),
       this.scale
     );
-    this.initFloor();
+    this.physics.enableUpdate();
     this.startPlayer();
+    this.initFloor();
     this.startAnimations();
 
     this.physics.world.setBounds(0, 0, 2000, this.scale.height);
@@ -92,10 +86,42 @@ export class GameScene extends Scene {
     EventBus.emit(SceneKeys.SCENE_READY, this);
   }
 
+  private startPlayer() {
+    this.player = this.physics.add
+      .sprite(50, 100, RetroRunnerKey.RUNNER)
+      .setOrigin(0, 1)
+      .setCollideWorldBounds(true)
+      .setGravityY(400)
+      .setState(RetroRunnerStates.RUNNER_STATE_IDLE)
+      .setScale(1.6, 1.6);
+  }
+
+  private startPlatforms() {
+    this.platforms = this.physics.add.staticGroup();
+    this.platforms.setActive(true);
+  }
+
   private initFloor() {
     this.floor = this.physics.add.staticGroup();
     const floorSizeY = this.scale.height - 16;
-    this.floorManager.initFloor(this.floor, floorSizeY);
+    this.floorManager.initWorldFloor(this.floor, floorSizeY);
+    this.floorManager.initWorldFloor(this.floor, floorSizeY);
+    this.startPlatforms();
+
+    const floorFlySize = floorSizeY - 90;
+    this.floor
+      .create(210, floorFlySize, RetroRunnerMedia.GRASS_BLOCK, 1)
+      .setOrigin(0, 0.5)
+      .refreshBody();
+    //this.platforms.setHitArea();
+
+    //this.floorManager.generateGrassBlock(this.floor, floorFlySize, 210);
+    //this.floorManager.generateGrassSmallFloor(this.floor, floorFlySize, 290);
+
+    this.floor.world.checkCollision.down = true;
+    this.floor.world.checkCollision.up = true;
+    this.floor.world.checkCollision.left = true;
+    this.floor.world.checkCollision.right = true;
   }
 
   private startAnimations() {
@@ -180,7 +206,7 @@ export class GameScene extends Scene {
       this.jumpSound.play();
       this.actions.playerJump(this.player);
     }
-
+    this.physics.collide(this.player, this.floor);
     this.background.displayWidth = this.scale.width;
     this.background.displayHeight = this.scale.height;
     if (this.player.y >= this.scale.height) {

@@ -42,9 +42,20 @@ export class PreloaderScene extends Scene {
       RetroRunnerMedia.FLOORGRASS_CENTER,
       'scenery/overworld/floorgrassCenter.png'
     );
+
     this.load.image(
       RetroRunnerMedia.FLOORGRASS_END,
       'scenery/overworld/floorgrassEnd.png'
+    );
+
+    this.load.image(
+      RetroRunnerMedia.FLOORGRASS_SMALL,
+      'scenery/overworld/floorgrass.png'
+    );
+
+    this.load.image(
+      RetroRunnerMedia.GRASS_BLOCK,
+      'scenery/overworld/grassBlock.png'
     );
 
     this.load.image(

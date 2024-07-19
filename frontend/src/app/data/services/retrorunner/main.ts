@@ -8,7 +8,7 @@ export enum SceneKeys {
   PRELOADER = 'Preloader',
   GAME_OVER = 'GameOver',
   MAX_HEIGHT = 330,
-  MAX_WIDTH = 500,
+  MAX_WIDTH = 550,
   SCENE_READY = 'current-scene-ready',
 }
 
