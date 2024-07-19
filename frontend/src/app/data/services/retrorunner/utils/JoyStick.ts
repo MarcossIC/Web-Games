@@ -19,13 +19,15 @@ class Joystick {
     this.base = this.scene.add
       .circle(x, y, radius, 0x888888, 0.5)
       .setInteractive()
-      .setScrollFactor(0);
+      .setScrollFactor(0)
+      .setVisible(false);
 
     // Crear la palanca del joystick
     this.stick = this.scene.add
       .circle(x, y, radius / 2, 0xffffff, 0.5)
       .setInteractive()
-      .setScrollFactor(0);
+      .setScrollFactor(0)
+      .setVisible(false);
 
     // Variables para almacenar la posición inicial
     this.baseX = x;
@@ -44,6 +46,12 @@ class Joystick {
   protected onPointerDown(pointer) {
     if (this.pointerId === null) {
       this.pointerId = pointer.id;
+      this.baseX = pointer.x;
+      this.baseY = pointer.y;
+      this.base.setPosition(pointer.x, pointer.y);
+      this.stick.setPosition(pointer.x, pointer.y);
+      this.base.setVisible(true);
+      this.stick.setVisible(true);
       this.stick.setFillStyle(0xff0000, 0.5);
     }
   }
@@ -72,10 +80,12 @@ class Joystick {
     if (pointer.id === this.pointerId) {
       this.pointerId = null;
       this.stick.setFillStyle(0xffffff, 0.5);
-      this.stick.x = this.baseX;
-      this.stick.y = this.baseY;
-      this.direction.x = 0;
-      this.direction.y = 0;
+     this.stick.x = this.baseX;
+     this.stick.y = this.baseY;
+     this.direction.x = 0;
+     this.direction.y = 0;
+     this.base.setVisible(false);
+     this.stick.setVisible(false);
     }
   }
 
