@@ -46,44 +46,57 @@ class Joystick {
   }
 
   protected onPointerDown(pointer) {
-    console.log('Entro a pointerdown?');
     if (this.pointerId === null) {
       this.pointerId = pointer.id;
+      //La base es la posicion(X, Y) de donde se empezo a clicar
       this.baseX = pointer.x;
       this.baseY = pointer.y;
+      //Se mueve el joystick a donde se clico
       this.base.setPosition(pointer.x, pointer.y);
       this.stick.setPosition(pointer.x, pointer.y);
+      //Se hace visible el Joystick
       this.base.setVisible(true);
       this.stick.setVisible(true);
 
+      //Se pone el boton en rojo para indicar que esta activo
       this.stick.setFillStyle(0xff0000, 0.5);
     }
   }
 
   protected onPointerMove(pointer) {
-    console.log('Entro a pinterMove?');
     if (pointer.id === this.pointerId) {
+      //Delta es la distancia entre la posicion actual del puntero
+      //Y la base que se inicio en "onPointerDown"
       let deltaX = pointer.x - this.baseX;
       let deltaY = pointer.y - this.baseY;
-      let distance = Math.sqrt(deltaX * deltaY + deltaY * deltaY);
 
+      //Usando el teorema de pitagoras se calcula,
+      //la distancia entre el puntero y el centro del joystick
+      let distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+      //Si el puntero quiere exceder el radio del joystick se limita
+      //De esta forma por mas lejos que intentes mover no se saldra del joystick
       if (distance > this.radius) {
         deltaX *= this.radius / distance;
         deltaY *= this.radius / distance;
         distance = this.radius;
       }
 
+      //Se actualiza el stick del joystick
       this.stick.x = this.baseX + deltaX;
       this.stick.y = this.baseY + deltaY;
 
+      //Direccion del movimiento entre X(-1, 1) e Y(-1, 1)
+      //"0" == Quieto // >0 = Derecha // <0 = Izquierda
       this.direction.x = deltaX / this.radius;
+      //"0" == Quieto // >0 = Agachandose // <0 = Saltando
       this.direction.y = deltaY / this.radius;
     }
   }
 
   protected onPointerUp(pointer) {
-    console.log('Entro a pointerUp?');
     if (pointer.id === this.pointerId) {
+      //Se resetea el puntero y se oculta el joystick
       this.pointerId = null;
       this.base.setVisible(false);
       this.stick.setVisible(false);
