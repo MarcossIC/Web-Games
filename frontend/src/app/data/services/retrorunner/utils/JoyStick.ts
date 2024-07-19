@@ -73,9 +73,9 @@ class Joystick {
       //Usando el teorema de pitagoras se calcula,
       //la distancia entre el puntero y el centro del joystick
       let distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      //*Anoto*: El radio es el la distancia entre el centro de una circunferencia y cualquiera de sus bordes
 
-      //Si el puntero quiere exceder el radio del joystick se limita
-      //De esta forma por mas lejos que intentes mover no se saldra del joystick
+      //Si la distancia es del puntero es mayor al radio, se limita para evitar que el stick se salga
       if (distance > this.radius) {
         deltaX *= this.radius / distance;
         deltaY *= this.radius / distance;
