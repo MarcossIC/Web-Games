@@ -59,7 +59,7 @@ export class GameScene extends Scene {
   }
 
   create() {
-    if (this.game.device.input.touch || true) {
+    if (this.game.device.input.touch) {
       this.joystick = new Joystick(this, 100, this.scale.height - 100, 50);
     }
     this.backgroundManager.scaleBackground(
