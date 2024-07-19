@@ -2,3 +2,10 @@ div ::ng-deep canvas {
   margin-block-start: 1rem;
   border: 2.5px solid rgb(41 116 163);
 }
+
+d {
+  color: #ffff41;
+  color: #f11c1c;
+  color: #2424f5;
+  color: #0bb80b;
+}
