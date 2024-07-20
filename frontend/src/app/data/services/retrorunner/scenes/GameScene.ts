@@ -1,4 +1,6 @@
+import { AxisTypeArray } from '@app/data/models/Axis';
 import {
+  PlatformType,
   RetroRunnerKey,
   RetroRunnerMedia,
   RetroRunnerStates,
@@ -10,7 +12,6 @@ import {
 } from '@app/data/services/phaser/types';
 import { SceneKeys } from '@app/data/services/retrorunner/main';
 import GameBackgroundManager from '@app/data/services/retrorunner/utils/GameBackgroundManager';
-import GameCollider from '@app/data/services/retrorunner/utils/GameColliderManager';
 import GameFloorManager from '@app/data/services/retrorunner/utils/GameFloorManager';
 import Joystick from '@app/data/services/retrorunner/utils/JoyStick';
 import { PlayerActions } from '@app/data/services/retrorunner/utils/PlayerActions';
@@ -18,7 +19,6 @@ import { Scene, Physics, GameObjects } from 'phaser';
 
 export class GameScene extends Scene {
   public floor!: Physics.Arcade.StaticGroup;
-  public platforms!: Physics.Arcade.StaticGroup;
   public player!: PhaserPlayerWithBody;
   private keys!: any;
   public background!: GameObjects.TileSprite;
@@ -96,27 +96,10 @@ export class GameScene extends Scene {
       .setScale(1.6, 1.6);
   }
 
-  private startPlatforms() {
-    this.platforms = this.physics.add.staticGroup();
-    this.platforms.setActive(true);
-  }
-
   private initFloor() {
     this.floor = this.physics.add.staticGroup();
-    const floorSizeY = this.scale.height - 16;
-    this.floorManager.initWorldFloor(this.floor, floorSizeY);
-    this.floorManager.initWorldFloor(this.floor, floorSizeY);
-    this.startPlatforms();
-
-    const floorFlySize = floorSizeY - 90;
-    this.floor
-      .create(210, floorFlySize, RetroRunnerMedia.GRASS_BLOCK, 1)
-      .setOrigin(0, 0.5)
-      .refreshBody();
-    //this.platforms.setHitArea();
-
-    //this.floorManager.generateGrassBlock(this.floor, floorFlySize, 210);
-    //this.floorManager.generateGrassSmallFloor(this.floor, floorFlySize, 290);
+    const floorStartDY = this.scale.height - 16;
+    this.floorManager.createWorld(this.floor, floorStartDY);
 
     this.floor.world.checkCollision.down = true;
     this.floor.world.checkCollision.up = true;

@@ -4,3 +4,4 @@ export interface Axis {
 }
 
 export type ArrayAxis = [number, number];
+export type AxisTypeArray = [number, number, number];

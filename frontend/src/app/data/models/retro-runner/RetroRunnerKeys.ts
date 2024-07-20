@@ -37,6 +37,10 @@ export enum RetroRunnerStates {
 export enum RetroRunnerFloor {
   FLOORGRASS_START_WIDTH = 81,
   FLOORGRASS_CENTER_WIDTH = 65,
+  GRASS_BLOCK_WIDTH = 32,
 }
 
-export enum FullNaturaFrame {}
+export enum PlatformType {
+  GRASS_BLOCK = 0,
+  FLOOR_GRASS_SMALL = 1,
+}

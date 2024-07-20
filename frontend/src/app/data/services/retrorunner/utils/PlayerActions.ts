@@ -12,6 +12,7 @@ export class PlayerActions {
       player.anims.play(RetroRunnerKey.DOWN_KEY);
       player.body.setSize(player.width, player.height / 2); // Ajustar tamaño del hitbox
       player.body.offset.y = player.height / 2; // Ajustar el offset del hitbox
+      player.setVelocityX(0);
     }
   }
   public playerLeft(player: PhaserPlayerWithBody) {
