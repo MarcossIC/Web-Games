@@ -18,7 +18,6 @@ import { PlayerActions } from '@app/data/services/retrorunner/utils/PlayerAction
 import { Scene, Physics, GameObjects } from 'phaser';
 
 export class GameScene extends Scene {
-  public floor!: Physics.Arcade.StaticGroup;
   public player!: PhaserPlayerWithBody;
   private keys!: any;
   public background!: GameObjects.TileSprite;
@@ -36,7 +35,7 @@ export class GameScene extends Scene {
   init() {
     this.actions = new PlayerActions();
     this.backgroundManager = new GameBackgroundManager();
-    this.floorManager = new GameFloorManager();
+
     this.background = this.add.tileSprite(
       0,
       0,
@@ -66,7 +65,7 @@ export class GameScene extends Scene {
     this.startAnimations();
 
     this.physics.world.setBounds(0, 0, 2000, this.scale.height);
-    this.physics.add.collider(this.player, this.floor);
+    this.physics.add.collider(this.player, this.floorManager.floor);
 
     this.cameras.main.setBounds(0, 0, 2000, this.scale.height);
     this.cameras.main.startFollow(this.player);
@@ -97,14 +96,9 @@ export class GameScene extends Scene {
   }
 
   private initFloor() {
-    this.floor = this.physics.add.staticGroup();
+    this.floorManager = new GameFloorManager(this);
     const floorStartDY = this.scale.height - 16;
-    this.floorManager.createWorld(this.floor, floorStartDY);
-
-    this.floor.world.checkCollision.down = true;
-    this.floor.world.checkCollision.up = true;
-    this.floor.world.checkCollision.left = true;
-    this.floor.world.checkCollision.right = true;
+    this.floorManager.createWorld(floorStartDY);
   }
 
   private startAnimations() {
@@ -189,7 +183,7 @@ export class GameScene extends Scene {
       this.jumpSound.play();
       this.actions.playerJump(this.player);
     }
-    this.physics.collide(this.player, this.floor);
+    this.physics.collide(this.player, this.floorManager.floor);
     this.background.displayWidth = this.scale.width;
     this.background.displayHeight = this.scale.height;
     if (this.player.y >= this.scale.height) {

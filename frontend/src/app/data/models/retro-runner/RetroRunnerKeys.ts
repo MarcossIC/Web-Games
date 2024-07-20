@@ -23,6 +23,12 @@ export enum RetroRunnerMedia {
   FLOORGRASS_END = 'floorgrassEN1',
   FLOORGRASS_SMALL = 'floorgrassSmall',
   GRASS_BLOCK = 'grassBlock',
+
+  NATURA_GRASS_ON = 'grass1',
+  NATURA_GRASS_TW = 'grass2',
+  NATURA_GRASS_TH = 'grass3',
+  NATURA_GRASS_FO = 'grass4',
+  NATURA_GRASS_FI = 'grass5',
 }
 
 export enum RetroRunnerStates {

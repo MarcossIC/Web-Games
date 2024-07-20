@@ -62,6 +62,26 @@ export class PreloaderScene extends Scene {
       RetroRunnerMedia.NATURA_BACKGROUND,
       'scenery/background.png'
     );
+    this.load.image(
+      RetroRunnerMedia.NATURA_GRASS_ON,
+      'entities/natural/Grass/1.png'
+    );
+    this.load.image(
+      RetroRunnerMedia.NATURA_GRASS_TW,
+      'entities/natural/Grass/2.png'
+    );
+    this.load.image(
+      RetroRunnerMedia.NATURA_GRASS_TH,
+      'entities/natural/Grass/3.png'
+    );
+    this.load.image(
+      RetroRunnerMedia.NATURA_GRASS_FO,
+      'entities/natural/Grass/4.png'
+    );
+    this.load.image(
+      RetroRunnerMedia.NATURA_GRASS_FI,
+      'entities/natural/Grass/5.png'
+    );
 
     this.load.audio(
       RetroRunnerMedia.GAMEOVER_SOUND,
