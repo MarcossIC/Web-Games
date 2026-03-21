@@ -1,6 +1,10 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { DEFAULT_COLOR } from '../../../../assets/constants/tetrisConstanst';
+import {
+  DEFAULT_COLOR,
+  NEXT_POSITION,
+} from '../../../../assets/constants/tetrisConstanst';
 import { Piece } from '@app/data/models/tetris/Piece';
+import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
 import { PointsService } from './Points.service';
 import { fillArray, fillMatrix } from '../util.service';
 import { BoardSizeService } from '@app/data/services/BoardSize.service';
@@ -12,7 +16,6 @@ export class BoardService {
   private points = inject(PointsService);
 
   constructor() {
-    this.boardSize.typeToTetris();
     this._board.set(
       fillMatrix(this.boardSize.WIDTH, this.boardSize.HEIGHT, 0) as number[][]
     );
@@ -90,13 +93,7 @@ export class BoardService {
 
     this._board.set(boardCopy);
 
-    let score = this.points.score;
-    let level;
-    if (score < 500) level = 1;
-    else if (score >= 500 && score < 1000) level = 2;
-    else if (score >= 1000 && score < 1500) level = 3;
-    else level = 4;
-    this.points.updateLevel(level);
+    const level = this.points.calculateLevel();
     this.points.updateMaxPoints();
     return level;
   }
@@ -111,5 +108,98 @@ export class BoardService {
 
   public get board(): number[][] {
     return this._board();
+  }
+
+  public detectedACollision(piece: Piece, direction: ACTION): boolean {
+    const { x, y } = piece.position;
+
+    for (let rowX = 0; rowX < piece.shape.length; rowX++) {
+      for (let cellY = 0; cellY < piece.shape[rowX].length; cellY++) {
+        const cell = piece.shape[rowX][cellY];
+        const boardX = x + rowX;
+        const boardY = y + cellY;
+
+        let isOutOfBounds = false;
+        let isOccupied = false;
+
+        if (direction === ACTION.RIGHT) {
+          isOutOfBounds = boardX + NEXT_POSITION >= this.boardSize.WIDTH;
+          isOccupied =
+            !isOutOfBounds &&
+            this._board()[boardY][boardX + NEXT_POSITION] > 0;
+        } else if (direction === ACTION.LEFT) {
+          isOutOfBounds = boardX - NEXT_POSITION < 0;
+          isOccupied =
+            !isOutOfBounds &&
+            this._board()[boardY][boardX - NEXT_POSITION] > 0;
+        } else if (direction === ACTION.DOWN) {
+          isOutOfBounds = boardY + NEXT_POSITION >= this.boardSize.HEIGHT;
+          isOccupied =
+            !isOutOfBounds &&
+            this._board()[boardY + NEXT_POSITION][boardX] > 0;
+        }
+
+        if (cell === 1 && (isOutOfBounds || isOccupied)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  public isWithinBoardLimits(
+    x: number,
+    y: number,
+    shape: number[][]
+  ): boolean {
+    const pieceWidth = shape[0].length;
+    const pieceHeight = shape.length;
+
+    const isWithinLeftAndTop = x >= 0 && y >= 0;
+    const isWithinRight = x + pieceWidth <= this.boardSize.WIDTH;
+    const isWithinBottom = y + pieceHeight <= this.boardSize.HEIGHT;
+
+    return isWithinLeftAndTop && isWithinRight && isWithinBottom;
+  }
+
+  public doesRotationCollide(
+    rotated: number[][],
+    piecePosition: { x: number; y: number }
+  ): boolean {
+    const { x, y } = piecePosition;
+
+    return rotated.some((row, rowX) =>
+      row.some((cell, cellY) => {
+        const boardX = rowX + x;
+        const boardY = y + cellY;
+
+        const isOutOfBounds =
+          boardY >= this.boardSize.HEIGHT ||
+          boardX < 0 ||
+          boardX >= this.boardSize.WIDTH;
+
+        const isOccupied = this._board()[boardY][boardX] === 1;
+
+        return isOutOfBounds || isOccupied;
+      })
+    );
+  }
+
+  public drawPiece(context: CanvasRenderingContext2D, piece: Piece): void {
+    piece.shape.forEach((row, x) => {
+      row.forEach((value, y) => {
+        if (value > 0) {
+          context.fillStyle = piece.color.fill;
+          context.strokeStyle = piece.color.stroke;
+
+          let boardX = x + piece.position.x;
+          let boardY = y + piece.position.y;
+
+          context.fillRect(boardX, boardY, 1, 1);
+          context.strokeRect(boardX, boardY, 1, 1);
+        }
+      });
+    });
   }
 }

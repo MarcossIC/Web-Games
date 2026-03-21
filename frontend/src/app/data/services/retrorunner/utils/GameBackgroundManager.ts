@@ -3,7 +3,7 @@ import { PhaserSourceImage } from '@app/data/services/phaser/types';
 import { GameObjects, Scale, Textures } from 'phaser';
 
 class GameBackgroundManager {
-  private calcBackgroundScale({ scaleWidth, scaleHeight, bgWidth, bgHeight }) {
+  private calcBackgroundScale({ scaleWidth, scaleHeight, bgWidth, bgHeight }: { scaleWidth: number; scaleHeight: number; bgWidth: number; bgHeight: number }) {
     const scaleX = scaleWidth / bgWidth;
     const scaleY = scaleHeight / bgHeight;
     return Math.max(scaleX, scaleY);

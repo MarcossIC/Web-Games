@@ -5,6 +5,7 @@ import { PieceType } from '@app/data/models/tetris/PieceType.enum';
 import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
 import { ramdomNumber } from '../util.service';
 import { BoardSizeService } from '@app/data/services/BoardSize.service';
+import type { BoardService } from './Board.service';
 
 @Injectable()
 export class BagOfPiecesService {
@@ -12,10 +13,17 @@ export class BagOfPiecesService {
   allPieceType: PieceType[];
   private boardSize = inject(BoardSizeService);
 
-  public piece = inject(PieceService);
+  private piece = inject(PieceService);
+
+  public get currentPiece(): Piece {
+    return this.piece.current;
+  }
+
+  public set currentPieceShape(shape: number[][]) {
+    this.piece.current.shape = shape;
+  }
 
   constructor() {
-    this.boardSize.typeToTetris();
     this.allPieceType = this.loadAllPieceType();
     this.loadPieceBag();
     this.recoverNextPiece();
@@ -70,6 +78,20 @@ export class BagOfPiecesService {
     }
     this.loadPieceBag();
     this.recoverNextPiece();
+  }
+
+  public rotatePiece(boardController: BoardService): void {
+    const { position: { x, y }, shape } = this.piece.current;
+    const numRows = shape.length;
+    const numCols = shape[0].length;
+
+    const rotated = this.piece.rotateShapeClockwise(shape, numRows, numCols);
+    if (
+      boardController.isWithinBoardLimits(x, y, rotated) &&
+      !boardController.doesRotationCollide(rotated, { x, y })
+    ) {
+      this.piece.current.shape = rotated;
+    }
   }
 
   public movePiece(direction: ACTION): void {

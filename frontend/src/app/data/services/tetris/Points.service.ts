@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class PointsService {
   private _score = signal(0);
   private _maxScore = signal(0);
@@ -57,6 +57,16 @@ export class PointsService {
 
   updateLevel(level: number) {
     this.level = level;
+  }
+
+  calculateLevel(): number {
+    let level;
+    if (this.score < 500) level = 1;
+    else if (this.score < 1000) level = 2;
+    else if (this.score < 1500) level = 3;
+    else level = 4;
+    this.updateLevel(level);
+    return level;
   }
 
   resetScore() {

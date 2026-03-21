@@ -5,7 +5,6 @@ import { Piece } from '@app/data/models/tetris/Piece';
 import {
   ACTIONS,
   LINE_WIDTH_SCALE,
-  NEXT_POSITION,
   SHADOW_BLUR_SCALE,
   SPEED_PER_LEVEL,
 } from 'assets/constants/tetrisConstanst';
@@ -35,7 +34,7 @@ export class TetrisControllerService {
   private nextPieceBoard = inject(NextPieceBoardService);
   private ngZone = inject(NgZone);
   private chronometerService = inject(ChronometerServiceService);
-  private detroy$ = inject(DestroyRef);
+  private destroy$ = inject(DestroyRef);
 
   constructor() {
     this.boardSize.typeToTetris();
@@ -52,7 +51,7 @@ export class TetrisControllerService {
     height: number
   ) =>
     this.nextPiece
-      .pipe(takeUntilDestroyed(this.detroy$))
+      .pipe(takeUntilDestroyed(this.destroy$))
       .subscribe((nextPiece: any) => {
         context.lineWidth = LINE_WIDTH_SCALE;
         context.shadowBlur = SHADOW_BLUR_SCALE;
@@ -108,7 +107,7 @@ export class TetrisControllerService {
         lastTime = newLastTime;
         this.boardController.drawBoard(context, width, height);
 
-        this.draw(context);
+        this.boardController.drawPiece(context, this.bagOfPieces.currentPiece);
       }
       this.ngZone.runOutsideAngular(() => {
         this.animationFrameId = requestAnimationFrame(update);
@@ -147,37 +146,8 @@ export class TetrisControllerService {
   }
 
   protected checkCollision(): void {
-    if (this.detectedACollision(this.bagOfPieces.piece.current, ACTION.DOWN))
+    if (this.boardController.detectedACollision(this.bagOfPieces.currentPiece, ACTION.DOWN))
       this.checkCollisionEffects();
-  }
-
-  /**
-   * Dibuja la pieza actual en el contexto del canvas.
-   *
-   * @param context - El contexto 2D del canvas donde se dibujará la pieza.
-   *
-   * Recorre la forma de la pieza actual y dibuja cada bloque ocupado
-   * en su posición correspondiente en el tablero. Utiliza el color
-   * de relleno y de borde definidos para la pieza.
-   */
-  private draw(context: CanvasRenderingContext2D): void {
-    let piece = this.bagOfPieces.piece.current;
-    piece.shape.forEach((row, x) => {
-      row.forEach((value, y) => {
-        if (value > 0) {
-          //Configuracion
-          context.fillStyle = piece.color.fill;
-          context.strokeStyle = piece.color.stroke;
-
-          //Le sumo a la pieza su pocicion, para hallar donde se debe pintar
-          let boardX = x + piece.position.x;
-          let boardY = y + piece.position.y;
-
-          context.fillRect(boardX, boardY, 1, 1);
-          context.strokeRect(boardX, boardY, 1, 1);
-        }
-      });
-    });
   }
 
   /**
@@ -197,19 +167,19 @@ export class TetrisControllerService {
     if (!this._isGameOver() && !this._isPaused()) {
       if (
         action !== undefined &&
-        !this.detectedACollision(this.bagOfPieces.piece.current, action)
+        !this.boardController.detectedACollision(this.bagOfPieces.currentPiece, action)
       ) {
         this.bagOfPieces.movePiece(action);
       }
       if (
         action === ACTION.ROTATE &&
-        this.bagOfPieces.piece.current.isMovable
+        this.bagOfPieces.currentPiece.isMovable
       ) {
-        this.rotate();
+        this.bagOfPieces.rotatePiece(this.boardController);
       }
 
       if (
-        this.detectedACollision(this.bagOfPieces.piece.current, ACTION.DOWN)
+        this.boardController.detectedACollision(this.bagOfPieces.currentPiece, ACTION.DOWN)
       ) {
         this.checkCollisionEffects();
       }
@@ -227,7 +197,7 @@ export class TetrisControllerService {
    * obtiene la siguiente pieza y verifica el fin del juego.
    */
   private checkCollisionEffects(): void {
-    this.boardController.solidifyPieceInBoard(this.bagOfPieces.piece.current);
+    this.boardController.solidifyPieceInBoard(this.bagOfPieces.currentPiece);
 
     let updateLevel = this.boardController.updateBoardAndScore();
     this.level = updateLevel;
@@ -238,199 +208,8 @@ export class TetrisControllerService {
 
   //Termina el juego al detectar una colision, util al resetear la pieza
   public endGame(): void {
-    if (this.detectedACollision(this.bagOfPieces.piece.current, ACTION.DOWN)) {
+    if (this.boardController.detectedACollision(this.bagOfPieces.currentPiece, ACTION.DOWN)) {
       this.gameOver = true;
-    }
-  }
-
-  /**
-   * Verifica si una pieza está dentro de los límites del tablero.
-   *
-   * @param x - Posición X de la pieza en el tablero.
-   * @param y - Posición Y de la pieza en el tablero.
-   * @param shape - Matriz que representa la forma de la pieza.
-   * @returns true si la pieza está completamente dentro del tablero, false en caso contrario.
-   */
-  private isWithinBoardLimits(
-    x: number,
-    y: number,
-    shape: number[][],
-    isPieceOnRightEdge: boolean
-  ): boolean {
-    const pieceWidth = shape[0].length;
-    const pieceHeight = shape.length;
-
-    const isWithinLeftAndTop = x >= 0 && y >= 0;
-    const isWithinRight = x + pieceWidth <= this.boardSize.WIDTH;
-    const isWithinBottom = y + pieceHeight <= this.boardSize.HEIGHT;
-
-    return isWithinLeftAndTop && isWithinRight && isWithinBottom;
-  }
-
-  /**
-   * Rota una matriz 2D en sentido horario.
-   *
-   * @param shape - La matriz 2D a rotar.
-   * @param numRows - Número de filas de la matriz.
-   * @param numCols - Número de columnas de la matriz.
-   * @returns Una nueva matriz rotada 90 grados en sentido horario.
-   *
-   * Crea una nueva matriz donde las columnas de la original
-   * se convierten en filas, invirtiendo el orden de las columnas.
-   */
-  private rotateShapeClockwise(
-    shape: number[][],
-    numRows: number,
-    numCols: number
-  ): number[][] {
-    const rotated: number[][] = [];
-
-    for (let col = numCols - 1; col >= 0; col--) {
-      const newRow: number[] = [];
-      for (let row = 0; row < numRows; row++) newRow.push(shape[row][col]);
-
-      rotated.push(newRow);
-    }
-    return rotated;
-  }
-
-  //Rota una forma en sentido a contra reloj
-  private rotateShapeCounterClockwise(
-    shape: number[][],
-    numRows: number,
-    numCols: number
-  ): number[][] {
-    const rotated: number[][] = [];
-    let curTetrominoBU;
-    for (let i = 0; i < shape.length; i++) {
-      curTetrominoBU = [...shape];
-
-      let x = shape[i][0];
-      let y = shape[i][1];
-      let newX = this.getLastSquareX(shape) - y;
-      let newY = x;
-      rotated.push([newX, newY]);
-    }
-    return rotated;
-  }
-
-  getLastSquareX(shape: number[][]) {
-    let lastX = 0;
-    for (let i = 0; i < shape.length; i++) {
-      let square = shape[i];
-      if (square[0] > lastX) lastX = square[0];
-    }
-    return lastX;
-  }
-
-  /**
-   * Detecta si hay colisión al mover una pieza en una dirección específica.
-   *
-   * @param piece - La pieza a verificar.
-   * @param direction - La dirección del movimiento (ACTION.RIGHT, ACTION.LEFT, ACTION.DOWN).
-   * @returns true si se detecta una colisión, false en caso contrario.
-   *
-   * Verifica cada celda de la pieza para detectar:
-   * - Si está fuera de los límites del tablero.
-   * - Si colisiona con una celda ocupada del tablero.
-   */
-  private detectedACollision(piece: Piece, direction: ACTION): boolean {
-    const { x, y } = piece.position;
-
-    for (let rowX = 0; rowX < piece.shape.length; rowX++) {
-      for (let cellY = 0; cellY < piece.shape[rowX].length; cellY++) {
-        const cell = piece.shape[rowX][cellY];
-        const boardX = x + rowX;
-        const boardY = y + cellY;
-
-        let isOutOfBounds = false;
-        let isOccupied = false;
-
-        if (direction === ACTION.RIGHT) {
-          isOutOfBounds = boardX + NEXT_POSITION >= this.boardSize.WIDTH;
-          isOccupied =
-            !isOutOfBounds &&
-            this.boardController.board[boardY][boardX + NEXT_POSITION] > 0;
-        } else if (direction === ACTION.LEFT) {
-          isOutOfBounds = boardX - NEXT_POSITION < 0;
-          isOccupied =
-            !isOutOfBounds &&
-            this.boardController.board[boardY][boardX - NEXT_POSITION] > 0;
-        } else if (direction === ACTION.DOWN) {
-          isOutOfBounds = boardY + NEXT_POSITION >= this.boardSize.HEIGHT;
-          isOccupied =
-            !isOutOfBounds &&
-            this.boardController.board[boardY + NEXT_POSITION][boardX] > 0;
-        }
-
-        if (cell === 1 && (isOutOfBounds || isOccupied)) {
-          return true; // Salir de la función tan pronto como se cumpla la condición
-        }
-      }
-    }
-
-    return false; // Si no se cumple la condición en ningún caso, regresar falso al final
-  }
-
-  /**
-   * Verifica si la rotación de una pieza colisiona con el tablero o sus límites.
-   *
-   * @param rotated - La matriz que representa la forma rotada de la pieza.
-   * @param isPieceOnRightEdge - Indica si la pieza está en el borde derecho (no utilizado en la implementación actual).
-   * @returns true si la rotación colisiona, false en caso contrario.
-   *
-   * Comprueba cada celda de la pieza rotada para detectar:
-   * - Si está fuera de los límites del tablero.
-   * - Si colisiona con una celda ocupada del tablero.
-   */
-  private doesRotationCollide(
-    rotated: number[][],
-    isPieceOnRightEdge: boolean
-  ): boolean {
-    const { x, y } = this.bagOfPieces.piece.current.position; // Obtener la posición actual de la pieza
-
-    return rotated.some((row, rowX) =>
-      row.some((cell, cellY) => {
-        const boardX = rowX + x;
-        const boardY = y + cellY;
-
-        const isOutOfBounds =
-          boardY >= this.boardSize.HEIGHT ||
-          boardX < 0 ||
-          boardX >= this.boardSize.WIDTH;
-
-        const isOccupied = this.boardController.board[boardY][boardX] === 1;
-
-        return isOutOfBounds || isOccupied;
-      })
-    );
-  }
-
-  private isPieceOnRightEdge(numCols: number, xPosition: number): boolean {
-    return xPosition + numCols >= this.boardSize.WIDTH - 1;
-  }
-
-  /**
-   * Intenta rotar la pieza actual en sentido horario.
-   *
-   * Calcula la forma rotada de la pieza y verifica si es posible aplicar
-   * la rotación sin colisiones y dentro de los límites del tablero.
-   * Si es válida, actualiza la forma de la pieza actual.
-   */
-  public rotate(): void {
-    const {
-      position: { x, y },
-      shape,
-    } = this.bagOfPieces.piece.current;
-    const numRows = shape.length;
-    const numCols = shape[0].length;
-
-    const rotated = this.rotateShapeClockwise(shape, numRows, numCols);
-    if (
-      this.isWithinBoardLimits(x, y, rotated, false) &&
-      !this.doesRotationCollide(rotated, false)
-    ) {
-      this.bagOfPieces.piece.current.shape = rotated;
     }
   }
 

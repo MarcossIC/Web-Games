@@ -7,15 +7,21 @@ export enum SceneKeys {
   GAME = 'Game',
   PRELOADER = 'Preloader',
   GAME_OVER = 'GameOver',
-  MAX_HEIGHT = 330,
-  MAX_WIDTH = 550,
   SCENE_READY = 'current-scene-ready',
 }
 
+// Internal resolution — all game logic is designed for this size.
+// Phaser Scale.FIT stretches the canvas via CSS to fill the container.
+// pixelArt + roundPixels ensure nearest-neighbor filtering and integer positions.
+const GAME_WIDTH = 550;
+const GAME_HEIGHT = 330;
+
 const config: Phaser.Types.Core.GameConfig = {
   type: AUTO,
-  width: Math.min(window.innerWidth, SceneKeys.MAX_WIDTH),
-  height: Math.min(window.innerHeight, SceneKeys.MAX_HEIGHT),
+  width: GAME_WIDTH,
+  height: GAME_HEIGHT,
+  pixelArt: true,
+  roundPixels: true,
   backgroundColor: '#049cd8',
   parent: 'retro-runner-game',
   physics: {
@@ -37,8 +43,15 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [PreloaderScene, GameScene, GameOverScene],
 };
 
-const StartGame = (parent: string) => {
-  return new Game({ ...config, parent });
+const StartGame = (parent: string, initialSeed?: string) => {
+  const game = new Game({ ...config, parent });
+
+  // Store seed in registry so GameScene can read it synchronously on first init
+  if (initialSeed) {
+    game.registry.set('initialSeed', initialSeed);
+  }
+
+  return game;
 };
 
 export default StartGame;

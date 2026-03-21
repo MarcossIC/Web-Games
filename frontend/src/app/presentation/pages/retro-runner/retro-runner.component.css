@@ -1,11 +1,41 @@
-div ::ng-deep canvas {
-  margin-block-start: 1rem;
-  border: 2.5px solid rgb(41 116 163);
+:host {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
-d {
-  color: #ffff41;
-  color: #f11c1c;
-  color: #2424f5;
-  color: #0bb80b;
+.game-container {
+  justify-content: center;
+  position: relative;
+}
+
+.back-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 18px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.back-btn:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+div ::ng-deep canvas {
+  border: 2.5px solid rgb(41 116 163);
+  border-radius: 4px;
+  max-width: 100%;
+  height: auto;
+  /* Force nearest-neighbor scaling at the browser level — safety net
+     so pixel art stays crisp even if the canvas is CSS-stretched */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }

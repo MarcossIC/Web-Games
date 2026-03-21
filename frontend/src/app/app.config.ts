@@ -1,5 +1,6 @@
 import { provideHttpClient, withFetch } from '@angular/common/http';
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, ErrorHandler } from '@angular/core';
+import { GlobalErrorHandler } from '@app/data/services/global-error-handler.service';
 import {
   PreloadAllModules,
   provideRouter,
@@ -17,5 +18,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withFetch()),
     provideClientHydration(),
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],
 };

@@ -1,5 +1,5 @@
 import { Axis } from '@app/data/models/Axis';
-import { GameObjects, Scenes, Scene } from 'phaser';
+import { GameObjects, Input, Scenes, Scene } from 'phaser';
 
 class Joystick {
   private scene: Scene;
@@ -8,7 +8,7 @@ class Joystick {
   private base: GameObjects.Arc;
   private baseX = 0;
   private baseY = 0;
-  private pointerId: any;
+  private pointerId: number | null;
   private direction: Axis;
 
   constructor(main: Scene, x: number, y: number, radius: number) {
@@ -45,7 +45,7 @@ class Joystick {
     this.scene.input.on('pointerup', this.onPointerUp, this);
   }
 
-  protected onPointerDown(pointer) {
+  protected onPointerDown(pointer: Input.Pointer) {
     if (this.pointerId === null) {
       this.pointerId = pointer.id;
       //La base es la posicion(X, Y) de donde se empezo a clicar
@@ -63,7 +63,7 @@ class Joystick {
     }
   }
 
-  protected onPointerMove(pointer) {
+  protected onPointerMove(pointer: Input.Pointer) {
     if (pointer.id === this.pointerId) {
       //Delta es la distancia entre la posicion actual del puntero
       //Y la base que se inicio en "onPointerDown"
@@ -94,7 +94,7 @@ class Joystick {
     }
   }
 
-  protected onPointerUp(pointer) {
+  protected onPointerUp(pointer: Input.Pointer) {
     if (pointer.id === this.pointerId) {
       //Se resetea el puntero y se oculta el joystick
       this.pointerId = null;

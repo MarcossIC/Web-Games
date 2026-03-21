@@ -68,6 +68,22 @@ export class PieceService {
     this._current.position.y = 2;
   }
 
+  public rotateShapeClockwise(
+    shape: number[][],
+    numRows: number,
+    numCols: number
+  ): number[][] {
+    const rotated: number[][] = [];
+
+    for (let col = numCols - 1; col >= 0; col--) {
+      const newRow: number[] = [];
+      for (let row = 0; row < numRows; row++) newRow.push(shape[row][col]);
+
+      rotated.push(newRow);
+    }
+    return rotated;
+  }
+
   public generateShapePiece(pieceType: PieceType): number[][] {
     //Crea la forma de una pieza segun el tipo
     return this.allPieces[pieceType]();

@@ -71,7 +71,7 @@ export class ChessComponent implements OnInit {
   protected controller = inject(ChessController);
   private document = inject(DOCUMENT);
   private platformId = inject(PLATFORM_ID);
-  private detroy$ = inject(DestroyRef);
+  private destroy$ = inject(DestroyRef);
   protected selectedSquare: SelectedSquare;
   private pieceSafeCoords: Coords[];
   public isPromotionActive: boolean;
@@ -81,7 +81,7 @@ export class ChessComponent implements OnInit {
 
   constructor() {
     this.controller.restartActive
-      .pipe(takeUntilDestroyed(this.detroy$))
+      .pipe(takeUntilDestroyed(this.destroy$))
       .subscribe((reason) => {
         if (this.controller.isGameOver && reason) this.restartGame();
       });
@@ -126,7 +126,7 @@ export class ChessComponent implements OnInit {
 
             this.showPreviousPosition(pointer);
           }),
-          takeUntilDestroyed(this.detroy$)
+          takeUntilDestroyed(this.destroy$)
         )
         .subscribe();
     }

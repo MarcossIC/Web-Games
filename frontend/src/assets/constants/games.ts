@@ -48,4 +48,12 @@ export const GAMES: iGAMES[] = [
     PATH: '/chess',
     priority: true,
   },
+  {
+    ID: 'RUNNER-GAME',
+    IMG: 'assets/images/runner-frontpage.png',
+    NAME: 'Runner',
+    ALT: 'Runner front page image',
+    PATH: '/runner',
+    priority: true,
+  },
 ];

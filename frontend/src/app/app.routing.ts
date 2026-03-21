@@ -3,8 +3,10 @@ import { ChessBoard } from '@app/data/services/chess/ChessBoard.service';
 import { ChessBoardConverter } from '@app/data/services/chess/ChessBoardConverter.service';
 import { ChessCaptureCounter } from '@app/data/services/chess/ChessCaptureCounter.service';
 import { ChessController } from '@app/data/services/chess/ChessController.service';
+import { ChessGameStateManager } from '@app/data/services/chess/ChessGameStateManager.service';
 import { ChessHistory } from '@app/data/services/chess/ChessHistory.service';
 import { ChessMoveCounter } from '@app/data/services/chess/ChessMoveCounter.service';
+import { ChessMoveHandler } from '@app/data/services/chess/ChessMoveHandler.service';
 import { ChessMoveValidator } from '@app/data/services/chess/ChessMoveValidator.service';
 import { ChessPieceMover } from '@app/data/services/chess/ChessPieceMover.service';
 import { MemoramaControllerService } from '@app/data/services/memorama/memoramaController.service';
@@ -85,6 +87,8 @@ const routes: Routes = [
     loadComponent: () => import('@app-pages/chess/chess.component'),
     providers: [
       ChessController,
+      ChessMoveHandler,
+      ChessGameStateManager,
       ChessBoard,
       ChessBoardConverter,
       ChessHistory,
