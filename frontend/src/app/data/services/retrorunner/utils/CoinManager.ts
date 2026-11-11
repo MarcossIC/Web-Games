@@ -65,9 +65,9 @@ class CoinManager {
     const segmentWidth = segmentEndX - segmentStartX;
     if (segmentWidth < 100) return;
 
-    const coinCount = 1 + this.rng.integer(true, 3);
+    const coinCount = this.rng.intBetween(1, 4);
     const spacing = 28;
-    const startX = segmentStartX + this.rng.integer(false, Math.floor(segmentWidth * 0.3)) + 40;
+    const startX = segmentStartX + this.rng.intBetween(1, Math.floor(segmentWidth * 0.3)) + 40;
     // Ground surface is 17px above floorY (tile center), coins float 40px above surface
     const surfaceY = floorY - 17;
     const coinY = surfaceY - 40;

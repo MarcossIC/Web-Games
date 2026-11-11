@@ -1,11 +1,15 @@
 import * as Phaser from 'phaser';
-import { RetroRunnerMedia } from '@app/data/models/retro-runner/RetroRunnerKeys';
-import SeededRandom from '@app/data/services/retrorunner/utils/SeededRandom';
+import { RetroRunnerFloor, RetroRunnerMedia } from '@app/data/models/retro-runner/RetroRunnerKeys';
 import { Physics, Scene } from 'phaser';
 
 const COLLAPSE_DELAY_MS = 450;  // time standing before shaking starts
 const SHAKE_DURATION_MS = 300;  // shake before falling
 const RECYCLE_DISTANCE = 600;
+const BLOCK_WIDTH = RetroRunnerFloor.GRASS_BLOCK_WIDTH;
+// A block's centre sits this far below the floor's surface (it is 32 px tall).
+const BLOCK_CENTER_BELOW_SURFACE = 16;
+// The floor's surface is this far above the centre of its tiles.
+const SURFACE_ABOVE_FLOOR_Y = 17;
 
 interface CollapsingBlock {
   sprite: Physics.Arcade.Sprite;
@@ -16,14 +20,12 @@ interface CollapsingBlock {
 
 class CollapsingPlatformManager {
   private scene: Scene;
-  private rng: SeededRandom;
   private blocks: CollapsingBlock[] = [];
   public group: Physics.Arcade.StaticGroup;
   private dustEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
 
-  constructor(scene: Scene, rng: SeededRandom) {
+  constructor(scene: Scene) {
     this.scene = scene;
-    this.rng = rng;
     this.group = scene.physics.add.staticGroup();
 
     // Debris particle emitter for collapse effect
@@ -48,23 +50,24 @@ class CollapsingPlatformManager {
   }
 
   /**
-   * Spawn collapsing platforms on a segment.
-   * Placed at ground surface level so they look like normal floor blocks.
+   * Lays a bridge of collapsing blocks across a hole in the floor, level
+   * with both edges. Crossing without stopping is safe; standing on it drops
+   * the player into the hole. Over solid floor a falling block would leave
+   * the floor underneath, so a bridge is the only place they go.
+   *
+   * @param holeStartX - where the floor on the left ends
+   * @param holeEndX - where the floor on the right starts
+   * @param floorY - the centre of the floor tiles on both sides
    */
-  trySpawn(segmentStartX: number, segmentEndX: number, floorY: number, chance: number) {
-    if (!this.rng.chance(chance)) return;
-    if (segmentEndX - segmentStartX < 200) return;
-
-    const surfaceY = floorY - 17;
-    const count = 1 + this.rng.integer(true, 1);
-    const segW = segmentEndX - segmentStartX;
+  spawnBridge(holeStartX: number, holeEndX: number, floorY: number) {
+    const span = holeEndX - holeStartX;
+    const count = Math.max(1, Math.ceil(span / BLOCK_WIDTH));
+    // The blocks overhang both edges by the same amount.
+    const firstX = holeStartX - (count * BLOCK_WIDTH - span) / 2;
+    const y = floorY - SURFACE_ABOVE_FLOOR_Y + BLOCK_CENTER_BELOW_SURFACE;
 
     for (let i = 0; i < count; i++) {
-      const x = segmentStartX + this.rng.integer(false, Math.floor(segW * 0.6)) + 50 + i * 80;
-      if (x >= segmentEndX - 40) break;
-
-      // Place at surface level — looks like part of the floor
-      const block = this.group.create(x, surfaceY + 16, RetroRunnerMedia.GRASS_BLOCK) as Physics.Arcade.Sprite;
+      const block = this.group.create(firstX + i * BLOCK_WIDTH, y, RetroRunnerMedia.GRASS_BLOCK) as Physics.Arcade.Sprite;
       block.setOrigin(0, 0.5).refreshBody();
       block.setTint(0xddaa77);
 
@@ -82,7 +85,7 @@ class CollapsingPlatformManager {
         sprite: block,
         state: 'idle',
         contactTime: 0,
-        originalY: surfaceY + 16,
+        originalY: y,
       });
     }
   }
@@ -105,7 +108,7 @@ class CollapsingPlatformManager {
   /**
    * Call every frame — handles delay → shake → collapse transitions.
    */
-  updateBlocks(now: number, cameraScrollX: number) {
+  updateBlocks(now: number) {
     for (const block of this.blocks) {
       if (!block.sprite.active) continue;
 
@@ -117,15 +120,25 @@ class CollapsingPlatformManager {
         }
       }
     }
+  }
 
-    // Clean up blocks far behind camera
-    this.blocks = this.blocks.filter((block) => {
-      if (!block.sprite.active && block.sprite.x < cameraScrollX - RECYCLE_DISTANCE) {
+  /**
+   * Destroys the blocks left far behind the camera, whether or not anyone
+   * stepped on them, with the tweens that animate them: an idle block's
+   * breathing tween never ends on its own.
+   */
+  recycle(cameraScrollX: number) {
+    const threshold = cameraScrollX - RECYCLE_DISTANCE;
+    let kept = 0;
+    for (const block of this.blocks) {
+      if (block.sprite.x < threshold) {
+        this.scene.tweens.killTweensOf(block.sprite);
         block.sprite.destroy();
-        return false;
+      } else {
+        this.blocks[kept++] = block;
       }
-      return true;
-    });
+    }
+    this.blocks.length = kept;
   }
 
   private startShake(block: CollapsingBlock) {

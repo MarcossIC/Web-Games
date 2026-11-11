@@ -130,16 +130,11 @@ class DecorationManager {
   private decorations: GameObjects.Group;
   private lastLargeDecoX: number = 0;
   private lastTreeX: number = 0;
-  private currentBiome: BiomeType = BiomeType.PLAINS;
 
   constructor(scene: Scene, rng: SeededRandom) {
     this.scene = scene;
     this.rng = rng;
     this.decorations = scene.add.group();
-  }
-
-  setBiome(biome: BiomeType) {
-    this.currentBiome = biome;
   }
 
   /**
@@ -180,10 +175,19 @@ class DecorationManager {
   }
 
   /**
+   * @param biome - the biome of the segment itself, never the player's: the
+   *                pool decides how many draws are taken, so a biome read at
+   *                the wrong moment shifts every decoration after it
    * @param exclusionZones - array of {x, width} ranges where decorations should NOT be placed
    *                         (e.g., under elevated platforms to prevent visual overlap)
    */
-  spawnOnSegment(segmentStartX: number, segmentEndX: number, floorY: number, exclusionZones?: { x: number; width: number }[]) {
+  spawnOnSegment(
+    segmentStartX: number,
+    segmentEndX: number,
+    floorY: number,
+    biome: BiomeType,
+    exclusionZones?: { x: number; width: number }[]
+  ) {
     const segmentWidth = segmentEndX - segmentStartX;
     if (segmentWidth < 60) return;
 
@@ -198,12 +202,12 @@ class DecorationManager {
       return exclusionZones.some(z => x + halfW > z.x && x - halfW < z.x + z.width);
     };
 
-    const cfg = BIOME_CONFIGS[this.currentBiome];
+    const cfg = BIOME_CONFIGS[biome];
 
     // Small decoration(s) — bushes, fences, ridges (low, rarely overlap)
     if (this.rng.chance(cfg.smallChance) && cfg.smallPool.length > 0) {
       const key = this.rng.pick(cfg.smallPool);
-      const x = sX + this.rng.integer(false, Math.floor(segmentWidth * 0.6)) + 20;
+      const x = sX + this.rng.intBetween(1,Math.floor(segmentWidth * 0.6)) + 20;
       if (!isExcluded(x)) {
         this.spawnDeco(x, surfaceY, key, 2, 0.7, 1, undefined, sX, eX);
       }
@@ -212,7 +216,7 @@ class DecorationManager {
     // Second small decoration on medium segments
     if (segmentWidth > 180 && this.rng.chance(cfg.smallChance * 0.7) && cfg.smallPool.length > 0) {
       const key = this.rng.pick(cfg.smallPool);
-      const x = sX + Math.floor(segmentWidth * 0.55) + this.rng.integer(false, 50);
+      const x = sX + Math.floor(segmentWidth * 0.55) + this.rng.intBetween(1,50);
       if (!isExcluded(x)) {
         this.spawnDeco(x, surfaceY, key, 2, 0.65, 1, undefined, sX, eX);
       }
@@ -221,7 +225,7 @@ class DecorationManager {
     // Boxes — tall enough to overlap with platforms
     if (segmentWidth > 120 && this.rng.chance(cfg.boxChance) && cfg.boxPool.length > 0) {
       const key = this.rng.pick(cfg.boxPool);
-      const x = sX + this.rng.integer(false, Math.floor(segmentWidth * 0.5)) + 30;
+      const x = sX + this.rng.intBetween(1,Math.floor(segmentWidth * 0.5)) + 30;
       if (!isExcluded(x, 60)) {
         this.spawnDeco(x, surfaceY, key, 2, 0.7, 1, undefined, sX, eX);
       }
@@ -230,7 +234,7 @@ class DecorationManager {
     // Medium tree — tall, check exclusion with wide margin
     if (segmentWidth > 130 && this.rng.chance(cfg.treeChance) && sX - this.lastTreeX > 250 && cfg.treePool.length > 0) {
       const key = this.rng.pick(cfg.treePool);
-      const x = sX + this.rng.integer(false, Math.floor(segmentWidth * 0.4)) + 40;
+      const x = sX + this.rng.intBetween(1,Math.floor(segmentWidth * 0.4)) + 40;
       if (!isExcluded(x, 100)) {
         this.spawnDeco(x, surfaceY, key, 1, 1.0, 0.9, cfg.treeTint, sX, eX);
         this.lastTreeX = x;
@@ -245,7 +249,7 @@ class DecorationManager {
       cfg.largePool.length > 0
     ) {
       const key = this.rng.pick(cfg.largePool);
-      const x = sX + Math.floor(segmentWidth * 0.3) + this.rng.integer(false, 60);
+      const x = sX + Math.floor(segmentWidth * 0.3) + this.rng.intBetween(1,60);
       if (!isExcluded(x, 120)) {
         this.spawnDeco(x, surfaceY, key, 0, 0.9, 0.75, cfg.largeTint, sX, eX);
         this.lastLargeDecoX = x;
@@ -255,7 +259,7 @@ class DecorationManager {
     // Accent decorations
     if (segmentWidth > 150 && this.rng.chance(cfg.accentChance) && cfg.accentPool.length > 0) {
       const key = this.rng.pick(cfg.accentPool);
-      const x = sX + this.rng.integer(false, Math.floor(segmentWidth * 0.5)) + 40;
+      const x = sX + this.rng.intBetween(1,Math.floor(segmentWidth * 0.5)) + 40;
       if (!isExcluded(x, 50)) {
         this.spawnDeco(x, surfaceY, key, 2, 0.75, 1, undefined, sX, eX);
       }

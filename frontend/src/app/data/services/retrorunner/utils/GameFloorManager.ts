@@ -36,6 +36,12 @@ const RECYCLE_DISTANCE = 600;
 const MAX_DIRECT_JUMP = 210;
 const MAX_ELEVATION = -80;
 const BW = RetroRunnerFloor.GRASS_BLOCK_WIDTH; // 32
+// Gaps get bridges of collapsing blocks once stones can appear.
+const BRIDGE_MIN_OBSTACLE_CHANCE = 0.08;
+// A gap's chance of a bridge, per unit of obstacle chance. Gaps are rarer
+// than segments, so this keeps bridges about as common as the floor-level
+// collapsing blocks they replace.
+const BRIDGE_CHANCE_PER_OBSTACLE = 2;
 
 enum PatternType {
   STAIRCASE_UP,
@@ -46,11 +52,32 @@ enum PatternType {
   DUAL_PATH,
 }
 
+/**
+ * What a piece of floor is for. Hazards go only on plain ground: a rest
+ * zone is a breather and a pattern carries its own structure.
+ */
+export type SegmentKind = 'ground' | 'rest' | 'pattern';
+
 interface SegmentResult {
   startX: number;
   endX: number;
   floorY: number;
-  isPattern: boolean;
+  kind: SegmentKind;
+}
+
+export interface SegmentInfo extends SegmentResult {
+  /** The difficulty at the chunk's own X, never at the player's. */
+  difficulty: DifficultyConfig;
+}
+
+/** A hole crossed by a bridge of collapsing blocks, level with both edges. */
+export interface BridgeInfo {
+  /** Where the floor on the left ends. */
+  startX: number;
+  /** Where the floor on the right starts. */
+  endX: number;
+  /** The centre of the floor tiles on both sides. */
+  floorY: number;
 }
 
 // Noise sampling scale — lower = smoother hills, higher = jagged
@@ -68,27 +95,47 @@ export interface DualPathInfo {
   groundStartX: number;
   groundEndX: number;
   groundFloorY: number;
+  biome: BiomeType;
   elevatedPlatforms: { x: number; y: number }[];
+}
+
+/** What GameScene places on each new piece of the world. */
+export interface WorldCallbacks {
+  onSegmentCreated?: (segment: SegmentInfo) => void;
+  onGapCreated?: (startX: number, endX: number, floorY: number) => void;
+  onBridgeCreated?: (bridge: BridgeInfo) => void;
+  onDualPathCreated?: (info: DualPathInfo) => void;
 }
 
 class GameFloorManager {
   private scene: Scene;
   private rng: SeededRandom;
+  private grassRng: SeededRandom;
   private noise: SimplexNoise;
-  private difficultyManager: DifficultyManager | null = null;
+  private difficultyManager: DifficultyManager;
   private lastChunkEndX: number = 0;
   private chunkCount: number = 0;
   private defaultFloorY: number = 0;
   private lastWasGap: boolean = false;
   private currentElevation: number = 0;
   private pendingDualPath: DualPathInfo | null = null;
+  private pendingBridge: BridgeInfo | null = null;
+  /** The chunk after a bridge has to start at the bridge's height. */
+  private bridgeLandingPending: boolean = false;
 
   public floor: Physics.Arcade.StaticGroup;
   public grassGroup: GameObjects.Group;
 
-  constructor(scene: Scene, rng: SeededRandom) {
+  /**
+   * @param rng - the terrain stream: every draw that shapes the world
+   * @param grassRng - the stream for decorative grass only, so changing
+   *                   the grass never moves a gap or a platform
+   */
+  constructor(scene: Scene, difficultyManager: DifficultyManager, rng: SeededRandom, grassRng: SeededRandom) {
     this.scene = scene;
+    this.difficultyManager = difficultyManager;
     this.rng = rng;
+    this.grassRng = grassRng;
     this.noise = new SimplexNoise(Math.floor(rng.next() * 0x7fffffff));
     this.floor = scene.physics.add.staticGroup();
     this.grassGroup = scene.add.group();
@@ -103,46 +150,47 @@ class GameFloorManager {
     }
   }
 
-  setDifficultyManager(dm: DifficultyManager) {
-    this.difficultyManager = dm;
-  }
-
-  createInitialWorld(floorPositionY: number, difficulty: DifficultyConfig) {
+  createInitialWorld(floorPositionY: number) {
     this.defaultFloorY = floorPositionY;
     this.lastChunkEndX = 0;
     this.chunkCount = 0;
     this.lastWasGap = false;
     this.currentElevation = 0;
+    this.pendingBridge = null;
+    this.bridgeLandingPending = false;
 
     const targetX = this.scene.scale.width + 400;
     while (this.lastChunkEndX < targetX) {
-      this.generateChunk(difficulty, true);
+      this.generateChunk(this.difficultyManager.getConfig(this.lastChunkEndX), true);
     }
   }
 
-  /** Builds floor until it reaches well past the right edge of the view. */
-  generateAhead(
-    cameraScrollX: number,
-    difficulty: DifficultyConfig,
-    callbacks?: {
-      onSegmentCreated?: (startX: number, endX: number, floorY: number, isPattern: boolean) => void;
-      onGapCreated?: (startX: number, endX: number, floorY: number) => void;
-      onDualPathCreated?: (info: DualPathInfo) => void;
-    }
-  ) {
+  /**
+   * Builds floor until it reaches well past the right edge of the view.
+   * The world depends only on the seed and the order of the chunks: how far
+   * the camera moved since the last call changes how many chunks are built
+   * now, never what they are.
+   */
+  generateAhead(cameraScrollX: number, callbacks?: WorldCallbacks) {
     const viewWidth = this.scene.scale.width;
 
     while (this.lastChunkEndX < cameraScrollX + viewWidth + 500) {
       const beforeX = this.lastChunkEndX;
+      // Each chunk takes the difficulty of where it starts. The player's
+      // position would depend on the camera's lag and on the frame rate.
+      const difficulty = this.difficultyManager.getConfig(beforeX);
       const segment = this.generateChunk(difficulty, false);
-      if (segment && callbacks?.onSegmentCreated) {
-        callbacks.onSegmentCreated(segment.startX, segment.endX, segment.floorY, segment.isPattern);
+      if (segment) {
+        callbacks?.onSegmentCreated?.({ ...segment, difficulty });
+      } else if (this.lastChunkEndX > beforeX) {
+        callbacks?.onGapCreated?.(beforeX, this.lastChunkEndX, this.getFloorY());
       }
-      if (!segment && callbacks?.onGapCreated && this.lastChunkEndX > beforeX) {
-        callbacks.onGapCreated(beforeX, this.lastChunkEndX, this.getFloorY());
+      if (this.pendingBridge) {
+        callbacks?.onBridgeCreated?.(this.pendingBridge);
+        this.pendingBridge = null;
       }
-      if (this.pendingDualPath && callbacks?.onDualPathCreated) {
-        callbacks.onDualPathCreated(this.pendingDualPath);
+      if (this.pendingDualPath) {
+        callbacks?.onDualPathCreated?.(this.pendingDualPath);
         this.pendingDualPath = null;
       }
     }
@@ -181,8 +229,16 @@ class GameFloorManager {
   ): SegmentResult | null {
     this.chunkCount++;
 
+    // The floor after a bridge stays at the bridge's height. Any other
+    // chunk could move it, and the bridge would end under a higher floor.
+    if (this.bridgeLandingPending) {
+      this.bridgeLandingPending = false;
+      this.lastWasGap = false;
+      return this.generateGroundSegment(difficulty, true);
+    }
+
     // Markov rest zone: after consecutive hard segments, force a safe ground
-    if (!isSafe && this.difficultyManager) {
+    if (!isSafe) {
       const restChance = this.difficultyManager.markSegmentDifficulty(
         difficulty.gapChance > 0.2 || difficulty.obstacleChance > 0.1
       );
@@ -225,18 +281,21 @@ class GameFloorManager {
     const startX = this.lastChunkEndX;
     this.currentElevation = Math.min(0, this.currentElevation + 40);
     const floorY = this.getFloorY();
-    const segment = this.buildGround(8 + this.rng.integer(true, 4), floorY);
-    return { startX, endX: segment.endX, floorY, isPattern: false };
+    const segment = this.buildGround(this.rng.intBetween(8, 12), floorY);
+    return { startX, endX: segment.endX, floorY, kind: 'rest' };
   }
 
   // --- GAP ---
 
   private generateGap(difficulty: DifficultyConfig) {
-    const gapRange = difficulty.maxGapWidth - difficulty.minGapWidth;
-    let gapWidth = difficulty.minGapWidth + this.rng.integer(true, Math.max(1, gapRange));
+    let gapWidth = this.rng.intBetween(difficulty.minGapWidth, difficulty.maxGapWidth);
+    const bridged =
+      difficulty.obstacleChance >= BRIDGE_MIN_OBSTACLE_CHANCE &&
+      this.rng.chance(difficulty.obstacleChance * BRIDGE_CHANCE_PER_OBSTACLE);
 
-    // Return elevation to ground during gaps
-    if (this.currentElevation < 0) {
+    // Return elevation to ground during gaps. A bridged gap keeps it: both
+    // of the bridge's edges have to be at the same height.
+    if (!bridged && this.currentElevation < 0) {
       this.currentElevation = Math.min(0, this.currentElevation + 40);
     }
 
@@ -245,6 +304,16 @@ class GameFloorManager {
     const safeDirectJump = Math.min(MAX_DIRECT_JUMP, maxJump);
 
     if (gapWidth <= safeDirectJump) {
+      if (bridged) {
+        // The hole starts after the previous ground's end tile, which
+        // buildGround leaves standing at lastChunkEndX.
+        this.pendingBridge = {
+          startX: this.lastChunkEndX + RetroRunnerFloor.FLOORGRASS_END_WIDTH,
+          endX: this.lastChunkEndX + gapWidth,
+          floorY: this.getFloorY(),
+        };
+        this.bridgeLandingPending = true;
+      }
       this.lastChunkEndX += gapWidth;
       return;
     }
@@ -265,9 +334,9 @@ class GameFloorManager {
 
     while (remaining > safeJump) {
       // Place stones at 50-80% of safe jump distance for comfortable gameplay
-      const jumpDist = safeJump * 0.5 + this.rng.integer(true, Math.floor(safeJump * 0.3));
+      const jumpDist = safeJump * 0.5 + this.rng.intBetween(0, Math.floor(safeJump * 0.3));
       currentX += jumpDist;
-      const heightOffset = 30 + this.rng.integer(true, 30);
+      const heightOffset = this.rng.intBetween(30, 60);
       this.createGrassBlock(currentX, this.getFloorY() - heightOffset);
       remaining = (gapStart + totalGap) - (currentX + BW);
     }
@@ -312,9 +381,9 @@ class GameFloorManager {
       case PatternType.HOUSE_SCENE:
         return this.patternHouseScene();
       case PatternType.DUAL_PATH:
-        return this.patternDualPath();
+        return this.patternDualPath(difficulty.biome);
       default:
-        return { ...this.generateGroundSegment({} as DifficultyConfig), isPattern: false };
+        return this.generateGroundSegment(difficulty);
     }
   }
 
@@ -344,7 +413,7 @@ class GameFloorManager {
     // Landing at new elevation
     const landing = this.buildGround(3, this.getFloorY());
 
-    return { startX, endX: landing.endX, floorY: this.getFloorY(), isPattern: true };
+    return { startX, endX: landing.endX, floorY: this.getFloorY(), kind: 'pattern' };
   }
 
   // Descending stairs back toward ground level
@@ -367,7 +436,7 @@ class GameFloorManager {
     // Landing at new (lower) elevation
     const landing = this.buildGround(4, this.getFloorY());
 
-    return { startX, endX: landing.endX, floorY: this.getFloorY(), isPattern: true };
+    return { startX, endX: landing.endX, floorY: this.getFloorY(), kind: 'pattern' };
   }
 
   // Pyramid: up then down, self-contained
@@ -402,28 +471,28 @@ class GameFloorManager {
     // Landing at same elevation (pyramid is self-contained)
     const landing = this.buildGround(3, baseY);
 
-    return { startX, endX: landing.endX, floorY: baseY, isPattern: true };
+    return { startX, endX: landing.endX, floorY: baseY, kind: 'pattern' };
   }
 
   // Floating chain: blocks above ground
   private patternFloatingChain(): SegmentResult {
     const startX = this.lastChunkEndX;
     const baseY = this.getFloorY();
-    const blockCount = 3 + this.rng.integer(true, 1); // 3-4
+    const blockCount = this.rng.intBetween(3, 4);
 
     const base = this.buildGround(2, baseY);
 
     let cx = base.endX + 40;
     for (let i = 0; i < blockCount; i++) {
-      const h = 35 + this.rng.integer(true, 40); // 35-75px above
+      const h = this.rng.intBetween(35, 75); // px above the floor
       this.createGrassBlock(cx, baseY - h);
-      cx += 50 + this.rng.integer(true, 25);
+      cx += this.rng.intBetween(50, 75);
     }
 
     this.lastChunkEndX = cx + 15;
     const landing = this.buildGround(4, baseY);
 
-    return { startX, endX: landing.endX, floorY: baseY, isPattern: true };
+    return { startX, endX: landing.endX, floorY: baseY, kind: 'pattern' };
   }
 
   /**
@@ -472,12 +541,12 @@ class GameFloorManager {
     this.grassGroup.add(water);
 
     // Gap after bridge — player jumps from dock end to landing
-    this.lastChunkEndX = hutX + 192 + 100 + this.rng.integer(true, 40);
+    this.lastChunkEndX = hutX + 192 + this.rng.intBetween(100, 140);
 
     // Landing
     const landing = this.buildGround(4, baseY);
 
-    return { startX, endX: landing.endX, floorY: baseY, isPattern: true };
+    return { startX, endX: landing.endX, floorY: baseY, kind: 'pattern' };
   }
 
   /**
@@ -507,16 +576,16 @@ class GameFloorManager {
    *
    *   ██████████████████████████  ← ground path (safe, obstacles, fewer coins)
    */
-  private patternDualPath(): SegmentResult {
+  private patternDualPath(biome: BiomeType): SegmentResult {
     const startX = this.lastChunkEndX;
     const baseY = this.getFloorY();
 
     // Ground path — long flat segment (safe route)
-    const ground = this.buildGround(10 + this.rng.integer(true, 4), baseY);
+    const ground = this.buildGround(this.rng.intBetween(10, 14), baseY);
 
     // Elevated path — noise-based offsets for organic, non-uniform spacing
-    const baseElevatedY = baseY - 55 - this.rng.integer(true, 15);
-    const platCount = 3 + this.rng.integer(true, 2); // 3-5 platforms
+    const baseElevatedY = baseY - this.rng.intBetween(55, 70);
+    const platCount = this.rng.intBetween(3, 5);
     const totalWidth = ground.endX - ground.startX;
     const avgSpacing = totalWidth / (platCount + 1);
 
@@ -553,10 +622,11 @@ class GameFloorManager {
       groundStartX: ground.startX,
       groundEndX: ground.endX,
       groundFloorY: baseY,
+      biome,
       elevatedPlatforms: platforms,
     };
 
-    return { startX, endX: ground.endX, floorY: baseY, isPattern: true };
+    return { startX, endX: ground.endX, floorY: baseY, kind: 'pattern' };
   }
 
   // House scene: long flat area, reset elevation
@@ -567,7 +637,7 @@ class GameFloorManager {
 
     const segment = this.buildGround(10, baseY);
 
-    return { startX, endX: segment.endX, floorY: baseY, isPattern: true };
+    return { startX, endX: segment.endX, floorY: baseY, kind: 'pattern' };
   }
 
   // --- GROUND SEGMENT ---
@@ -596,25 +666,30 @@ class GameFloorManager {
     return -Math.max(0, (n + 0.3)) * NOISE_AMPLITUDE;
   }
 
-  private generateGroundSegment(difficulty: DifficultyConfig): SegmentResult {
-    // Use noise-based elevation instead of random coin-flip
-    const noiseElev = this.sampleElevation(this.lastChunkEndX);
-    this.currentElevation = Math.max(MAX_ELEVATION, noiseElev);
+  /**
+   * @param keepElevation - stay at the current height instead of sampling
+   *                        a new one: the landing of a bridge
+   */
+  private generateGroundSegment(difficulty: DifficultyConfig, keepElevation = false): SegmentResult {
+    if (!keepElevation) {
+      // Use noise-based elevation instead of random coin-flip
+      const noiseElev = this.sampleElevation(this.lastChunkEndX);
+      this.currentElevation = Math.max(MAX_ELEVATION, noiseElev);
+    }
 
-    const tileRange = (difficulty.maxCenterTiles || 10) - (difficulty.minCenterTiles || 4);
-    const centerTiles = (difficulty.minCenterTiles || 4) + this.rng.integer(true, Math.max(1, tileRange));
+    const centerTiles = this.rng.intBetween(difficulty.minCenterTiles, difficulty.maxCenterTiles);
     const floorY = this.getFloorY();
 
     const segment = this.buildGround(centerTiles, floorY);
 
     // Elevated platform above long segments — high enough to not clip ground decorations
     if (centerTiles >= 6 && this.rng.chance(0.25)) {
-      const platX = segment.startX + this.rng.integer(false, Math.floor((segment.endX - segment.startX) * 0.4)) + 80;
-      const platY = floorY - 75 - this.rng.integer(true, 20);
+      const platX = segment.startX + this.rng.intBetween(1, Math.floor((segment.endX - segment.startX) * 0.4)) + 80;
+      const platY = floorY - this.rng.intBetween(75, 95);
       this.createGrassBlock(platX, platY);
     }
 
-    return { startX: segment.startX, endX: segment.endX, floorY, isPattern: false };
+    return { startX: segment.startX, endX: segment.endX, floorY, kind: 'ground' };
   }
 
   // --- HELPERS ---
@@ -653,22 +728,24 @@ class GameFloorManager {
     block.setOrigin(0, 0.5).refreshBody();
   }
 
+  /** Decorative only: draws from the grass stream, never from the terrain. */
   private placeGrass(startX: number, endX: number, floorY: number) {
     const segmentWidth = endX - startX;
     if (segmentWidth < 80) return;
 
+    const rng = this.grassRng;
     const count = Math.floor(segmentWidth / 70);
     let cx = startX + 20;
 
     for (let i = 0; i < count; i++) {
-      if (this.rng.chance(0.5)) {
-        cx += this.rng.integer(false, 50) + 20;
+      if (rng.chance(0.5)) {
+        cx += rng.intBetween(1, 50) + 20;
         continue;
       }
-      const [key, yOff] = this.rng.pick(GRASS_DECORATIONS);
+      const [key, yOff] = rng.pick(GRASS_DECORATIONS);
       if (cx >= endX - 10) break;
       this.grassGroup.create(cx, floorY - yOff, key).setOrigin(0, 0.5);
-      cx += this.rng.integer(false, 50) + 25;
+      cx += rng.intBetween(1, 50) + 25;
     }
   }
 }

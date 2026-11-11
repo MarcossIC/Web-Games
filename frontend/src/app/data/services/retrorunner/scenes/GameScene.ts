@@ -13,9 +13,14 @@ import { SceneKeys } from '@app/data/services/retrorunner/main';
 import CoinManager from '@app/data/services/retrorunner/utils/CoinManager';
 import CollapsingPlatformManager from '@app/data/services/retrorunner/utils/CollapsingPlatformManager';
 import DecorationManager from '@app/data/services/retrorunner/utils/DecorationManager';
-import DifficultyManager, { BiomeType, DifficultyConfig } from '@app/data/services/retrorunner/utils/DifficultyManager';
+import DifficultyManager, { BiomeType } from '@app/data/services/retrorunner/utils/DifficultyManager';
 import GameBackgroundManager from '@app/data/services/retrorunner/utils/GameBackgroundManager';
-import GameFloorManager, { DualPathInfo } from '@app/data/services/retrorunner/utils/GameFloorManager';
+import GameFloorManager, {
+  BridgeInfo,
+  DualPathInfo,
+  SegmentInfo,
+  WorldCallbacks,
+} from '@app/data/services/retrorunner/utils/GameFloorManager';
 import Joystick from '@app/data/services/retrorunner/utils/JoyStick';
 import ObstacleManager from '@app/data/services/retrorunner/utils/ObstacleManager';
 import { PlayerActions } from '@app/data/services/retrorunner/utils/PlayerActions';
@@ -72,31 +77,33 @@ export class GameScene extends Scene {
   private cameraX: number = 0;
   /** How long the current frame took, for the work done before drawing. */
   private frameDelta: number = 0;
-  /** Difficulty of the current frame, read by the world callbacks. */
-  private difficulty!: DifficultyConfig;
   public rng!: SeededRandom;
 
   /**
    * What to place on each new piece of floor. Built once: the world asks
    * on every frame, and a fresh set of functions per frame is garbage.
+   * Everything here reads the piece's own difficulty and biome, never the
+   * player's, so the same seed always fills the world the same way.
    */
-  private readonly worldCallbacks = {
-    onSegmentCreated: (startX: number, endX: number, floorY: number, isPattern: boolean) => {
+  private readonly worldCallbacks: WorldCallbacks = {
+    onSegmentCreated: (segment: SegmentInfo) => {
       // Pattern segments have their own structure — no extra spawning
       // (their internal buildGround() calls already place grass)
-      if (isPattern) return;
+      if (segment.kind === 'pattern') return;
 
-      const difficulty = this.difficulty;
-      this.obstacleManager.trySpawnObstacle(startX, endX, floorY, difficulty.obstacleChance);
+      const { startX, endX, floorY, difficulty } = segment;
       this.coinManager.trySpawnCoins(startX, endX, floorY, difficulty.coinChance);
-      this.decorationManager.spawnOnSegment(startX, endX, floorY);
-      // Collapsing platforms — appear from FOREST biome onward
-      if (difficulty.obstacleChance >= 0.08) {
-        this.collapsingManager.trySpawn(startX, endX, floorY, difficulty.obstacleChance * 0.5);
-      }
+      this.decorationManager.spawnOnSegment(startX, endX, floorY, difficulty.biome);
+      // A rest zone is a breather: coins, no hazards.
+      if (segment.kind === 'rest') return;
+
+      this.obstacleManager.trySpawnObstacle(startX, endX, floorY, difficulty.obstacleChance);
     },
     onGapCreated: (startX: number, endX: number, floorY: number) => {
       this.coinManager.spawnArcCoins(startX, endX, floorY);
+    },
+    onBridgeCreated: (bridge: BridgeInfo) => {
+      this.collapsingManager.spawnBridge(bridge.startX, bridge.endX, bridge.floorY);
     },
     onDualPathCreated: (info: DualPathInfo) => {
       // Build exclusion zones from elevated platforms (prevent decoration overlap)
@@ -108,7 +115,7 @@ export class GameScene extends Scene {
         midX, info.groundEndX, info.groundFloorY, 0.6
       );
       this.decorationManager.spawnOnSegment(
-        info.groundStartX, info.groundEndX, info.groundFloorY, exclusions
+        info.groundStartX, info.groundEndX, info.groundFloorY, info.biome, exclusions
       );
 
       // Elevated path: coins on each platform (reward for taking the risk)
@@ -187,10 +194,13 @@ export class GameScene extends Scene {
     // Floor
     this.floorY = this.scale.height - 16;
     // Independent RNG streams — prevents butterfly effect between systems
-    this.floorManager = new GameFloorManager(this, this.rng.fork('terrain'));
-    this.floorManager.setDifficultyManager(this.difficultyManager);
-    const initialDifficulty = this.difficultyManager.getConfig(0);
-    this.floorManager.createInitialWorld(this.floorY, initialDifficulty);
+    this.floorManager = new GameFloorManager(
+      this,
+      this.difficultyManager,
+      this.rng.fork('terrain'),
+      this.rng.fork('grass')
+    );
+    this.floorManager.createInitialWorld(this.floorY);
 
     // Decorations
     this.decorationManager = new DecorationManager(this, this.rng.fork('deco'));
@@ -205,8 +215,8 @@ export class GameScene extends Scene {
     // Coins
     this.coinManager = new CoinManager(this, this.scoreManager, this.rng.fork('coins'));
 
-    // Collapsing platforms
-    this.collapsingManager = new CollapsingPlatformManager(this, this.rng.fork('collapse'));
+    // Collapsing platforms: bridges the floor manager places over gaps
+    this.collapsingManager = new CollapsingPlatformManager(this);
 
     // Animations
     this.startAnimations();
@@ -540,21 +550,18 @@ export class GameScene extends Scene {
 
     this.actions.updateAnimation(this.player, isOnFloor, now);
 
-    // Update difficulty
-    const difficulty = this.difficultyManager.getConfig(this.player.x);
-
-    // Biome transition — changes visuals AND generation parameters
-    if (difficulty.biome !== this.currentBiome) {
-      this.currentBiome = difficulty.biome;
-      this.decorationManager.setBiome(difficulty.biome);
-      this.transitionBiome(difficulty.biome);
+    // Biome transition: only the sky and particles follow the player. The
+    // world's biome comes from each chunk's own position.
+    const biome = this.difficultyManager.getConfig(this.player.x).biome;
+    if (biome !== this.currentBiome) {
+      this.currentBiome = biome;
+      this.transitionBiome(biome);
     }
 
     // Update managers
     const scrollX = this.cameras.main.scrollX;
 
-    this.difficulty = difficulty;
-    this.floorManager.generateAhead(scrollX, difficulty, this.worldCallbacks);
+    this.floorManager.generateAhead(scrollX, this.worldCallbacks);
 
     if (scrollX - this.lastRecycleX >= RECYCLE_EVERY_PX) {
       this.lastRecycleX = scrollX;
@@ -562,8 +569,9 @@ export class GameScene extends Scene {
       this.obstacleManager.update(scrollX);
       this.coinManager.update(scrollX);
       this.decorationManager.update(scrollX);
+      this.collapsingManager.recycle(scrollX);
     }
-    this.collapsingManager.updateBlocks(now, scrollX);
+    this.collapsingManager.updateBlocks(now);
     this.scoreManager.update(this.player.x);
 
 
