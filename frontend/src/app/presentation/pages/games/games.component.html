@@ -1,31 +1,65 @@
-<section class="shared-container relative">
-  <div class="logo-container">
-    <a
-      class="text-format menu-logo text-menu"
-      role="button"
-      routerLink="/"
-      tabindex="0"
-      >Menu</a
-    >
-  </div>
+<section
+  class="games"
+  [class.is-leaving]="travel.leaving() && !launching()"
+  [class.is-launching]="launching()"
+>
+  <app-site-header />
 
-  <main class="games-container">
-    @for (GAME of GAMES; track GAME.ID; let i = $index) {
-    <article>
-      <div class="game" [routerLink]="GAME.PATH" [tabindex]="i + 1">
-        <picture>
-          <img
-            [ngSrc]="GAME.IMG"
-            [alt]="GAME.ALT"
-            role="presentation"
-            fill
-            [priority]="GAME.priority"
-          />
-        </picture>
-      </div>
+  <main class="content">
+    <h1 class="title select-none">Play Games</h1>
 
-      <h2 class="game-caption">{{ GAME.NAME }}</h2>
-    </article>
-    }
+    <div class="layout">
+      <nav class="rack" aria-label="Games">
+        @for (GAME of GAMES; track GAME.ID; let i = $index) {
+        <a
+          class="cartridge"
+          [class.is-selected]="GAME.ID === selected().ID"
+          [class.is-launched]="GAME.ID === launching()?.ID"
+          [style.--game]="GAME.COLOR"
+          [style.--i]="i"
+          [attr.href]="GAME.PATH"
+          (click)="launch($event, GAME)"
+          (mouseenter)="select(GAME)"
+          (focus)="select(GAME)"
+        >
+          <span class="cartridge-num">{{ GAME.NUM }}</span>
+          <app-pixel-emblem [map]="GAME.EMBLEM" />
+          <span class="cartridge-label">
+            <span class="cartridge-name">{{ GAME.NAME }}</span>
+            <span class="cartridge-tag"
+              >{{ GAME.TYPE }} / {{ GAME.PLAYERS }}</span
+            >
+          </span>
+          <span class="cartridge-grip" aria-hidden="true"></span>
+        </a>
+        }
+      </nav>
+
+      <aside
+        class="panel"
+        aria-live="polite"
+        [style.--game]="selected().COLOR"
+      >
+        <p class="panel-num">{{ selected().NUM }}</p>
+        <h2 class="panel-title">{{ selected().NAME }}</h2>
+        <p class="panel-desc">{{ selected().DESC }}</p>
+        <dl class="panel-facts">
+          <dt>TYPE</dt>
+          <dd>{{ selected().TYPE }}</dd>
+          <dt>PLAYERS</dt>
+          <dd>{{ selected().PLAYERS }}</dd>
+          <dt>CONTROLS</dt>
+          <dd>{{ selected().CONTROLS }}</dd>
+        </dl>
+        <a
+          class="play"
+          [attr.href]="selected().PATH"
+          (click)="launch($event, selected())"
+        >
+          <span class="caret" aria-hidden="true">&gt;</span>
+          Play Game
+        </a>
+      </aside>
+    </div>
   </main>
 </section>

@@ -1,28 +1,33 @@
-/* tslint:disable:no-unused-variable */
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
-
+import {
+  ComponentFixture,
+  discardPeriodicTasks,
+  fakeAsync,
+  TestBed,
+  tick,
+} from '@angular/core/testing';
+import { ChronometerServiceService } from '@app/data/services/chronometerService.service';
 import { ChronometerComponent } from './chronometer.component';
 
 describe('ChronometerComponent', () => {
-  let component: ChronometerComponent;
   let fixture: ComponentFixture<ChronometerComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ ChronometerComponent ]
-    })
-    .compileComponents();
-  }));
+  // No PointsService is provided here on purpose: that is the situation of
+  // every game other than Tetris, which is the only route that provides it.
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ChronometerComponent],
+    }).compileComponents();
+  });
 
-  beforeEach(() => {
+  it('runs in a game that has no Tetris score', fakeAsync(() => {
     fixture = TestBed.createComponent(ChronometerComponent);
-    component = fixture.componentInstance;
     fixture.detectChanges();
-  });
+    // A game starts paused; this is what its Play button does.
+    TestBed.inject(ChronometerServiceService).reset();
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+    tick(3000);
+
+    expect(fixture.componentInstance.time()).toBe('00:03');
+    discardPeriodicTasks();
+  }));
 });

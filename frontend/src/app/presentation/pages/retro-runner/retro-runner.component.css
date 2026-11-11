@@ -1,41 +1,172 @@
+/* The page is exactly one screen: the game is sized from the window. */
 :host {
-  display: flex;
-  justify-content: center;
+  --game-bar-height: 4rem;
+  /* The frame drawn around the screen, on both sides. */
+  --frame: 24px;
+  /* The game is drawn at 550 by 330, a 5:3 picture. It gets the largest
+     size of that shape that fits: limited by the width of the window, and
+     by the height left under the bar and above the strip. */
+  --screen-width: min(
+    100vw - 2.5rem - var(--frame),
+    (100dvh - var(--game-bar-height) - 7rem - var(--frame)) * 5 / 3
+  );
+
+  display: block;
   width: 100%;
+  height: 100dvh;
+  overflow: hidden;
 }
 
-.game-container {
+.play {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  position: relative;
+  gap: 1rem;
+  width: 100%;
+  height: calc(100dvh - var(--game-bar-height));
+  padding: 0.25rem 1.25rem 1.25rem;
 }
 
-.back-btn {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 20;
-  background: rgba(0, 0, 0, 0.5);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-  padding: 4px 10px;
-  font-size: 18px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 0.2s;
+/* The cabinet frame goes on this outer element and not on the one
+   Phaser draws into: Phaser sizes its canvas from the full box of its
+   parent, border included, so a border there makes the canvas too big. */
+.screen {
+  display: block;
+  width: fit-content;
+  border: 10px solid var(--gg-panel);
+  outline: 2px solid #3a3360;
+  box-shadow: 8px 8px 0 2px var(--gg-magenta);
+  /* A fade only. Phaser measures its parent once, as it starts: an
+     entrance that scales it would be measured small, and the game would
+     stay that size. */
+  animation: screen-in 0.5s linear 0.1s backwards;
 }
 
-.back-btn:hover {
-  background: rgba(0, 0, 0, 0.75);
+@keyframes screen-in {
+  from {
+    opacity: 0;
+  }
 }
 
-div ::ng-deep canvas {
-  border: 2.5px solid rgb(41 116 163);
-  border-radius: 4px;
-  max-width: 100%;
-  height: auto;
-  /* Force nearest-neighbor scaling at the browser level — safety net
-     so pixel art stays crisp even if the canvas is CSS-stretched */
+/* Giving this element a size is what makes the game fill the screen:
+   Phaser fits its canvas to it. */
+.screen ::ng-deep #retro-runner-game {
+  width: var(--screen-width);
+  aspect-ratio: 5 / 3;
+  background: #049cd8;
+}
+
+.screen ::ng-deep canvas {
+  display: block;
+  /* The art is pixel art drawn small and enlarged: keep its hard edges. */
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+/* ---- The strip under the screen: keys on the left, seed on the right */
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  width: calc(var(--screen-width) + var(--frame) - 4px);
+  max-width: 100%;
+  font-family: var(--gg-font-mono);
+  animation: gg-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.35s backwards;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-item dt,
+.seed-label {
+  font-family: var(--gg-font-pixel);
+  font-size: 0.8125rem;
+  letter-spacing: 1px;
+  color: var(--gg-muted);
+}
+
+.legend-item dd {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.legend-note,
+.legend-hold {
+  font-size: 0.8125rem;
+  color: var(--gg-muted);
+}
+
+.legend-hold {
+  align-self: center;
+}
+
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  background: var(--gg-ink);
+  border: 2px solid #3a3360;
+  /* The lip under the key is what makes it read as a keycap. */
+  box-shadow: 0 3px 0 #3a3360;
+  color: #fff;
+  font-family: var(--gg-font-pixel);
+  font-size: 0.8125rem;
+}
+
+.seed {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-inline-start: auto;
+}
+
+.seed-value {
+  font-family: var(--gg-font-mono);
+  font-size: 0.9375rem;
+  color: var(--gg-yellow);
+}
+
+.seed-copy {
+  min-height: 2.25rem;
+  /* Wide enough for both labels, so it does not resize on a click. */
+  min-width: 6.5rem;
+  padding: 0 0.75rem;
+  background: var(--gg-panel);
+  border: 2px solid var(--gg-line);
+  color: var(--gg-text);
+  font-family: var(--gg-font-pixel);
+  font-size: 0.8125rem;
+  transition: border-color 0.15s linear, color 0.15s linear;
+}
+
+.seed-copy:hover {
+  border-color: var(--gg-cyan);
+  color: var(--gg-cyan);
+}
+
+.seed-copy:focus-visible {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 3px;
+}
+
+/* A touch screen plays with the on-screen stick, not with keys. */
+@media (pointer: coarse) {
+  .legend {
+    display: none;
+  }
 }

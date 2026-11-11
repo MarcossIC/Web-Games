@@ -17,6 +17,11 @@ export class SnakeService {
   public speedSnakeY: number = 0;
 
   private snakeBody: number[][] = [];
+
+  /** The body as [x, y] cells, head first. Read-only: for drawing. */
+  public get body(): readonly (readonly number[])[] {
+    return this.snakeBody;
+  }
   constructor() {
     this.boardSize.typeToSnake();
     this.snakeX = ramdomNumber(false, this.boardSize.WIDTH);

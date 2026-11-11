@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  viewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { ChessGameOverType } from '@app/data/models/chess/chess-gameOverType';
 import { ChessController } from '@app/data/services/chess/ChessController.service';
@@ -10,14 +17,28 @@ import { ChessController } from '@app/data/services/chess/ChessController.servic
   selector: 'endgame-modal-chess',
   templateUrl: './endgame-modal-chess.component.html',
   styleUrls: [
-    './endgame-modal-chess.component.css',
     '../../../shared/styles/modal.css',
+    './endgame-modal-chess.component.css',
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EndGameModalChess {
   protected controller = inject(ChessController);
   private router = inject(Router);
+  private playButton = viewChild.required<ElementRef<HTMLButtonElement>>('play');
+
+  constructor() {
+    // Enter starts the next game without reaching for the mouse.
+    afterNextRender(() => this.playButton().nativeElement.focus());
+  }
+
+  /** Which side to color the verdict for, if a side won. */
+  protected verdictClass(): string {
+    const type = this.controller.gameOverType;
+    if (type === ChessGameOverType.CHECK_MATE_WHITE) return 'white-won';
+    if (type === ChessGameOverType.CHECK_MATE_BLACK) return 'black-won';
+    return '';
+  }
   private readonly GAME_OVER_MESSAGE = {
     [ChessGameOverType.DRAW_BY_REPETITION]:
       'The game has ended in a tie due to repetition of moves',

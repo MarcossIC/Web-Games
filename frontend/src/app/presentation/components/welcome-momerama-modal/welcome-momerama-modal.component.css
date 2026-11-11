@@ -1,27 +1,50 @@
-.modal-bg{
-    background-color: var(--ttt-bg-200);
-}
-.message-modal-sub{
-    color: var(--ttt-text);
-    font-size: 1.5rem/* 24px */;
-    line-height: 2rem/* 32px */;
-    font-weight: 500;
-    margin-block-end: .5rem;
-    text-align: center;
-    margin-block-start: 1rem;
+/* The dialog frame comes from the shared sheet in modal.css. */
+
+.demo {
+  display: flex;
+  justify-content: center;
+  gap: 0.875rem;
+  padding-block: 0.25rem;
 }
 
-@media screen and (min-width: 600px){
-    .message-modal-sub{
-        font-size: 2rem;
-    }
+.demo-card {
+  --accent: #3a3360;
+
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  aspect-ratio: 3 / 4;
+  background: var(--gg-panel);
+  border: 2px solid var(--accent);
+  box-shadow: 4px 4px 0 var(--accent);
+  color: #fff;
+  font-family: var(--gg-font-display);
+  font-size: 2rem;
+  animation: gg-emerge 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-@media screen and (min-width: 1500px){
-    
-    .message-modal-sub{
-        font-size: 2.5rem;
-        line-height: 2.5rem;
-    }
+.demo-card:nth-child(2) {
+  animation-delay: 0.08s;
+}
 
+.demo-card:nth-child(3) {
+  animation-delay: 0.16s;
+}
+
+.demo-card.is-found {
+  --accent: #ffe14a;
+
+  background: var(--gg-ink);
+}
+
+.demo-card app-pixel-emblem {
+  width: 80%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.rule {
+  font-size: 1rem;
+  line-height: 1.6;
 }

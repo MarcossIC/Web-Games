@@ -6,51 +6,64 @@
   display: flex;
   flex-direction: column;
   scrollbar-width: thin;
-  scrollbar-color: #ddddddad var(--chess-side-color);
+  scrollbar-color: #3a3360 var(--chess-side-color);
+  font-family: var(--gg-font-mono);
+}
+
+.empty {
+  margin: auto;
+  font-size: var(--chess-side-move-text-size);
+  color: var(--gg-muted);
 }
 
 .row {
   display: flex;
-  justify-content: flex-start;
+  flex-shrink: 0;
+  align-items: center;
   column-gap: var(--chess-side-moves-gap);
-  font-weight: 600;
-  height: 100%;
   min-height: var(--chess-side-move-row-h);
-  max-height: var(--chess-side-move-row-h);
-  color: white;
-  line-height: 30px;
-  overflow: hidden;
-  padding: 0 15px 0 15px;
-  position: relative;
+  padding-inline: 0.9375rem;
+  color: #fff;
   width: 100%;
 
   .row-moves {
     display: flex;
-    justify-content: flex-start;
     align-items: center;
     column-gap: var(--chess-side-moves-move-gap);
     width: 100%;
   }
 }
+
 .row:nth-child(even) {
   background-color: var(--chess-side-even-color);
 }
 
 .move-number {
-  width: 50px;
+  width: 2.25rem;
   font-size: var(--chess-side-move-text-size);
-}
-
-.current-move {
-  background-color: #1e1f34b5;
+  color: var(--gg-muted);
 }
 
 .move {
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
-  line-height: 30px;
+  line-height: 1.75rem;
   font-size: var(--chess-side-move-text-size);
   min-width: var(--chess-side-moves-size);
-  padding-inline: 5px;
+  padding-inline: 0.375rem;
+}
+
+.move:hover {
+  color: var(--gg-cyan);
+}
+
+/* The position shown on the board. */
+.current-move {
+  background-color: var(--gg-magenta);
+  color: var(--gg-ink);
+}
+
+.current-move:hover {
+  color: var(--gg-ink);
 }

@@ -1,28 +1,53 @@
-import { RetroRunnerMedia } from '@app/data/models/retro-runner/RetroRunnerKeys';
-import SeededRandom from '@app/data/services/retrorunner/utils/SeededRandom';
+import * as Phaser from 'phaser';
+import { RetroRunnerFloor, RetroRunnerMedia } from '@app/data/models/retro-runner/RetroRunnerKeys';
 import { Physics, Scene } from 'phaser';
 
 const COLLAPSE_DELAY_MS = 450;  // time standing before shaking starts
 const SHAKE_DURATION_MS = 300;  // shake before falling
-const RECYCLE_DISTANCE = 600;
+const BLOCK_WIDTH = RetroRunnerFloor.GRASS_BLOCK_WIDTH;
+// A block's centre sits this far below the floor's surface (it is 32 px tall).
+const BLOCK_CENTER_BELOW_SURFACE = 16;
+// The floor's surface is this far above the centre of its tiles.
+const SURFACE_ABOVE_FLOOR_Y = 17;
+const BLOCK_TINT = 0xddaa77;
+// Bridge blocks are drawn at the floor's depth.
+const BLOCK_DEPTH = 0;
+// An idle block breathes to telegraph that it is unstable: it shrinks to
+// 95 % of its height and back, 600 ms each way.
+const BREATH_DEPTH = 0.05;
+const BREATH_HALF_PERIOD_MS = 600;
+
+/**
+ * How tall an idle block is drawn at `now`, as a share of its height. Every
+ * block reads the same clock, so a bridge needs no tween to breathe; the
+ * curve is the Sine.easeInOut yoyo each block used to tween on its own.
+ */
+export function breathingScale(now: number): number {
+  return 1 - (BREATH_DEPTH * (1 - Math.cos((Math.PI * now) / BREATH_HALF_PERIOD_MS))) / 2;
+}
 
 interface CollapsingBlock {
   sprite: Physics.Arcade.Sprite;
   state: 'idle' | 'waiting' | 'shaking' | 'falling';
   contactTime: number;
-  originalY: number;
 }
 
+/**
+ * The bridges of collapsing blocks. Its blocks are reused: a released one
+ * waits hidden, with no body, until the next bridge needs it.
+ */
 class CollapsingPlatformManager {
   private scene: Scene;
-  private rng: SeededRandom;
+  /** The blocks in the world, in the order they were laid. */
   private blocks: CollapsingBlock[] = [];
+  /** The same blocks, found by their sprite when the player lands on one. */
+  private bySprite = new Map<Physics.Arcade.Sprite, CollapsingBlock>();
+  private free: Physics.Arcade.Sprite[] = [];
   public group: Physics.Arcade.StaticGroup;
   private dustEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
 
-  constructor(scene: Scene, rng: SeededRandom) {
+  constructor(scene: Scene) {
     this.scene = scene;
-    this.rng = rng;
     this.group = scene.physics.add.staticGroup();
 
     // Debris particle emitter for collapse effect
@@ -47,89 +72,104 @@ class CollapsingPlatformManager {
   }
 
   /**
-   * Spawn collapsing platforms on a segment.
-   * Placed at ground surface level so they look like normal floor blocks.
+   * Lays a bridge of collapsing blocks across a hole in the floor, level
+   * with both edges. Crossing without stopping is safe; standing on it drops
+   * the player into the hole. Over solid floor a falling block would leave
+   * the floor underneath, so a bridge is the only place they go.
+   *
+   * @param holeStartX - where the floor on the left ends
+   * @param holeEndX - where the floor on the right starts
+   * @param floorY - the centre of the floor tiles on both sides
    */
-  trySpawn(segmentStartX: number, segmentEndX: number, floorY: number, chance: number) {
-    if (!this.rng.chance(chance)) return;
-    if (segmentEndX - segmentStartX < 200) return;
-
-    const surfaceY = floorY - 17;
-    const count = 1 + this.rng.integer(true, 1);
-    const segW = segmentEndX - segmentStartX;
+  spawnBridge(holeStartX: number, holeEndX: number, floorY: number): Physics.Arcade.Sprite[] {
+    const span = holeEndX - holeStartX;
+    const count = Math.max(1, Math.ceil(span / BLOCK_WIDTH));
+    // The blocks overhang both edges by the same amount.
+    const firstX = holeStartX - (count * BLOCK_WIDTH - span) / 2;
+    const y = floorY - SURFACE_ABOVE_FLOOR_Y + BLOCK_CENTER_BELOW_SURFACE;
+    const sprites: Physics.Arcade.Sprite[] = [];
 
     for (let i = 0; i < count; i++) {
-      const x = segmentStartX + this.rng.integer(false, Math.floor(segW * 0.6)) + 50 + i * 80;
-      if (x >= segmentEndX - 40) break;
-
-      // Place at surface level — looks like part of the floor
-      const block = this.group.create(x, surfaceY + 16, RetroRunnerMedia.GRASS_BLOCK) as Physics.Arcade.Sprite;
-      block.setOrigin(0, 0.5).refreshBody();
-      block.setTint(0xddaa77);
-
-      // Subtle "breathing" pulse to telegraph instability
-      this.scene.tweens.add({
-        targets: block,
-        scaleY: 0.95,
-        duration: 600,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
-
-      this.blocks.push({
-        sprite: block,
-        state: 'idle',
-        contactTime: 0,
-        originalY: surfaceY + 16,
-      });
+      const sprite = this.takeBlock(firstX + i * BLOCK_WIDTH, y);
+      const block: CollapsingBlock = { sprite, state: 'idle', contactTime: 0 };
+      this.blocks.push(block);
+      this.bySprite.set(sprite, block);
+      sprites.push(sprite);
     }
+    return sprites;
+  }
+
+  /**
+   * Takes a bridge back, whether or not anyone stepped on it, and stops
+   * whatever its blocks were doing: shaking, or falling.
+   */
+  release(sprites: readonly Physics.Arcade.Sprite[]) {
+    for (const sprite of sprites) {
+      this.scene.tweens.killTweensOf(sprite);
+      sprite.setActive(false).setVisible(false);
+      sprite.body!.enable = false;
+      this.bySprite.delete(sprite);
+      this.free.push(sprite);
+    }
+    let kept = 0;
+    for (const block of this.blocks) {
+      if (this.bySprite.has(block.sprite)) this.blocks[kept++] = block;
+    }
+    this.blocks.length = kept;
   }
 
   /**
    * Called when the Phaser collider detects player on a collapsing block.
    * Starts the collapse timer.
    */
-  onPlayerCollide(player: Physics.Arcade.Sprite, block: Physics.Arcade.Sprite) {
-    const entry = this.blocks.find(b => b.sprite === block);
-    if (!entry || entry.state !== 'idle') return;
+  onPlayerCollide(player: Physics.Arcade.Sprite, sprite: Physics.Arcade.Sprite) {
+    const block = this.bySprite.get(sprite);
+    if (!block || block.state !== 'idle') return;
 
     // Only trigger if player is on TOP (not hitting from below/side)
-    if (player.body!.bottom > block.body!.top + 8) return;
+    if (player.body!.bottom > sprite.body!.top + 8) return;
 
-    entry.state = 'waiting';
-    entry.contactTime = this.scene.time.now;
+    block.state = 'waiting';
+    block.contactTime = this.scene.time.now;
   }
 
   /**
-   * Call every frame — handles delay → shake → collapse transitions.
+   * Call every frame: makes the idle blocks breathe and moves the ones the
+   * player stood on from waiting to shaking.
    */
-  updateBlocks(now: number, cameraScrollX: number) {
+  updateBlocks(now: number) {
+    const breath = breathingScale(now);
     for (const block of this.blocks) {
-      if (!block.sprite.active) continue;
+      if (block.state === 'idle' || block.state === 'waiting') block.sprite.scaleY = breath;
 
-      if (block.state === 'waiting') {
-        // Wait COLLAPSE_DELAY_MS before shaking
-        if (now - block.contactTime >= COLLAPSE_DELAY_MS) {
-          block.state = 'shaking';
-          this.startShake(block);
-        }
+      if (block.state === 'waiting' && now - block.contactTime >= COLLAPSE_DELAY_MS) {
+        block.state = 'shaking';
+        this.startShake(block);
       }
     }
+  }
 
-    // Clean up blocks far behind camera
-    this.blocks = this.blocks.filter((block) => {
-      if (!block.sprite.active && block.sprite.x < cameraScrollX - RECYCLE_DISTANCE) {
-        block.sprite.destroy();
-        return false;
-      }
-      return true;
-    });
+  /**
+   * A block for a bridge, its left edge at `x` and its centre at `y`. A
+   * reused one is put back as a new one would be, drawn over what was built
+   * since its last use, and its body is refreshed: a static body copies its
+   * size and place from its sprite only then.
+   */
+  private takeBlock(x: number, y: number): Physics.Arcade.Sprite {
+    let sprite = this.free.pop();
+    if (sprite) {
+      sprite.setPosition(x, y).setScale(1).setAlpha(1).setActive(true).setVisible(true);
+      sprite.setToTop().setDepth(BLOCK_DEPTH);
+      sprite.body!.enable = true;
+    } else {
+      sprite = this.group.create(x, y, RetroRunnerMedia.GRASS_BLOCK) as Physics.Arcade.Sprite;
+      sprite.setOrigin(0, 0.5).setTint(BLOCK_TINT).setDepth(BLOCK_DEPTH);
+    }
+    sprite.refreshBody();
+    return sprite;
   }
 
   private startShake(block: CollapsingBlock) {
-    // Kill the breathing tween
-    this.scene.tweens.killTweensOf(block.sprite);
     block.sprite.setScale(1);
 
     // Rapid horizontal shake

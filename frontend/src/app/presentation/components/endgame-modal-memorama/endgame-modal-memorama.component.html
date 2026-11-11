@@ -1,16 +1,41 @@
-<div class="modal modal-bg">
-  <h3 class="modal-title-with-bar">Game Over</h3>
+<div class="modal-scrim">
+  <div
+    class="modal modal-bg sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="memorama-result-title"
+  >
+    <h2 id="memorama-result-title" class="modal-title-with-bar">Game Over</h2>
 
-  <ng-container *ngIf="!controller.isWin; else win">
-    <p class="message message-loose">Opss... Te has quedado sin tiempo</p>
-  </ng-container>
-  <ng-template  #win>
-    <p class="message message-win">Felicidades haz ganado.</p>
-  </ng-template>
+    @if (controller.isWin) {
+    <p class="verdict is-win">All pairs found</p>
+    } @else {
+    <p class="verdict is-lost">Out of time</p>
+    }
 
+    <dl class="results">
+      <div class="result-row">
+        <dt>Successes</dt>
+        <dd>{{ controller.success }} / {{ pairs }}</dd>
+      </div>
+      <div class="result-row">
+        <dt>Movements</dt>
+        <dd>{{ controller.currentAttempts }}</dd>
+      </div>
+    </dl>
 
-  <div class="w-full flex justify-center items-center mt-4 buttons">
-    <button class="abstract-button exit-button" (click)="close()" role="button">Exit Game</button>
-    <button class="abstract-button play-button" (click)="playAgain()">Play Again</button>
-</div>
+    <div class="sheet-actions">
+      <button class="abstract-button exit-button" type="button" (click)="close()">
+        Exit Game
+      </button>
+      <button
+        #play
+        class="abstract-button play-button"
+        type="button"
+        (click)="playAgain()"
+      >
+        Play Again
+      </button>
+    </div>
+  </div>
 </div>

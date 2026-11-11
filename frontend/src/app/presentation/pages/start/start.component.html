@@ -1,11 +1,10 @@
-<section class="shared-container relative">
-  <div class="text-format menu-content">
-    <h1 class="menu-title select-none">Start Menu</h1>
-    <nav class="menu-buttons">
-      <button class="option" role="button" routerLink="/games">
-        <span style="opacity: 0" class="text-format" #spanElement> > </span>
-        Play Games
-      </button>
-    </nav>
-  </div>
-</section>
+<main class="start" [class.is-leaving]="travel.leaving()">
+  <h1 class="wordmark select-none">Game<br />Galaxy</h1>
+  <p class="lead">
+    Classic games on the Web. No account, no lobby. Pick a game and play.
+  </p>
+  <a class="cta" href="/games" (click)="travel.follow($event, '/games')">
+    <span class="caret" aria-hidden="true">&gt;</span>
+    Play Games
+  </a>
+</main>

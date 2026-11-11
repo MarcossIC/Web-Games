@@ -2,22 +2,18 @@
   class="shared-container relative"
   [ngClass]="{ 'opacity-95': this.controller.gameOver }"
 >
+  <app-game-bar title="Tetris" (pause)="pause()" />
 
   <main class="shared-wrapper">
     <div class="game-container">
-      <canvas #tetris class="border-radial"></canvas>
+      <canvas #tetris></canvas>
     </div>
 
     <div class="info-container">
       <ul>
-        <li class="mb-8 flex justify-end items-center text-3xl pause">
-          <button class="text-format menu-logo" role="button" (click)="pause()">
-            ||
-          </button>
-        </li>
         <li class="next">
           <h2 class="point-title menu-logo">Next</h2>
-          <canvas #nextPiece class="border-radial"></canvas>
+          <canvas #nextPiece></canvas>
         </li>
         <li class="score">
           <h2 class="point-title menu-logo">Score</h2>

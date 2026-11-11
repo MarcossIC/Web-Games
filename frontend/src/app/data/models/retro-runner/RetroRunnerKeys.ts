@@ -207,6 +207,7 @@ export enum RetroRunnerStates {
 export enum RetroRunnerFloor {
   FLOORGRASS_START_WIDTH = 81,
   FLOORGRASS_CENTER_WIDTH = 65,
+  FLOORGRASS_END_WIDTH = 15,
   GRASS_BLOCK_WIDTH = 32,
 }
 

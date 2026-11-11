@@ -1,6 +1,30 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+/*
+  Tailwind 4 changed three base defaults. These keep the ones the site was
+  designed against: gray borders when no color is given, a pointer over
+  buttons, and gray placeholder text.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    opacity: 1;
+    color: var(--color-gray-400);
+  }
+}
 
 :root {
   --ttt-cell: #eee;
@@ -23,6 +47,28 @@
 
   --ttt-select-o: #99ccff;
   --ttt-select-o-200: #66b2ff;
+
+  /* Arcade Terminal MK-II: site shell (Start, Games). */
+  --gg-ink: #07060d;
+  --gg-panel: #100e1c;
+  --gg-line: #2a2540;
+  --gg-text: #ece9f7;
+  --gg-soft: #c9c4e3;
+  --gg-muted: #a7a1c6;
+  --gg-magenta: #ff2e88;
+  --gg-cyan: #5ee6ff;
+  --gg-yellow: #ffe14a;
+  --gg-font-display: "Audiowide", system-ui, sans-serif;
+  --gg-font-mono: "Space Mono", ui-monospace, monospace;
+  --gg-font-pixel: "Silkscreen", ui-monospace, monospace;
+  /* The brand slab shadow: hard layers, zero blur, with a cyan CRT fringe. */
+  --gg-slab: -2px 0 0 var(--gg-cyan), 2px 2px 0 var(--gg-magenta),
+    4px 4px 0 #b3186a, 6px 6px 0 #5a1a8c;
+  --gg-scanlines: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.04) 0 1px,
+    transparent 1px 3px
+  );
 }
 
 html,
@@ -46,6 +92,7 @@ html,
 body {
   font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont;
   color: #f5f5f5;
+  background-color: var(--gg-ink);
   min-height: 100dvh;
 
   scroll-behavior: smooth;
@@ -64,6 +111,9 @@ body {
   z-index: 1;
 }
 
+/* Backdrop of the game pages: deep space with the galaxy glow on the
+   horizon. Plain CSS on purpose: a game should not share the GPU with
+   the WebGL galaxy of the site pages. */
 .shared-container {
   display: flex;
   flex-direction: column;
@@ -71,61 +121,145 @@ body {
   width: 100%;
   min-height: 100dvh;
   background: radial-gradient(
-    circle,
-    rgba(11, 59, 89, 1) 8%,
-    rgba(14, 29, 58, 1) 100%
-  );
+      ellipse at 50% 115%,
+      rgba(255, 46, 136, 0.24),
+      transparent 60%
+    ),
+    radial-gradient(circle at 50% 35%, #17112e 0%, var(--gg-ink) 72%);
 }
 
-.snake-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  min-height: calc(100dvh - 100px);
-
-  background-color: #82af05;
+/* Pages that float the game bar over the backdrop keep their content
+   clear of it. */
+.shared-container:has(> app-game-bar.absolute) {
+  padding-block-start: 4rem;
 }
 
 .text-format {
-  color: var(--ttt-primary-100);
+  color: #fff;
   font-weight: bold;
 }
 
+/* Slab-shadowed display text: headings, pause glyph, rail labels. */
 .menu-logo {
-  text-shadow: 2px 2px 0 #3c5e71, 3px 4px 0 var(--ttt-accent-200),
-    4px 5px 0px var(--ttt-accent-200), 4px 6px 0px var(--ttt-accent-200),
-    5px 6px 0px var(--ttt-accent-200);
+  font-family: var(--gg-font-display);
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-shadow: var(--gg-slab);
 }
 
 .abstract-button {
-  color: #141b00;
-  font-weight: 500;
-  font-size: 1rem;
+  color: var(--gg-ink);
+  font-family: var(--gg-font-display);
+  font-size: 0.875rem;
+  letter-spacing: 1px;
   padding: 4px;
   display: flex;
+  align-items: center;
   margin-inline: auto;
   margin-block-start: 20px;
   aspect-ratio: 7/2;
-  width: 110px;
+  width: 120px;
   justify-content: center;
-  border-radius: 0.5rem;
   text-align: center;
+  transition: transform 0.12s linear, box-shadow 0.12s linear;
+}
+
+.abstract-button:focus-visible {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 3px;
 }
 
 @media screen and (min-width: 600px) {
   .abstract-button {
-    font-size: 1.2rem;
-    width: 165px;
-    display: flex;
-    align-items: center;
+    font-size: 1rem;
+    width: 175px;
   }
 }
 
 @media screen and (min-width: 1500px) {
   .abstract-button {
-    font-size: 2rem;
+    font-size: 1.5rem;
     padding: 10px;
-    width: 230px;
+    width: 250px;
+  }
+}
+
+@keyframes gg-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Page transitions for routes outside the galaxy (router
+   withViewTransitions). Start <-> Games skip these: see GalaxyTravel. */
+::view-transition-old(root) {
+  animation: gg-page-out 160ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(root) {
+  animation: gg-page-in 260ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both;
+}
+
+@keyframes gg-page-out {
+  to {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}
+
+@keyframes gg-page-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Motion below animates only opacity and transform: the compositor can run
+   those without repainting, which is what keeps them at the display's
+   frame rate. No blur: animating a filter repaints every frame. */
+
+/* A page we fly through as the camera dives in. */
+@keyframes gg-fly-past {
+  to {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+/* A page that falls away as the camera pulls out. */
+@keyframes gg-fall-away {
+  to {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+
+/* Entrance of page content. CSS only, so it plays on first paint, before
+   any JavaScript loads. Use with `animation-fill-mode: backwards` so the
+   element is free to transform again (hover) once it has landed. */
+@keyframes gg-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+/* Something far away coming to rest in front of us. */
+@keyframes gg-emerge {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.6);
+  }
+}
+
+/* Something we had flown past settling back as we pull away. */
+@keyframes gg-settle {
+  from {
+    opacity: 0;
+    transform: scale(1.35);
   }
 }

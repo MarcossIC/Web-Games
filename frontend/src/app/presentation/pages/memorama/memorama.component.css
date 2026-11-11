@@ -1,252 +1,247 @@
-.memorama-wrapper {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  grid-template-rows: 1fr 4fr;
-  align-items: center;
-  justify-content: center;
+/* The page is exactly one screen: the cards are sized from the window, so
+   the table never needs scrolling. */
+:host {
+  --game-bar-height: 4rem;
 
-  --memorama-anim-play-state: running;
-  --memorama-card-opacity-border: 1;
-  --memorama-card-cursor: pointer;
-}
-.memorama-wrapper.paused {
-  --memorama-anim-play-state: paused;
-  --memorama-card-opacity-border: 0;
-  --memorama-card-cursor: default;
-}
-.game {
-  height: auto;
-  width: 100%;
-  grid-area: 2 / 1 / 3 / 2;
-  max-width: 800px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 200px));
-  justify-content: center;
-  justify-items: center;
-  justify-self: center;
+  display: block;
+  height: 100dvh;
+  overflow: hidden;
 }
 
-.memorama-title {
-  grid-area: 1 / 1 / 2 / 3;
-  justify-self: center;
-}
-.stats {
-  background-color: #151515;
-  grid-area: 2 / 2 / 3 / 3;
-  position: relative;
+.table {
+  --gap: clamp(0.5rem, 1.6vw, 1.25rem);
+  /* The widest a card can be: capped, and limited both by the width of
+     four cards in a row and by the height of three rows of 3:4 cards
+     under the bar and the readouts. */
+  --card: min(
+    10.5rem,
+    calc((100vw - 2.5rem - 3 * var(--gap)) / 4),
+    calc((100dvh - var(--game-bar-height) - 9rem - 2 * var(--gap)) / 4)
+  );
+  /* Whether the clock is running: the time bar follows it. */
+  --clock: running;
+
   display: flex;
   flex-direction: column;
   align-items: center;
-  align-content: center;
-  justify-self: flex-start;
-  margin-block-end: 1rem;
-  border-radius: 1rem;
   justify-content: center;
-  width: 300px;
-  aspect-ratio: 3/4;
-  overflow: hidden;
+  gap: 1.25rem;
+  width: 100%;
+  height: calc(100dvh - var(--game-bar-height));
+  padding: 0.5rem 1.25rem 1.5rem;
+}
+
+.table.paused {
+  --clock: paused;
+}
+
+/* ---- Readouts and the time bar, as wide as the four cards ---- */
+.hud {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  width: calc(4 * var(--card) + 3 * var(--gap));
+  animation: gg-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+}
+
+.readouts {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-family: var(--gg-font-pixel);
+}
+
+.readout {
+  display: flex;
+  align-items: baseline;
+  gap: 0.625rem;
+}
+
+.readout-end {
+  margin-inline-start: auto;
+}
+
+.readout dt {
+  font-size: 0.875rem;
+  letter-spacing: 1px;
+  color: var(--gg-muted);
+}
+
+.readout dd {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #fff;
+}
+
+.time-bar {
+  height: 8px;
+  background: var(--gg-line);
+}
+
+.time-left {
+  display: block;
+  height: 100%;
+  background: var(--gg-cyan);
+  transform-origin: left;
+  animation: drain 60s linear forwards;
+  animation-play-state: var(--clock);
+}
+
+/* The bar turns red for the last quarter of the minute. */
+@keyframes drain {
+  0%,
+  70% {
+    background-color: var(--gg-cyan);
+  }
+  78% {
+    background-color: #ff5c5c;
+  }
+  100% {
+    background-color: #ff5c5c;
+    transform: scaleX(0);
+  }
+}
+
+/* ---- The cards ---- */
+.game {
+  display: grid;
+  grid-template-columns: repeat(4, var(--card));
+  gap: var(--gap);
 }
 
 .game-card {
-  width: 100%;
-  max-width: 100px;
-  aspect-ratio: 3/4;
-  margin: 1rem;
-  border-radius: 1rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  --accent: var(--gg-text);
 
-  box-shadow: 0px 0px 3px 1px #00000088;
-
-  overflow: hidden;
-  position: relative;
-  background-color: #151515;
-  cursor: var(--memorama-card-cursor);
+  width: var(--card);
+  aspect-ratio: 3 / 4;
+  padding: 0;
+  background: none;
+  border: 0;
+  /* Gives the flip its depth. */
+  perspective: 700px;
+  cursor: pointer;
 }
 
-.stats-content {
-  background-color: #151515;
-  border-radius: 1rem;
-  width: 98%;
-  height: 98%;
-  z-index: 1;
-  position: relative;
-  padding: 20px;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  row-gap: 2rem;
+.paused .game-card {
+  cursor: default;
 }
 
+.game-card:focus-visible {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 4px;
+}
+
+/* The part that turns over. The game adds `active` to it to show the
+   face, and removes it to hide it again. */
 .content {
-  background-color: #151515;
-  border-radius: 1rem;
-  width: 96%;
-  height: 96%;
-
   position: relative;
-  transition: transform 0.5s;
+  width: 100%;
+  height: 100%;
   transform-style: preserve-3d;
-
-  z-index: 1;
-  padding: 20px;
-  color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  transition: transform 0.45s cubic-bezier(0.3, 1.3, 0.5, 1);
+  /* The entrance lives here and not on the card: the card swaps its own
+     animation for the shake and the lock, and going back to an entrance
+     afterwards would play it again. */
+  animation: gg-emerge 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(0.15s + var(--i) * 0.04s);
 }
 
 .content.active {
   transform: rotateY(180deg);
 }
 
-.content .face,
-.content .back {
-  width: 100%;
-  height: 100%;
-  border-radius: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.back,
+.face {
   position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  border: 2px solid #3a3360;
   pointer-events: none;
-  overflow: hidden;
+}
+
+.back {
+  /* A sparse grid of dots: the back of a card from the same deck as the
+     starfield behind the table. */
+  background: radial-gradient(#2a2540 1.5px, transparent 2px) 0 0 / 14px 14px,
+    var(--gg-panel);
+  box-shadow: 5px 5px 0 var(--gg-line);
   color: #fff;
-  font-size: 6rem;
+  font-family: var(--gg-font-display);
+  font-size: calc(var(--card) * 0.5);
+  text-shadow: var(--gg-slab);
+  transition: box-shadow 0.15s linear, transform 0.15s linear;
 }
 
-.content .face {
+/* A face-down card lifts under the pointer, while the game is running. */
+.table:not(.paused) .game-card.rotate:hover .back {
+  box-shadow: 7px 7px 0 var(--gg-magenta);
+  transform: translate(-2px, -2px);
+}
+
+.face {
+  background: var(--gg-ink);
   transform: rotateY(180deg);
+  transition: border-color 0.2s linear, box-shadow 0.2s linear;
 }
 
-.content .back {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+.face app-pixel-emblem {
+  width: 80%;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
-.content::before {
-  opacity: 0;
-  transition: opacity 300ms;
-  content: " ";
-  display: block;
-  background: white;
-  width: 20px;
-  height: 20px;
-  position: absolute;
-  filter: blur(50px);
-  z-index: 0;
+/* A found pair locks in with the color of its art. The face is turned
+   over inside a card that is itself turned over, so the two cancel out
+   and a positive offset falls to the right, like every other shadow. */
+.is-matched .face {
+  border-color: var(--accent);
+  box-shadow: 5px 5px 0 var(--accent);
 }
 
-.game-card.rotate:hover .content::before {
-  opacity: var(--memorama-card-opacity-border);
+.game-card.is-matched {
+  cursor: default;
+  animation: lock 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 
-.game-card::before {
-  opacity: 0;
-  content: " ";
-  position: absolute;
-  display: block;
-  width: 90px;
-  height: 240px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    #ff2288,
-    #387ef0,
-    transparent
-  );
-  transition: opacity 300ms;
-  animation: rotation_360 3000ms infinite linear;
-  animation-play-state: paused;
+/* Two cards that are not a pair shake their heads before turning back. */
+.game-card.is-wrong {
+  animation: shake 0.4s linear;
 }
 
-.stats::before {
-  opacity: 1;
-  content: " ";
-  position: absolute;
-  display: block;
-  width: 250px;
-  height: 500px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    #ff2288,
-    #387ef0,
-    transparent
-  );
-  animation: rotation_360 6000ms infinite linear;
-  animation-play-state: var(--memorama-anim-play-state);
-}
-
-.game-card.rotate:hover::before {
-  opacity: var(--memorama-card-opacity-border);
-  animation-play-state: var(--memorama-anim-play-state);
-}
-
-.game-card::after {
-  position: absolute;
-  content: " ";
-  display: block;
-  width: 98%;
-  height: 98%;
-  background: #17171733;
-  backdrop-filter: blur(50px);
-  z-index: 0;
-}
-
-@media screen and (min-width: 1500px) {
-  .game {
-    max-width: 900px;
-  }
-  .game-card {
-    max-width: 135px; /* Limita el ancho máximo para evitar que se extienda demasiado */
+@keyframes lock {
+  40% {
+    transform: scale(1.1);
   }
 }
 
-@media screen and (max-width: 930px) {
-  .memorama-wrapper {
-    grid-template-columns: 2fr 1fr;
-    grid-template-rows: 1fr 3fr 2fr;
+@keyframes shake {
+  20%,
+  60% {
+    transform: translateX(-5px);
   }
-
-  .game {
-    grid-area: 2 / 1 / 3 / 3;
-  }
-  .memorama-title {
-    grid-area: 1 / 1 / 2 / 3;
-  }
-  .stats {
-    grid-area: 3 / 1 / 4 / 3;
-    justify-self: center;
-    width: 375px;
-    aspect-ratio: 8/4;
-  }
-  .stats::before {
-    width: 250px;
-    height: 550px;
+  40%,
+  80% {
+    transform: translateX(5px);
   }
 }
 
-@media screen and (max-width: 400px) {
-  .memorama-wrapper {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: 200px 4fr 2fr;
+@media screen and (max-width: 600px) {
+  .table {
+    gap: 0.875rem;
+    padding: 0.25rem 0.75rem 1rem;
   }
-}
 
-@keyframes rotation_360 {
-  to {
-    transform: rotate(0deg);
+  .readout {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
   }
-  from {
-    transform: rotate(360deg);
+
+  .readout dd {
+    font-size: 1.125rem;
   }
 }

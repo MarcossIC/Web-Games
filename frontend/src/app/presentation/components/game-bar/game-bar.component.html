@@ -1,0 +1,19 @@
+<header class="bar">
+  <a class="exit" routerLink="/games">
+    <span aria-hidden="true">&lt;</span>
+    Exit Game
+  </a>
+
+  <h1 class="title select-none">{{ title() }}</h1>
+
+  @if (canPause()) {
+  <button
+    class="pause"
+    type="button"
+    aria-label="Pause"
+    (click)="pause.emit()"
+  >
+    <span class="pause-bars" aria-hidden="true"></span>
+  </button>
+  }
+</header>

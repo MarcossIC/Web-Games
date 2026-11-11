@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Game Galaxy** — an Angular 18 web arcade with 6 games: Tetris, Snake (Snakeling), Tic-Tac-Toe, Memorama, Chess, and Retro Runner. Uses standalone components (no NgModules), SSR via Express, and deploys to Netlify.
+**Game Galaxy** — an Angular 22 web arcade with 6 games: Tetris, Snake (Snakeling), Tic-Tac-Toe, Memorama, Chess, and Retro Runner. Uses standalone components (no NgModules), SSR via Express, and deploys to Netlify.
 
 ## Commands
 

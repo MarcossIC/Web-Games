@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  viewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { SnakelingControllerService } from '@app/data/services/snakeling/SnakelingController.service';
 
@@ -17,6 +24,12 @@ import { SnakelingControllerService } from '@app/data/services/snakeling/Snakeli
 export class EndgameModalSnakelingComponent {
   protected controller = inject(SnakelingControllerService);
   private router = inject(Router);
+  private playButton = viewChild.required<ElementRef<HTMLButtonElement>>('play');
+
+  constructor() {
+    // Enter starts the next game without reaching for the mouse.
+    afterNextRender(() => this.playButton().nativeElement.focus());
+  }
 
   protected close(): void {
     this.controller.reset();

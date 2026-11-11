@@ -3,33 +3,53 @@ import {
   RetroRunnerStates,
 } from '@app/data/models/retro-runner/RetroRunnerKeys';
 import { PhaserPlayerWithBody } from '@app/data/services/phaser/types';
+import {
+  APEX_GRAVITY_MULT,
+  APEX_VELOCITY_THRESHOLD,
+  BASE_WALK_SPEED,
+  FALL_GRAVITY_MULT,
+  JUMP_SPEED,
+} from '@app/data/services/retrorunner/generation/jump-model';
+
+// The speeds and gravities of the jump live in jump-model, which the world
+// generator plans with: changing them here would build jumps nobody makes.
 
 // --- Movement ---
-const BASE_WALK_SPEED = 190;
 const GROUND_ACCEL = 1200;    // px/s^2 — snappy on ground
 const GROUND_DECEL = 1800;    // px/s^2 — quick stop
 const AIR_ACCEL = 600;        // px/s^2 — reduced air control
 const AIR_DECEL = 200;        // px/s^2 — keeps momentum in air
 
 // --- Jump ---
-const JUMP_VELOCITY = -510;
+const JUMP_VELOCITY = -JUMP_SPEED;
 const VARIABLE_JUMP_CUTOFF = -200;
 const FAST_FALL_SPEED = 250;
-
-// --- Asymmetric gravity ---
-const FALL_GRAVITY_MULT = 1.6;   // heavier when falling — snappy landings
-const APEX_GRAVITY_MULT = 0.55;  // lighter near apex — hang time
-const APEX_VELOCITY_THRESHOLD = 80; // |vy| below this = "near apex"
 
 // --- Timers ---
 const COYOTE_TIME_MS = 90;
 const JUMP_BUFFER_MS = 100;
+
+// --- Animation ---
+// Frames of the spritesheet held in the air, by vertical speed.
+const FRAME_RISING = 6;   // legs stretched out: the leap
+const FRAME_APEX = 7;     // hanging at the top
+const FRAME_FALLING = 8;  // legs gathering for the landing
+// Leaving the floor for less than this (a seam between tiles, the lip of
+// a step) keeps the run going instead of flashing an air pose.
+const AIR_POSE_DELAY_MS = 70;
+// Slower than this the capybara stands; faster, it runs.
+const RUN_MIN_SPEED = 15;
+// The run is drawn for the base speed. Its playback follows the real
+// speed inside these limits, so the legs match the ground going past.
+const RUN_ANIM_MIN_RATE = 0.55;
+const RUN_ANIM_MAX_RATE = 1.5;
 
 export class PlayerActions {
   private lastOnFloorTime: number = 0;
   private jumpBufferTime: number = 0;
   private wasOnFloor: boolean = false;
   private speedMultiplier: number = 1;
+  private crouched: boolean = false;
 
   setSpeedMultiplier(multiplier: number) {
     this.speedMultiplier = multiplier;
@@ -101,11 +121,60 @@ export class PlayerActions {
   }
 
   playerCrouch(player: PhaserPlayerWithBody) {
-    if (player.anims?.currentAnim?.key !== RetroRunnerKey.DOWN_KEY) {
-      player.anims.play(RetroRunnerKey.DOWN_KEY);
-      player.body.setSize(player.width, player.height / 2);
-      player.body.offset.y = player.height / 2;
-      player.setVelocityX(0);
+    if (this.crouched) return;
+    this.crouched = true;
+    // The same hitbox at half the height, against the floor.
+    const body = player.body;
+    body.setSize(body.sourceWidth, player.height / 2, false);
+    body.offset.y = player.height / 2;
+    player.setVelocityX(0);
+  }
+
+  /** Gives the body its full height back after a crouch. */
+  private standUp(player: PhaserPlayerWithBody) {
+    if (!this.crouched) return;
+    this.crouched = false;
+    const body = player.body;
+    body.setSize(body.sourceWidth, player.height, false);
+    body.offset.y = 0;
+  }
+
+  /**
+   * Picks what the capybara looks like from what its body is doing, in
+   * one place and once per frame. Call it after all movement is applied.
+   */
+  updateAnimation(player: PhaserPlayerWithBody, isOnFloor: boolean, now: number) {
+    const { x: vx, y: vy } = player.body.velocity;
+    const airborne = !isOnFloor && now - this.lastOnFloorTime > AIR_POSE_DELAY_MS;
+
+    if (airborne) {
+      // A pose chosen by the speed of the jump reads as one movement; a
+      // cycle looping in the air reads as running on nothing.
+      let frame = FRAME_APEX;
+      if (vy < -APEX_VELOCITY_THRESHOLD) frame = FRAME_RISING;
+      else if (vy > APEX_VELOCITY_THRESHOLD) frame = FRAME_FALLING;
+      player.anims.stop();
+      player.setFrame(frame);
+      return;
+    }
+
+    if (this.crouched) {
+      player.anims.timeScale = 1;
+      if (player.anims.currentAnim?.key !== RetroRunnerKey.DOWN_KEY) {
+        player.anims.play(RetroRunnerKey.DOWN_KEY);
+      }
+      return;
+    }
+
+    if (Math.abs(vx) > RUN_MIN_SPEED) {
+      player.anims.timeScale = Math.min(
+        RUN_ANIM_MAX_RATE,
+        Math.max(RUN_ANIM_MIN_RATE, Math.abs(vx) / BASE_WALK_SPEED)
+      );
+      player.anims.play(RetroRunnerKey.WALK_KEY, true);
+    } else {
+      player.anims.timeScale = 1;
+      player.anims.play(RetroRunnerKey.IDLE_KEY, true);
     }
   }
 
@@ -114,8 +183,8 @@ export class PlayerActions {
    * Uses different accel/decel constants for ground vs air.
    */
   playerLeft(player: PhaserPlayerWithBody, isOnFloor: boolean, delta: number) {
+    this.standUp(player);
     player.setState(RetroRunnerStates.RUNNER_STATE_WALK);
-    player.anims.play(RetroRunnerKey.WALK_KEY, true);
     player.flipX = false;
 
     const target = -this.walkSpeed;
@@ -124,8 +193,8 @@ export class PlayerActions {
   }
 
   playerRight(player: PhaserPlayerWithBody, isOnFloor: boolean, delta: number) {
+    this.standUp(player);
     player.setState(RetroRunnerStates.RUNNER_STATE_WALK);
-    player.anims.play(RetroRunnerKey.WALK_KEY, true);
     player.flipX = true;
 
     const target = this.walkSpeed;
@@ -134,6 +203,7 @@ export class PlayerActions {
   }
 
   playerIdle(player: PhaserPlayerWithBody, isOnFloor: boolean, delta: number) {
+    this.standUp(player);
     if (isOnFloor) {
       // Decelerate to zero on ground
       this.decelerateX(player, GROUND_DECEL, delta);
@@ -141,21 +211,15 @@ export class PlayerActions {
         player.setVelocityX(0);
       }
       player.setState(RetroRunnerStates.RUNNER_STATE_IDLE);
-      player.anims.play(RetroRunnerKey.IDLE_KEY, true);
     } else {
       // Gentle air deceleration — preserves momentum
       this.decelerateX(player, AIR_DECEL, delta);
     }
-
-    if (player.anims?.currentAnim?.key === RetroRunnerKey.DOWN_KEY) {
-      player.body.setSize(player.width, player.height);
-      player.body.offset.y = 0;
-    }
   }
 
   playerJump(player: PhaserPlayerWithBody) {
+    this.standUp(player);
     player.setState(RetroRunnerStates.RUNNER_STATE_JUMP);
-    player.anims.play(RetroRunnerKey.JUMP_KEY, true);
     player.setVelocityY(JUMP_VELOCITY);
 
     // If jumping while falling (coyote time / edge jump), reduce horizontal
@@ -168,6 +232,7 @@ export class PlayerActions {
   }
 
   fastFall(player: PhaserPlayerWithBody) {
+    this.standUp(player);
     if (player.body.velocity.y > 0) {
       player.setVelocityY(FAST_FALL_SPEED);
     }

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { PointsService } from '@app/data/services/tetris/Points.service';
 import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
@@ -9,6 +9,7 @@ import { TetrisControllerService } from '@app/data/services/tetris/TetrisControl
   imports: [CommonModule],
   selector: 'endgame-modal-tetris',
   templateUrl: './endgame-modal-tetris.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./endgame-modal-tetris.component.css', '../../../shared/styles/modal.css']
 })
 export class EndgameModalTetrisComponent implements OnInit {

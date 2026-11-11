@@ -1,42 +1,63 @@
-<section class="shared-container justify-center relative">
-  <aside class="absolute top-[2%] left-[2%] z-50">
-    <button
-      class="text-format menu-logo"
-      role="button"
-      [disabled]="controller.isPaused"
-      (click)="this.controller.pause()"
-      tabindex="0"
-    >
-      ||
-    </button>
-  </aside>
-  <div class="memorama-wrapper" [ngClass]="{ paused: controller.isPaused }">
-    <h2 class="text-4xl mb-4 font-bold memorama-title min-[1500px]:text-6xl">
-      Memorama Game
-    </h2>
+<section class="shared-container">
+  <app-game-bar title="Memorama" (pause)="controller.pause()" />
+
+  <main
+    class="table"
+    [class.paused]="controller.isPaused || controller.isGameOver"
+  >
+    <div class="hud">
+      <dl class="readouts">
+        <div class="readout">
+          <dt>Time</dt>
+          <dd><chronometer></chronometer></dd>
+        </div>
+        <div class="readout">
+          <dt>Successes</dt>
+          <dd>{{ controller.success }} / {{ pairs }}</dd>
+        </div>
+        <div class="readout readout-end">
+          <dt>Movements</dt>
+          <dd>{{ controller.currentAttempts }}</dd>
+        </div>
+      </dl>
+
+      <!-- The minute the round lasts, draining. A new element per round
+           is what restarts the animation. -->
+      <div class="time-bar" aria-hidden="true">
+        @for (current of [round()]; track current) {
+        <span class="time-left"></span>
+        }
+      </div>
+    </div>
 
     <div id="game-memorama" class="game">
       @for (card of this.cards; track $index) {
-      <div class="game-card rotate" (click)="controller.play(renderer, $event)">
+      <button
+        type="button"
+        class="game-card rotate"
+        [class.is-matched]="matched().has($index)"
+        [class.is-wrong]="missed().has($index)"
+        [style.--accent]="art($index).accent"
+        [style.--i]="$index"
+        [attr.aria-label]="label($index)"
+        (click)="pick($event, $index)"
+      >
         <div class="content">
-          <div class="back">?</div>
-          <div class="face">{{ controller.valueUsed[$index] }}</div>
+          <div class="back" aria-hidden="true">?</div>
+          <!-- The game tells a pair by comparing the text of the two
+               faces, so the value stays in the face as text. -->
+          <div class="face" aria-hidden="true">
+            <app-pixel-emblem [map]="art($index).emblem" />
+            <span class="sr-only">{{ controller.valueUsed[$index] }}</span>
+          </div>
         </div>
-      </div>
+      </button>
       }
     </div>
-
-    <div class="stats">
-      <div class="stats-content">
-        <p class="text-2xl">Time: <chronometer></chronometer></p>
-        <p class="text-2xl">Successes: {{ this.controller.success }}</p>
-        <p class="text-2xl">Movements: {{ this.controller.currentAttempts }}</p>
-      </div>
-    </div>
-  </div>
+  </main>
 </section>
 @if(this.controller.isPaused){
-<welcome-momerama-modal></welcome-momerama-modal>
+<welcome-momerama-modal [resuming]="started()"></welcome-momerama-modal>
 } @if(this.controller.isGameOver){
 <endgame-modal-memorama></endgame-modal-memorama>
 }
