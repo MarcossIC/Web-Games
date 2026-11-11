@@ -120,7 +120,8 @@ class GameFloorManager {
     }
   }
 
-  update(
+  /** Builds floor until it reaches well past the right edge of the view. */
+  generateAhead(
     cameraScrollX: number,
     difficulty: DifficultyConfig,
     callbacks?: {
@@ -145,11 +146,10 @@ class GameFloorManager {
         this.pendingDualPath = null;
       }
     }
-
-    this.destroyBehindCamera(cameraScrollX);
   }
 
-  private destroyBehindCamera(cameraScrollX: number) {
+  /** Removes floor and grass far enough behind the camera to never return. */
+  destroyBehindCamera(cameraScrollX: number) {
     const threshold = cameraScrollX - RECYCLE_DISTANCE;
 
     const floorToDestroy: Physics.Arcade.Sprite[] = [];

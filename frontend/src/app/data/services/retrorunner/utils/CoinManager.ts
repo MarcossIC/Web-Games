@@ -1,7 +1,7 @@
 import { RetroRunnerKey, RetroRunnerMedia } from '@app/data/models/retro-runner/RetroRunnerKeys';
 import { PhaserSound } from '@app/data/services/phaser/types';
 import SeededRandom from '@app/data/services/retrorunner/utils/SeededRandom';
-import { Physics, Scene } from 'phaser';
+import { GameObjects, Physics, Scene } from 'phaser';
 import ScoreManager from './ScoreManager';
 
 const RECYCLE_DISTANCE = 600;
@@ -23,6 +23,8 @@ class CoinManager {
   private scoreManager: ScoreManager;
   private comboCount: number = 0;
   private lastCoinTime: number = 0;
+  /** The burst of sparks a coin leaves where it was picked up. */
+  private sparks: GameObjects.Particles.ParticleEmitter;
 
   constructor(scene: Scene, scoreManager: ScoreManager, rng: SeededRandom) {
     this.scene = scene;
@@ -32,6 +34,24 @@ class CoinManager {
       allowGravity: false,
     });
     this.coinSound = scene.sound.add(RetroRunnerMedia.COIN_SOUND, { volume: 0.15 });
+
+    if (!scene.textures.exists('sparkPixel')) {
+      const gfx = scene.add.graphics();
+      gfx.fillStyle(0xffe14a);
+      gfx.fillRect(0, 0, 2, 2);
+      gfx.generateTexture('sparkPixel', 2, 2);
+      gfx.destroy();
+    }
+    // Without it a coin just vanishes: the sparks are what says "taken".
+    this.sparks = scene.add.particles(0, 0, 'sparkPixel', {
+      speed: { min: 40, max: 95 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 1.5, end: 0 },
+      lifespan: { min: 220, max: 380 },
+      gravityY: 160,
+      emitting: false,
+    });
+    this.sparks.setDepth(6);
   }
 
   trySpawnCoins(
@@ -138,6 +158,7 @@ class CoinManager {
     const points = BASE_COIN_POINTS * multiplier;
 
     this.coinSound.play();
+    this.sparks.emitParticleAt(coinX, coinY, 7);
     this.scoreManager.addCoinBonus(points);
 
     const comboText = multiplier > 1 ? `+${points} x${multiplier}` : `+${points}`;

@@ -30,7 +30,17 @@ const config: Phaser.Types.Core.GameConfig = {
     arcade: {
       gravity: { y: 300, x: 0 },
       debug: false,
+      // One physics step per rendered frame, sized by the frame's time.
+      // The default is a fixed 60 Hz step on its own clock: on any screen
+      // that is not exactly 60 Hz some frames get no step and others two,
+      // so the player moves in bursts while the camera keeps gliding.
+      fixedStep: false,
     },
+  },
+  fps: {
+    // Below 20 fps a frame's time is no longer trusted: the game slows
+    // down instead of taking a step long enough to fall through a floor.
+    min: 20,
   },
   input: {
     keyboard: true,

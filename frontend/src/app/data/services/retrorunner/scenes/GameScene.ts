@@ -13,7 +13,7 @@ import { SceneKeys } from '@app/data/services/retrorunner/main';
 import CoinManager from '@app/data/services/retrorunner/utils/CoinManager';
 import CollapsingPlatformManager from '@app/data/services/retrorunner/utils/CollapsingPlatformManager';
 import DecorationManager from '@app/data/services/retrorunner/utils/DecorationManager';
-import DifficultyManager, { BiomeType } from '@app/data/services/retrorunner/utils/DifficultyManager';
+import DifficultyManager, { BiomeType, DifficultyConfig } from '@app/data/services/retrorunner/utils/DifficultyManager';
 import GameBackgroundManager from '@app/data/services/retrorunner/utils/GameBackgroundManager';
 import GameFloorManager, { DualPathInfo } from '@app/data/services/retrorunner/utils/GameFloorManager';
 import Joystick from '@app/data/services/retrorunner/utils/JoyStick';
@@ -21,12 +21,25 @@ import ObstacleManager from '@app/data/services/retrorunner/utils/ObstacleManage
 import { PlayerActions } from '@app/data/services/retrorunner/utils/PlayerActions';
 import ScoreManager from '@app/data/services/retrorunner/utils/ScoreManager';
 import SeededRandom from '@app/data/services/retrorunner/utils/SeededRandom';
+import { followScroll, lerpForDelta } from '@app/data/services/retrorunner/utils/camera-smoothing';
+import PlayerView from '@app/data/services/retrorunner/utils/PlayerView';
 import { Scene, GameObjects } from 'phaser';
 
 // Speed ramp: player gradually gets faster
 const BASE_SPEED_MULTIPLIER = 1;
 const MAX_SPEED_MULTIPLIER = 1.4;
 const SPEED_RAMP_DISTANCE = 15000; // distance to reach max speed
+
+// How fast the camera catches up with the player, tuned at 60 fps.
+const CAMERA_LERP = 0.1;
+// Width of the band in the middle of the screen where the player moves
+// without dragging the camera along.
+const CAMERA_DEADZONE = 80;
+// How much each parallax layer moves per pixel of camera scroll.
+const PARALLAX_SPEEDS = [0.08, 0.15, 0.25, 0.35];
+// Objects left behind are recycled once per this many pixels of scroll,
+// not on every frame: nothing visible depends on when it happens.
+const RECYCLE_EVERY_PX = 64;
 
 export class GameScene extends Scene {
   public player!: PhaserPlayerWithBody;
@@ -52,7 +65,59 @@ export class GameScene extends Scene {
   private parallaxLayers: GameObjects.TileSprite[] = [];
   private lastLandTime: number = 0;
   private currentBiome: BiomeType = BiomeType.PLAINS;
+  private lastRecycleX: number = 0;
+  /** What the player sees of the capybara; `player` is its hidden body. */
+  private playerView!: PlayerView;
+  /** The camera position with decimals; it is drawn at its rounding. */
+  private cameraX: number = 0;
+  /** How long the current frame took, for the work done before drawing. */
+  private frameDelta: number = 0;
+  /** Difficulty of the current frame, read by the world callbacks. */
+  private difficulty!: DifficultyConfig;
   public rng!: SeededRandom;
+
+  /**
+   * What to place on each new piece of floor. Built once: the world asks
+   * on every frame, and a fresh set of functions per frame is garbage.
+   */
+  private readonly worldCallbacks = {
+    onSegmentCreated: (startX: number, endX: number, floorY: number, isPattern: boolean) => {
+      // Pattern segments have their own structure — no extra spawning
+      // (their internal buildGround() calls already place grass)
+      if (isPattern) return;
+
+      const difficulty = this.difficulty;
+      this.obstacleManager.trySpawnObstacle(startX, endX, floorY, difficulty.obstacleChance);
+      this.coinManager.trySpawnCoins(startX, endX, floorY, difficulty.coinChance);
+      this.decorationManager.spawnOnSegment(startX, endX, floorY);
+      // Collapsing platforms — appear from FOREST biome onward
+      if (difficulty.obstacleChance >= 0.08) {
+        this.collapsingManager.trySpawn(startX, endX, floorY, difficulty.obstacleChance * 0.5);
+      }
+    },
+    onGapCreated: (startX: number, endX: number, floorY: number) => {
+      this.coinManager.spawnArcCoins(startX, endX, floorY);
+    },
+    onDualPathCreated: (info: DualPathInfo) => {
+      // Build exclusion zones from elevated platforms (prevent decoration overlap)
+      const exclusions = info.elevatedPlatforms.map(p => ({ x: p.x - 20, width: 104 }));
+
+      // Ground path: obstacle + decorations (with exclusion zones)
+      const midX = info.groundStartX + (info.groundEndX - info.groundStartX) * 0.3;
+      this.obstacleManager.trySpawnObstacle(
+        midX, info.groundEndX, info.groundFloorY, 0.6
+      );
+      this.decorationManager.spawnOnSegment(
+        info.groundStartX, info.groundEndX, info.groundFloorY, exclusions
+      );
+
+      // Elevated path: coins on each platform (reward for taking the risk)
+      for (const plat of info.elevatedPlatforms) {
+        const platSurface = plat.y - 16;
+        this.coinManager.trySpawnCoins(plat.x, plat.x + 64, platSurface, 0.9);
+      }
+    },
+  };
 
   constructor() {
     super(SceneKeys.GAME);
@@ -185,8 +250,13 @@ export class GameScene extends Scene {
 
     // Camera
     this.cameras.main.setBounds(0, 0, Number.MAX_SAFE_INTEGER, this.scale.height);
-    this.cameras.main.startFollow(this.player, false, 0.1, 0);
-    this.cameras.main.setDeadzone(80, 0);
+    // The camera is moved by hand in placeCamera(), on whole pixels.
+    this.cameraX = 0;
+    this.frameDelta = 0;
+    this.events.on(Phaser.Scenes.Events.PRE_RENDER, this.placeCamera, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(Phaser.Scenes.Events.PRE_RENDER, this.placeCamera, this);
+    });
 
     // Input
     this.keys = this.input.keyboard?.addKeys({
@@ -203,6 +273,7 @@ export class GameScene extends Scene {
 
 
     this.prevOnFloor = false;
+    this.lastRecycleX = 0;
 
     EventBus.emit(SceneKeys.SCENE_READY, this);
   }
@@ -309,6 +380,37 @@ export class GameScene extends Scene {
     const shrinkX = 4;
     body.setSize(this.player.width - shrinkX * 2, this.player.height);
     body.setOffset(shrinkX, 0);
+
+    this.playerView = new PlayerView(this, this.player);
+  }
+
+  /**
+   * Runs right before each frame is drawn, once physics has moved the
+   * player: follows it with the camera and places what scrolls with it.
+   *
+   * The camera only ever sits on whole pixels. The picture is small and
+   * enlarged, so each object is drawn on whole pixels anyway; with the
+   * camera between two of them, each object rounds on its own and the
+   * scenery shivers as it scrolls.
+   */
+  private placeCamera() {
+    const camera = this.cameras.main;
+    this.cameraX = followScroll(
+      this.cameraX,
+      this.player.x,
+      this.scale.width,
+      CAMERA_DEADZONE,
+      lerpForDelta(CAMERA_LERP, this.frameDelta)
+    );
+    const scrollX = Math.round(this.cameraX);
+    camera.scrollX = scrollX;
+
+    this.playerView.sync(this.cameraX, scrollX);
+
+    this.background.tilePositionX = scrollX * 0.05;
+    for (let i = 0; i < this.parallaxLayers.length; i++) {
+      this.parallaxLayers[i].tilePositionX = scrollX * PARALLAX_SPEEDS[i];
+    }
   }
 
   private startAnimations() {
@@ -335,15 +437,8 @@ export class GameScene extends Scene {
       repeat: -1,
     });
 
-    this.anims.create({
-      key: RetroRunnerKey.JUMP_KEY,
-      frames: this.anims.generateFrameNumbers(RetroRunnerKey.RUNNER, {
-        start: 10,
-        end: 6,
-      }),
-      frameRate: 12,
-      repeat: -1,
-    });
+    // There is no jump animation: in the air PlayerActions holds one frame
+    // chosen by the vertical speed.
 
     this.anims.create({
       key: RetroRunnerKey.DEAD_KEY,
@@ -367,6 +462,7 @@ export class GameScene extends Scene {
   }
 
   override update(_time: number, delta: number) {
+    this.frameDelta = delta;
     if (this.player.state === RetroRunnerStates.RUNNER_STATE_DEAD) return;
 
     const now = this.time.now;
@@ -404,16 +500,8 @@ export class GameScene extends Scene {
     if (isOnFloor && !this.prevOnFloor && now - this.lastLandTime > 150) {
       this.lastLandTime = now;
       this.emitDust(5);
-      // Squash effect on landing — kill any ongoing scale tweens first
-      this.tweens.killTweensOf(this.player);
-      this.player.setScale(1.8, 1.3);
-      this.tweens.add({
-        targets: this.player,
-        scaleX: 1.6,
-        scaleY: 1.6,
-        duration: 120,
-        ease: 'Back.easeOut',
-      });
+      // Squash on landing: wider and shorter, then it springs back.
+      this.playerView.squash(1.125, 0.8, 140, 'Back.easeOut');
     }
     this.prevOnFloor = isOnFloor;
 
@@ -428,16 +516,8 @@ export class GameScene extends Scene {
       this.actions.playerJump(this.player);
       this.actions.consumeJumpBuffer();
       this.emitDust(3);
-      // Stretch effect on jump — kill conflicting tweens first
-      this.tweens.killTweensOf(this.player);
-      this.player.setScale(1.4, 1.9);
-      this.tweens.add({
-        targets: this.player,
-        scaleX: 1.6,
-        scaleY: 1.6,
-        duration: 150,
-        ease: 'Sine.easeOut',
-      });
+      // Stretch on take-off: thinner and taller.
+      this.playerView.squash(0.875, 1.19, 150, 'Sine.easeOut');
     }
 
     // Variable jump height: releasing jump button cuts upward velocity
@@ -458,6 +538,8 @@ export class GameScene extends Scene {
       this.actions.playerIdle(this.player, isOnFloor, delta);
     }
 
+    this.actions.updateAnimation(this.player, isOnFloor, now);
+
     // Update difficulty
     const difficulty = this.difficultyManager.getConfig(this.player.x);
 
@@ -471,60 +553,19 @@ export class GameScene extends Scene {
     // Update managers
     const scrollX = this.cameras.main.scrollX;
 
-    this.floorManager.update(scrollX, difficulty, {
-      onSegmentCreated: (startX, endX, floorY, isPattern) => {
-        // Pattern segments have their own structure — no extra spawning
-        // (their internal buildGround() calls already place grass)
-        if (isPattern) return;
+    this.difficulty = difficulty;
+    this.floorManager.generateAhead(scrollX, difficulty, this.worldCallbacks);
 
-        this.obstacleManager.trySpawnObstacle(startX, endX, floorY, difficulty.obstacleChance);
-        this.coinManager.trySpawnCoins(startX, endX, floorY, difficulty.coinChance);
-        this.decorationManager.spawnOnSegment(startX, endX, floorY);
-        // Collapsing platforms — appear from FOREST biome onward
-        if (difficulty.obstacleChance >= 0.08) {
-          this.collapsingManager.trySpawn(startX, endX, floorY, difficulty.obstacleChance * 0.5);
-        }
-      },
-      onGapCreated: (startX, endX, floorY) => {
-        this.coinManager.spawnArcCoins(startX, endX, floorY);
-      },
-      onDualPathCreated: (info: DualPathInfo) => {
-        // Build exclusion zones from elevated platforms (prevent decoration overlap)
-        const exclusions = info.elevatedPlatforms.map(p => ({ x: p.x - 20, width: 104 }));
-
-        // Ground path: obstacle + decorations (with exclusion zones)
-        const midX = info.groundStartX + (info.groundEndX - info.groundStartX) * 0.3;
-        this.obstacleManager.trySpawnObstacle(
-          midX, info.groundEndX, info.groundFloorY, 0.6
-        );
-        this.decorationManager.spawnOnSegment(
-          info.groundStartX, info.groundEndX, info.groundFloorY, exclusions
-        );
-
-        // Elevated path: coins on each platform (reward for taking the risk)
-        for (const plat of info.elevatedPlatforms) {
-          const platSurface = plat.y - 16;
-          this.coinManager.trySpawnCoins(plat.x, plat.x + 64, platSurface, 0.9);
-        }
-      },
-    });
-
-    this.obstacleManager.update(scrollX);
-    this.coinManager.update(scrollX);
-    this.decorationManager.update(scrollX);
+    if (scrollX - this.lastRecycleX >= RECYCLE_EVERY_PX) {
+      this.lastRecycleX = scrollX;
+      this.floorManager.destroyBehindCamera(scrollX);
+      this.obstacleManager.update(scrollX);
+      this.coinManager.update(scrollX);
+      this.decorationManager.update(scrollX);
+    }
     this.collapsingManager.updateBlocks(now, scrollX);
     this.scoreManager.update(this.player.x);
 
-    // Parallax background scroll
-    this.background.tilePositionX = scrollX * 0.05;
-    this.background.displayWidth = this.scale.width;
-    this.background.displayHeight = this.scale.height;
-
-    // Parallax layers at different speeds
-    const speeds = [0.08, 0.15, 0.25, 0.35];
-    for (let i = 0; i < this.parallaxLayers.length; i++) {
-      this.parallaxLayers[i].tilePositionX = scrollX * speeds[i];
-    }
 
     // Player fell off screen
     if (this.player.y >= this.scale.height) {
@@ -620,6 +661,7 @@ export class GameScene extends Scene {
 
   private handlePlayerDied() {
     this.player.setState(RetroRunnerStates.RUNNER_STATE_DEAD);
+    this.player.anims.timeScale = 1;
     this.player.anims.play(RetroRunnerKey.DEAD_KEY);
     this.player.setCollideWorldBounds(false);
     this.player.setVelocityX(0);
@@ -628,14 +670,7 @@ export class GameScene extends Scene {
     // Camera shake for impact feedback
     this.cameras.main.shake(200, 0.01);
 
-    // Player blink effect
-    this.tweens.add({
-      targets: this.player,
-      alpha: { from: 1, to: 0.2 },
-      duration: 80,
-      yoyo: true,
-      repeat: 3,
-    });
+    this.playerView.blink();
 
     this.time.delayedCall(150, () => {
       this.player.setVelocityY(-350);
