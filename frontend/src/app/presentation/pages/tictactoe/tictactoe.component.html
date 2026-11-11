@@ -1,55 +1,54 @@
-<section class="shared-container justify-center relative">
-  <aside class="absolute top-[2%] left-[2%] z-50">
-    <button
-      class="text-format menu-logo"
-      role="button"
-      (click)="this.controller.reset()"
-      tabindex="0"
-      title="Reset button"
-    >
-      ||
-    </button>
-  </aside>
-  <main class="tictactoe-wrapper">
-    <h2 class="tictactoe-title">Tic Tac Toe</h2>
+<section class="shared-container relative">
+  <app-game-bar
+    class="absolute top-0 left-0"
+    title="Tic Tac Toe"
+    (pause)="controller.reset()"
+  />
 
-    <display-info
-      captionO="O's Turn"
-      captionX="X's Turn"
-      [oCurrent]="!this.controller.isPlayerXTurn()"
-      [xCurrent]="this.controller.isPlayerXTurn()"
-      [displayClass]="['mb-4']"
-    ></display-info>
+  <!-- The duel carries on from the New Game dialog: one fighter on each
+       side of the board, and the one in turn is lit. -->
+  <main class="arena" [class.turn-x]="xTurn" [class.turn-o]="!xTurn">
+    <aside class="fighter fighter-x" [class.is-active]="xTurn">
+      <p class="who">{{ whoPlays("X") }}</p>
+      <app-ttt-mark class="fighter-mark" mark="X" />
+      <p class="name">Player X</p>
+      <p class="score">
+        <span class="sr-only">Score: </span>{{ controller.scorePlayerX }}
+      </p>
+      <p class="turn-tag" aria-hidden="true">Turn</p>
+    </aside>
 
-    <div
-      #board
-      class="board"
-      aria-details="Board where tic tac toe is being played"
-    >
-      @for(row of this.controller.retrieveBoard(); track "ln-"+rowI; let rowI =
-      $index){
-      <div class="line" [id]="'line-' + (rowI + 1)">
-        @for(cell of row; track "cll"+cellI; let cellI = $index){
-        <div
-          class="cell"
-          (click)="cellSelected(rowI, cellI)"
-          [ngClass]="{ 'cell-X': cell === 'X', 'cell-O': cell === 'O' }"
-          [id]="'cell-' + (rowI + 1) + '-' + (cellI + 1)"
-        >
-          {{ cell !== "0" ? cell : "" }}
-        </div>
+    <div #board class="board" role="group" aria-label="Board">
+      @for (row of controller.retrieveBoard(); track rowI; let rowI = $index) {
+      @for (cell of row; track cellI; let cellI = $index) {
+      <button
+        type="button"
+        class="cell"
+        [class.cell-X]="cell === 'X'"
+        [class.cell-O]="cell === 'O'"
+        [class.is-free]="cell !== 'X' && cell !== 'O'"
+        [style.--i]="rowI * 3 + cellI"
+        [attr.aria-label]="cellLabel(rowI, cellI, cell)"
+        (click)="cellSelected(rowI, cellI)"
+      >
+        @if (cell === "X") {
+        <app-ttt-mark mark="X" />
+        } @else if (cell === "O") {
+        <app-ttt-mark mark="O" />
         }
-      </div>
-      }
+      </button>
+      } }
     </div>
 
-    <display-info
-      [captionO]="this.controller.scorePlayerO.toString()"
-      [captionX]="this.controller.scorePlayerX.toString()"
-      [oCurrent]="true"
-      [xCurrent]="true"
-      [displayClass]="['mt-7']"
-    ></display-info>
+    <aside class="fighter fighter-o" [class.is-active]="!xTurn">
+      <p class="who">{{ whoPlays("O") }}</p>
+      <app-ttt-mark class="fighter-mark" mark="O" />
+      <p class="name">Player O</p>
+      <p class="score">
+        <span class="sr-only">Score: </span>{{ controller.scorePlayerO }}
+      </p>
+      <p class="turn-tag" aria-hidden="true">Turn</p>
+    </aside>
   </main>
 
   @if(this.controller.partyIsBegging()){

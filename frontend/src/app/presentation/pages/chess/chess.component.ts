@@ -10,7 +10,9 @@ import {
   DestroyRef,
   OnInit,
   PLATFORM_ID,
+  effect,
   inject,
+  signal,
 } from '@angular/core';
 import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
 import { ChessController } from '@app/data/services/chess/ChessController.service';
@@ -41,6 +43,7 @@ export type SelectedSquare = {
   x?: number;
   y?: number;
 };
+import { GameBarComponent } from '@app-components/game-bar/game-bar.component';
 
 @Component({
   standalone: true,
@@ -48,6 +51,7 @@ export type SelectedSquare = {
   templateUrl: './chess.component.html',
   styleUrl: './chess.component.css',
   imports: [
+    GameBarComponent,
     CommonModule,
     NgClass,
     QueenPieceComponent,
@@ -69,6 +73,14 @@ export type SelectedSquare = {
 })
 export class ChessComponent implements OnInit {
   protected controller = inject(ChessController);
+  /** False until the first Play: tells the opening dialog from a pause. */
+  protected readonly started = signal(false);
+  private readonly watchStart = effect(
+    () => {
+      if (!this.controller.isPaused) this.started.set(true);
+    },
+    { allowSignalWrites: true }
+  );
   private document = inject(DOCUMENT);
   private platformId = inject(PLATFORM_ID);
   private destroy$ = inject(DestroyRef);

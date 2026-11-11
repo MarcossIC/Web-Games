@@ -1,4 +1,44 @@
-<div class="shared-container relative game-container">
-  <a routerLink="/games" class="back-btn" title="Back to games">&larr;</a>
-  <retro-runner-phaser-game [initialSeed]="urlSeed" />
+<div class="shared-container game-container">
+  <app-game-bar title="Runner" [canPause]="false" />
+
+  <main class="play">
+    <retro-runner-phaser-game class="screen" [initialSeed]="urlSeed" />
+
+    <div class="strip">
+      <!-- The game has no opening dialog, so the keys live here. -->
+      <dl class="legend">
+        <div class="legend-item">
+          <dt>Move</dt>
+          <dd><kbd>A</kbd><kbd>D</kbd></dd>
+        </div>
+        <div class="legend-item">
+          <dt>Jump</dt>
+          <dd><kbd>W</kbd><kbd>Space</kbd></dd>
+        </div>
+        <div class="legend-item">
+          <dt>Crouch</dt>
+          <dd><kbd>S</kbd></dd>
+        </div>
+        <div class="legend-item legend-note">Arrow keys work too</div>
+      </dl>
+
+      <!-- Every level is built from a seed, and the seed is in the
+           address: the same link is the same level for anyone. -->
+      @if (seed(); as current) {
+      <div class="seed">
+        <span class="seed-label">Seed</span>
+        <code class="seed-value">{{ current }}</code>
+        <button
+          class="seed-copy"
+          type="button"
+          title="Copy a link to this exact level"
+          aria-live="polite"
+          (click)="copyLink()"
+        >
+          {{ copyLabel() }}
+        </button>
+      </div>
+      }
+    </div>
+  </main>
 </div>

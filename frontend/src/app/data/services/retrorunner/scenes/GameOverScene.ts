@@ -5,6 +5,11 @@ import { PhaserSound } from '@app/data/services/phaser/types';
 import { SceneKeys } from '@app/data/services/retrorunner/main';
 import { Scene } from 'phaser';
 
+// The typefaces of the site. Silkscreen is a pixel face with a 8px grid:
+// sizes that are multiples of 8 stay sharp when the picture is enlarged.
+const TITLE_FONT = 'Audiowide, sans-serif';
+const TEXT_FONT = 'Silkscreen, monospace';
+
 class GameOverScene extends Scene {
   public gameOverSound!: PhaserSound;
   public capibaraSound!: PhaserSound;
@@ -41,12 +46,12 @@ class GameOverScene extends Scene {
 
     // Overlay
     const overlay = this.add.graphics();
-    overlay.fillStyle(0x000000, 0.5);
+    overlay.fillStyle(0x07060d, 0.6);
     overlay.fillRect(cam.scrollX, cam.scrollY, cam.width + 30, cam.height);
 
     // Background for text
     const textBackground = this.add.graphics();
-    textBackground.fillStyle(0x000000, 0.8);
+    textBackground.fillStyle(0x100e1c, 0.92);
     textBackground.fillRect(
       cam.scrollX,
       cam.scrollY + cam.height / 2 - 55,
@@ -58,8 +63,10 @@ class GameOverScene extends Scene {
     const gameOverText = this.add
       .text(cam.scrollX + cam.width / 2, cam.scrollY + cam.height / 2 - 28, 'You died', {
         fontSize: '36px',
-        color: '#ee3131',
-        fontFamily: 'monospace',
+        color: '#ffffff',
+        stroke: '#ff2e88',
+        strokeThickness: 4,
+        fontFamily: TITLE_FONT,
       })
       .setOrigin(0.5, 0.5);
 
@@ -70,9 +77,9 @@ class GameOverScene extends Scene {
         cam.scrollY + cam.height / 2 + 8,
         `Score: ${this.finalScore}  |  Best: ${highScore}`,
         {
-          fontSize: '12px',
-          color: '#ffd700',
-          fontFamily: 'monospace',
+          fontSize: '16px',
+          color: '#ffe14a',
+          fontFamily: TEXT_FONT,
         }
       )
       .setOrigin(0.5, 0.5);
@@ -84,9 +91,9 @@ class GameOverScene extends Scene {
         cam.scrollY + cam.height / 2 + 25,
         `Seed: ${this.seedKey}`,
         {
-          fontSize: '9px',
-          color: '#aabbcc',
-          fontFamily: 'monospace',
+          fontSize: '8px',
+          color: '#a7a1c6',
+          fontFamily: TEXT_FONT,
         }
       )
       .setOrigin(0.5, 0.5);
@@ -100,7 +107,7 @@ class GameOverScene extends Scene {
         {
           fontSize: '8px',
           color: '#fff',
-          fontFamily: 'monospace',
+          fontFamily: TEXT_FONT,
         }
       )
       .setOrigin(0.5, 0.5);

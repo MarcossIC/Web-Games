@@ -1,12 +1,15 @@
-import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { GalaxyBackgroundComponent } from '@app-components/galaxy-background/galaxy-background.component';
+import { GalaxyTravel } from '@app-components/galaxy-background/galaxy-travel.service';
 
 @Component({
   standalone: true,
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
-  imports: [CommonModule, RouterOutlet],
+  imports: [RouterOutlet, GalaxyBackgroundComponent],
 })
-export class AppComponent {}
+export class AppComponent {
+  protected readonly travel = inject(GalaxyTravel);
+}

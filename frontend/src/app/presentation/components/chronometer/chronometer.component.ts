@@ -31,7 +31,9 @@ export class ChronometerComponent implements OnInit {
 
   private destroy$ = inject(DestroyRef);
   private controller = inject(ChronometerServiceService);
-  private point = inject(PointsService);
+  // Only the Tetris route provides the score service; the chronometer is
+  // shared with games that have no score to report a time to.
+  private point = inject(PointsService, { optional: true });
 
   constructor() {
     interval(1000)
@@ -70,7 +72,7 @@ export class ChronometerComponent implements OnInit {
     const currentTime = `${this.formatTime(this.minutes())}:${this.formatTime(
       this.seconds()
     )}`;
-    this.point.updateTime(currentTime);
+    this.point?.updateTime(currentTime);
 
     if (
       this.maxMinute() < this.minutes() ||
@@ -78,7 +80,7 @@ export class ChronometerComponent implements OnInit {
     ) {
       this.maxMinute.set(this.minutes());
       this.maxSecond.set(this.seconds());
-      this.point.maxTime = currentTime;
+      if (this.point) this.point.maxTime = currentTime;
     }
   }
 

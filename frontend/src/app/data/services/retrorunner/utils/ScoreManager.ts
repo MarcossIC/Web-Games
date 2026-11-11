@@ -1,5 +1,11 @@
 import { GameObjects, Scene } from 'phaser';
 
+/**
+ * The pixel typeface of the site. It is drawn at 16px, its native grid,
+ * so it stays sharp when the 550x330 picture is enlarged.
+ */
+const HUD_FONT = 'Silkscreen, monospace';
+
 class ScoreManager {
   private scene: Scene;
   private score: number = 0;
@@ -16,11 +22,11 @@ class ScoreManager {
   createHUD() {
     this.scoreText = this.scene.add
       .text(10, 8, 'Score: 0', {
-        fontSize: '12px',
+        fontSize: '16px',
         color: '#fff',
-        stroke: '#000',
-        strokeThickness: 2,
-        fontFamily: 'monospace',
+        stroke: '#07060d',
+        strokeThickness: 3,
+        fontFamily: HUD_FONT,
       })
       .setScrollFactor(0)
       .setDepth(100);
@@ -28,11 +34,11 @@ class ScoreManager {
     const highScore = parseInt(localStorage.getItem('retroRunnerHighScore') ?? '0', 10);
     this.highScoreText = this.scene.add
       .text(this.scene.scale.width - 10, 8, `Best: ${highScore}`, {
-        fontSize: '10px',
-        color: '#ffd700',
-        stroke: '#000',
-        strokeThickness: 2,
-        fontFamily: 'monospace',
+        fontSize: '16px',
+        color: '#ffe14a',
+        stroke: '#07060d',
+        strokeThickness: 3,
+        fontFamily: HUD_FONT,
       })
       .setOrigin(1, 0)
       .setScrollFactor(0)
@@ -52,11 +58,11 @@ class ScoreManager {
   showFloatingText(x: number, y: number, text: string, color: string = '#ffd700') {
     const floatingText = this.scene.add
       .text(x, y, text, {
-        fontSize: '10px',
+        fontSize: '16px',
         color,
-        stroke: '#000',
-        strokeThickness: 1,
-        fontFamily: 'monospace',
+        stroke: '#07060d',
+        strokeThickness: 3,
+        fontFamily: HUD_FONT,
       })
       .setOrigin(0.5, 1)
       .setDepth(100);

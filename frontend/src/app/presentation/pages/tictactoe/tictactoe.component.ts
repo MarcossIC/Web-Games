@@ -10,10 +10,11 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TicTacToeControllerService } from '@app/data/services/tictactoe/TicTacToeController.service';
-import { DisplayInfoComponent } from '@app/presentation/components/display-info/display-info.component';
 import { EndgameModalTttComponent } from '@app/presentation/components/endgame-modal-ttt/endgame-modal-ttt.component';
 import { SelectModalTttComponent } from '@app/presentation/components/select-modal-ttt/select-modal-ttt.component';
 import { delay, filter, fromEvent } from 'rxjs';
+import { GameBarComponent } from '@app-components/game-bar/game-bar.component';
+import { TttMarkComponent } from '@app-components/ttt-mark/ttt-mark.component';
 
 @Component({
   standalone: true,
@@ -21,9 +22,10 @@ import { delay, filter, fromEvent } from 'rxjs';
   templateUrl: './tictactoe.component.html',
   styleUrl: './tictactoe.component.css',
   imports: [
+    GameBarComponent,
     CommonModule,
     SelectModalTttComponent,
-    DisplayInfoComponent,
+    TttMarkComponent,
     EndgameModalTttComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,6 +50,26 @@ export class TictactoeComponent {
     this.controller._notifyBot
       .pipe(delay(500), takeUntilDestroyed(this.destroy))
       .subscribe(() => this.controller.playBot());
+  }
+
+  protected get xTurn(): boolean {
+    return this.controller.isPlayerXTurn();
+  }
+
+  /** Who is behind a mark: the main player, a friend or the bot. */
+  protected whoPlays(mark: 'X' | 'O'): string {
+    const mainPlaysIt =
+      mark === 'O'
+        ? this.controller.mainPlayerPlaysWithO()
+        : this.controller.mainPlayerPlaysWithX();
+    if (mainPlaysIt) return 'You';
+    return this.controller.isBotPlaying() ? 'Bot' : 'Friend';
+  }
+
+  /** What a screen reader announces for a cell. */
+  protected cellLabel(row: number, column: number, cell: string): string {
+    const state = cell === 'X' || cell === 'O' ? cell : 'empty';
+    return `Row ${row + 1}, column ${column + 1}: ${state}`;
   }
 
   protected cellSelected(row: number, cell: number): void {

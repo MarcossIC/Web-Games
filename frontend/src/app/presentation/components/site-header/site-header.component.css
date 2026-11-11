@@ -1,0 +1,33 @@
+.bar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding: 1rem clamp(1.25rem, 3vw, 2rem) 0;
+  animation: gg-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 44px;
+  padding: 0 1rem;
+  border: 2px solid var(--gg-line);
+  background: var(--gg-panel);
+  color: var(--gg-text);
+  font-family: var(--gg-font-pixel);
+  font-size: 0.875rem;
+  transition: border-color 0.15s linear, color 0.15s linear;
+}
+
+.back:hover {
+  border-color: var(--gg-cyan);
+  color: var(--gg-cyan);
+}
+
+.back:focus-visible {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 3px;
+}
