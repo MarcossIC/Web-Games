@@ -1,5 +1,9 @@
 import { provideHttpClient, withFetch } from '@angular/common/http';
-import { ApplicationConfig, ErrorHandler } from '@angular/core';
+import {
+  ApplicationConfig,
+  ErrorHandler,
+  provideZoneChangeDetection,
+} from '@angular/core';
 import { GlobalErrorHandler } from '@app/data/services/global-error-handler.service';
 import {
   PreloadAllModules,
@@ -13,6 +17,7 @@ import routes from './app.routing';
 import {
   provideClientHydration,
   withHttpTransferCacheOptions,
+  withNoIncrementalHydration
 } from '@angular/platform-browser';
 
 /**
@@ -32,6 +37,10 @@ function skipGalaxyTrips({ transition, from, to }: ViewTransitionInfo): void {
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    // Angular is zoneless unless told otherwise. The games rely on zone.js:
+    // their loops step out of it with runOutsideAngular and expect timers
+    // and DOM events to refresh the page on their own.
+    provideZoneChangeDetection(),
     // Page changes animate through the browser's View Transitions API;
     // the CSS lives in styles.css. Browsers without it just swap pages.
     provideRouter(
@@ -39,7 +48,7 @@ export const appConfig: ApplicationConfig = {
       withViewTransitions({ onViewTransitionCreated: skipGalaxyTrips })
     ),
     provideHttpClient(withFetch()),
-    provideClientHydration(),
+    provideClientHydration(withNoIncrementalHydration()),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],
 };

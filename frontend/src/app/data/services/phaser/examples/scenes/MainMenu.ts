@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { GameObjects, Scene } from 'phaser';
 
 import { EventBus } from '../../EventBus';

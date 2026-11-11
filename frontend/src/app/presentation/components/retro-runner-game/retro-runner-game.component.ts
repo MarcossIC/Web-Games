@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { EventBus } from '@app/data/services/phaser/EventBus';
 import StartGame, { SceneKeys } from '@app/data/services/retrorunner/main';
 import { Scene, Game } from 'phaser';
@@ -6,6 +6,7 @@ import { Scene, Game } from 'phaser';
 @Component({
   standalone: true,
   selector: 'retro-runner-phaser-game',
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: '<div id="retro-runner-game"></div>',
 })
 export class RetroRunnerPhaserGameComponent implements OnInit, OnDestroy {

@@ -153,22 +153,20 @@ class GameFloorManager {
     const threshold = cameraScrollX - RECYCLE_DISTANCE;
 
     const floorToDestroy: Physics.Arcade.Sprite[] = [];
-    this.floor.children.each((child) => {
+    this.floor.children.forEach((child) => {
       const sprite = child as Physics.Arcade.Sprite;
       if (sprite.active && sprite.x < threshold) {
         floorToDestroy.push(sprite);
       }
-      return true;
     });
     for (const s of floorToDestroy) s.destroy();
 
     const grassToDestroy: GameObjects.Sprite[] = [];
-    this.grassGroup.children.each((child) => {
+    this.grassGroup.children.forEach((child) => {
       const sprite = child as GameObjects.Sprite;
       if (sprite.active && sprite.x < threshold) {
         grassToDestroy.push(sprite);
       }
-      return true;
     });
     for (const s of grassToDestroy) s.destroy();
   }

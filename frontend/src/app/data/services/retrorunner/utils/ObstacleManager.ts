@@ -82,14 +82,13 @@ class ObstacleManager {
   }
 
   update(cameraScrollX: number) {
-    this.obstacles.children.each((child) => {
+    this.obstacles.children.forEach((child) => {
       const sprite = child as Physics.Arcade.Sprite;
       if (sprite.active && sprite.x < cameraScrollX - RECYCLE_DISTANCE) {
         // Pool instead of destroy: deactivate and hide
         sprite.setActive(false).setVisible(false);
         sprite.body!.enable = false;
       }
-      return true;
     });
   }
 

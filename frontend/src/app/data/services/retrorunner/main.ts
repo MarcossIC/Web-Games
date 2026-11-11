@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { AUTO, Game } from 'phaser';
 import { GameScene } from '@app/data/services/retrorunner/scenes/GameScene';
 import { PreloaderScene } from '@app/data/services/retrorunner/scenes/PreloaderScene';

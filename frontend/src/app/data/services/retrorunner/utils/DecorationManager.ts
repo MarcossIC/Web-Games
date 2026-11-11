@@ -276,13 +276,12 @@ class DecorationManager {
   }
 
   update(cameraScrollX: number) {
-    this.decorations.children.each((child) => {
+    this.decorations.children.forEach((child) => {
       const sprite = child as GameObjects.Sprite;
       if (sprite.active && sprite.x < cameraScrollX - RECYCLE_DISTANCE) {
         // Pool instead of destroy
         sprite.setActive(false).setVisible(false);
       }
-      return true;
     });
   }
 }

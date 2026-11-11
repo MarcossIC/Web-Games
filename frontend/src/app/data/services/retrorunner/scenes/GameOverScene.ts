@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import {
   RetroRunnerMedia,
 } from '@app/data/models/retro-runner/RetroRunnerKeys';

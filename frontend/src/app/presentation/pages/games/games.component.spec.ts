@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import {
   ComponentFixture,
   fakeAsync,
@@ -10,7 +10,8 @@ import { EXIT_MS } from '@app-components/galaxy-background/galaxy-travel.service
 import { GAMES } from 'assets/constants/games';
 import { GamesComponent } from './games.component';
 
-@Component({ standalone: true, template: '' })
+@Component({ standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ template: '' })
 class BlankPage {}
 
 describe('GamesComponent', () => {

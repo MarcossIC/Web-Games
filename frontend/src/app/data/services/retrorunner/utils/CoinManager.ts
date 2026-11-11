@@ -146,14 +146,13 @@ class CoinManager {
   }
 
   update(cameraScrollX: number) {
-    this.coins.children.each((child) => {
+    this.coins.children.forEach((child) => {
       const sprite = child as Physics.Arcade.Sprite;
       if (sprite.active && sprite.x < cameraScrollX - RECYCLE_DISTANCE) {
         // Pool instead of destroy
         sprite.setActive(false).setVisible(false);
         (sprite.body as Physics.Arcade.Body).enable = false;
       }
-      return true;
     });
   }
 
