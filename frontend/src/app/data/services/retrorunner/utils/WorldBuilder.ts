@@ -7,6 +7,7 @@ import CoinManager from './CoinManager';
 import CollapsingPlatformManager from './CollapsingPlatformManager';
 import DecorationManager from './DecorationManager';
 import ObstacleManager from './ObstacleManager';
+import PicturePool from './PicturePool';
 
 /** The pools that hold what the world places and takes back. */
 export interface WorldPools {
@@ -27,9 +28,11 @@ const WATER_ALPHA = 0.4;
 /** A chunk in the world: its plan and everything built from it. */
 interface BuiltChunk {
   plan: ChunkPlan;
-  /** Tiles, blocks and invisible platforms. */
-  solids: Physics.Arcade.Sprite[];
-  /** Grass, the fishing hut and its water. */
+  /** What the player stands on: runs of floor, blocks and platforms. */
+  bodies: Physics.Arcade.Sprite[];
+  /** Floor tiles, blocks and grass. */
+  pictures: GameObjects.Image[];
+  /** The fishing hut and its water. */
   scenery: GameObjects.GameObject[];
   stones: Physics.Arcade.Sprite[];
   coins: Physics.Arcade.Sprite[];
@@ -41,11 +44,18 @@ interface BuiltChunk {
  * Turns the generator's plans into the world the player runs on, and takes
  * each chunk back whole once it is far behind. It decides nothing: every
  * position comes from the plan.
+ *
+ * What is drawn and what is stood on are kept apart. A run of floor is a
+ * row of tile pictures over a single invisible body, so the player crosses
+ * no seams between its tiles. Bodies and pictures are both reused.
  */
 class WorldBuilder {
-  /** Everything the player stands on. */
+  /** Everything the player stands on, all of it invisible. */
   readonly floor: Physics.Arcade.StaticGroup;
+  /** What is drawn of the floor, the blocks and the grass. */
+  readonly pictures: PicturePool;
   readonly scenery: GameObjects.Group;
+  private freeBodies: Physics.Arcade.Sprite[] = [];
   private chunks: BuiltChunk[] = [];
   private builtUntilX = 0;
 
@@ -55,9 +65,10 @@ class WorldBuilder {
     private readonly pools: WorldPools
   ) {
     this.floor = scene.physics.add.staticGroup();
+    this.pictures = new PicturePool(scene);
     this.scenery = scene.add.group();
 
-    // A 1x1 see-through texture for invisible platforms.
+    // A 1x1 see-through texture for the bodies.
     if (!scene.textures.exists(INVISIBLE_TEXTURE)) {
       const gfx = scene.add.graphics();
       gfx.fillStyle(0x000000, 0);
@@ -106,7 +117,8 @@ class WorldBuilder {
   private build(plan: ChunkPlan): BuiltChunk {
     const chunk: BuiltChunk = {
       plan,
-      solids: [],
+      bodies: [],
+      pictures: [],
       scenery: [],
       stones: [],
       coins: [],
@@ -120,13 +132,16 @@ class WorldBuilder {
   private buildPiece(piece: Piece, chunk: BuiltChunk) {
     switch (piece.type) {
       case 'floor':
-        this.buildFloor(piece, chunk.solids);
+        this.buildFloor(piece, chunk);
         break;
-      case 'block':
-        chunk.solids.push(this.solid(piece.x, piece.y, RetroRunnerMedia.GRASS_BLOCK));
+      case 'block': {
+        const top = piece.y - TILE.BLOCK_SIZE / 2;
+        chunk.bodies.push(this.takeBody(piece.x, top, TILE.BLOCK_SIZE, TILE.BLOCK_SIZE));
+        chunk.pictures.push(this.pictures.take(piece.x, piece.y, RetroRunnerMedia.GRASS_BLOCK));
         break;
+      }
       case 'platform':
-        chunk.solids.push(this.invisiblePlatform(piece.x, piece.y, piece.width, piece.height));
+        chunk.bodies.push(this.takeBody(piece.x, piece.y, piece.width, piece.height));
         break;
       case 'bridge':
         chunk.bridges.push(this.pools.bridges.spawnBridge(piece.startX, piece.endX, piece.floorY));
@@ -141,7 +156,7 @@ class WorldBuilder {
         chunk.decoration.push(this.pools.decoration.place(piece));
         break;
       case 'grass':
-        chunk.scenery.push(this.scenery.create(piece.x, piece.y, piece.key).setOrigin(0, 0.5));
+        chunk.pictures.push(this.pictures.take(piece.x, piece.y, piece.key));
         break;
       case 'hut': {
         const hut = this.scene.add
@@ -166,39 +181,49 @@ class WorldBuilder {
     }
   }
 
-  private buildFloor(piece: FloorPiece, solids: Physics.Arcade.Sprite[]) {
-    solids.push(this.solid(piece.x, piece.y, RetroRunnerMedia.FLOORGRASS_START));
+  /** The tiles of a run of floor, over one body that spans all of them. */
+  private buildFloor(piece: FloorPiece, chunk: BuiltChunk) {
+    const endX = floorRunEnd(piece.x, piece.centerTiles);
+    const top = piece.y - TILE.FLOOR_HEIGHT / 2;
+    chunk.bodies.push(this.takeBody(piece.x, top, endX + TILE.END_WIDTH - piece.x, TILE.FLOOR_HEIGHT));
+
+    chunk.pictures.push(this.pictures.take(piece.x, piece.y, RetroRunnerMedia.FLOORGRASS_START));
     for (let i = 0; i < piece.centerTiles; i++) {
       const x = piece.x + TILE.START_WIDTH + i * TILE.CENTER_WIDTH;
-      solids.push(this.solid(x, piece.y, RetroRunnerMedia.FLOORGRASS_CENTER));
+      chunk.pictures.push(this.pictures.take(x, piece.y, RetroRunnerMedia.FLOORGRASS_CENTER));
     }
-    solids.push(this.solid(floorRunEnd(piece.x, piece.centerTiles), piece.y, RetroRunnerMedia.FLOORGRASS_END));
-  }
-
-  /** A tile or a block: its left edge at `x`, its centre at `y`. */
-  private solid(x: number, y: number, key: RetroRunnerMedia): Physics.Arcade.Sprite {
-    const sprite = this.floor.create(x, y, key) as Physics.Arcade.Sprite;
-    sprite.setOrigin(0, 0.5).refreshBody();
-    return sprite;
+    chunk.pictures.push(this.pictures.take(endX, piece.y, RetroRunnerMedia.FLOORGRASS_END));
   }
 
   /**
-   * An invisible body to stand on: a 1x1 texture stretched to the size, so
-   * the body matches it exactly.
+   * An invisible body to stand on, its top-left corner at `left`, `top`: a
+   * 1x1 texture stretched to the size, so the body matches it exactly. A
+   * static body copies its size and place from its sprite only when
+   * refreshed, so a reused one is refreshed after it moves.
    */
-  private invisiblePlatform(x: number, y: number, width: number, height: number): Physics.Arcade.Sprite {
-    const platform = this.floor.create(x, y, INVISIBLE_TEXTURE) as Physics.Arcade.Sprite;
-    platform.setVisible(false);
-    platform.setOrigin(0, 0);
-    platform.setDisplaySize(width, height);
-    platform.body!.setSize(width, height);
-    platform.body!.setOffset(0, 0);
-    platform.refreshBody();
-    return platform;
+  private takeBody(left: number, top: number, width: number, height: number): Physics.Arcade.Sprite {
+    let body = this.freeBodies.pop();
+    if (body) {
+      body.setActive(true);
+      body.body!.enable = true;
+    } else {
+      body = this.floor.create(left, top, INVISIBLE_TEXTURE) as Physics.Arcade.Sprite;
+      body.setVisible(false).setOrigin(0, 0);
+    }
+    body.setPosition(left, top).setDisplaySize(width, height);
+    body.refreshBody();
+    return body;
+  }
+
+  private releaseBody(body: Physics.Arcade.Sprite) {
+    body.setActive(false);
+    body.body!.enable = false;
+    this.freeBodies.push(body);
   }
 
   private release(chunk: BuiltChunk) {
-    for (const solid of chunk.solids) solid.destroy();
+    for (const body of chunk.bodies) this.releaseBody(body);
+    for (const picture of chunk.pictures) this.pictures.release(picture);
     for (const thing of chunk.scenery) thing.destroy();
     for (const stone of chunk.stones) this.pools.stones.release(stone);
     for (const coin of chunk.coins) this.pools.coins.release(coin);

@@ -5,6 +5,8 @@ export const TILE = {
   START_WIDTH: RetroRunnerFloor.FLOORGRASS_START_WIDTH, // 81
   CENTER_WIDTH: RetroRunnerFloor.FLOORGRASS_CENTER_WIDTH, // 65
   END_WIDTH: RetroRunnerFloor.FLOORGRASS_END_WIDTH, // 15
+  /** The three floor tiles are the same height. */
+  FLOOR_HEIGHT: 35,
   BLOCK_SIZE: RetroRunnerFloor.GRASS_BLOCK_WIDTH, // 32
 } as const;
 
