@@ -72,23 +72,25 @@ describe('CollapsingPlatformManager', () => {
     });
   });
 
-  describe('recycling', () => {
-    it('removes blocks left behind, even if nobody stepped on them, with their tweens', () => {
-      manager.spawnBridge(100, 200, TEST_FLOOR_Y);
+  describe('releasing', () => {
+    it('removes a bridge, even if nobody stepped on it, with its tweens', () => {
+      const bridge = manager.spawnBridge(100, 200, TEST_FLOOR_Y);
       expect(liveTweens()).toBeGreaterThan(0);
 
-      manager.recycle(2000);
+      manager.release(bridge);
 
       expect(manager.getGroup().getLength()).toBe(0);
       expect(liveTweens()).toBe(0);
     });
 
-    it('keeps the blocks that are still ahead', () => {
+    it('keeps the other bridges', () => {
+      const behind = manager.spawnBridge(100, 200, TEST_FLOOR_Y);
       manager.spawnBridge(3000, 3100, TEST_FLOOR_Y);
 
-      manager.recycle(2000);
+      manager.release(behind);
 
       expect(manager.getGroup().getLength()).toBe(4);
+      expect(liveTweens()).toBe(4);
     });
   });
 });

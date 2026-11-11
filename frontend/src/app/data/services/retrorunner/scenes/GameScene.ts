@@ -10,17 +10,14 @@ import {
   PhaserSound,
 } from '@app/data/services/phaser/types';
 import { SceneKeys } from '@app/data/services/retrorunner/main';
+import { BiomeType } from '@app/data/services/retrorunner/generation/chunk-plan';
+import { biomeAt, speedMultiplierAt } from '@app/data/services/retrorunner/generation/difficulty-curve';
+import { PLAYER_GRAVITY } from '@app/data/services/retrorunner/generation/jump-model';
+import { WorldGenerator } from '@app/data/services/retrorunner/generation/world-generator';
 import CoinManager from '@app/data/services/retrorunner/utils/CoinManager';
 import CollapsingPlatformManager from '@app/data/services/retrorunner/utils/CollapsingPlatformManager';
 import DecorationManager from '@app/data/services/retrorunner/utils/DecorationManager';
-import DifficultyManager, { BiomeType } from '@app/data/services/retrorunner/utils/DifficultyManager';
 import GameBackgroundManager from '@app/data/services/retrorunner/utils/GameBackgroundManager';
-import GameFloorManager, {
-  BridgeInfo,
-  DualPathInfo,
-  SegmentInfo,
-  WorldCallbacks,
-} from '@app/data/services/retrorunner/utils/GameFloorManager';
 import Joystick from '@app/data/services/retrorunner/utils/JoyStick';
 import ObstacleManager from '@app/data/services/retrorunner/utils/ObstacleManager';
 import { PlayerActions } from '@app/data/services/retrorunner/utils/PlayerActions';
@@ -28,12 +25,8 @@ import ScoreManager from '@app/data/services/retrorunner/utils/ScoreManager';
 import SeededRandom from '@app/data/services/retrorunner/utils/SeededRandom';
 import { followScroll, lerpForDelta } from '@app/data/services/retrorunner/utils/camera-smoothing';
 import PlayerView from '@app/data/services/retrorunner/utils/PlayerView';
+import WorldBuilder from '@app/data/services/retrorunner/utils/WorldBuilder';
 import { Scene, GameObjects } from 'phaser';
-
-// Speed ramp: player gradually gets faster
-const BASE_SPEED_MULTIPLIER = 1;
-const MAX_SPEED_MULTIPLIER = 1.4;
-const SPEED_RAMP_DISTANCE = 15000; // distance to reach max speed
 
 // How fast the camera catches up with the player, tuned at 60 fps.
 const CAMERA_LERP = 0.1;
@@ -42,7 +35,7 @@ const CAMERA_LERP = 0.1;
 const CAMERA_DEADZONE = 80;
 // How much each parallax layer moves per pixel of camera scroll.
 const PARALLAX_SPEEDS = [0.08, 0.15, 0.25, 0.35];
-// Objects left behind are recycled once per this many pixels of scroll,
+// Chunks left behind are released once per this many pixels of scroll,
 // not on every frame: nothing visible depends on when it happens.
 const RECYCLE_EVERY_PX = 64;
 
@@ -54,14 +47,14 @@ export class GameScene extends Scene {
 
   public actions!: PlayerActions;
   public backgroundManager!: GameBackgroundManager;
-  public floorManager!: GameFloorManager;
+  /** The world: planned from the seed alone, built from the plans. */
+  public world!: WorldBuilder;
   public joystick!: Joystick;
   public scoreManager!: ScoreManager;
   public obstacleManager!: ObstacleManager;
   public coinManager!: CoinManager;
   public decorationManager!: DecorationManager;
   public collapsingManager!: CollapsingPlatformManager;
-  public difficultyManager!: DifficultyManager;
 
   private floorY!: number;
   private dustEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -78,53 +71,6 @@ export class GameScene extends Scene {
   /** How long the current frame took, for the work done before drawing. */
   private frameDelta: number = 0;
   public rng!: SeededRandom;
-
-  /**
-   * What to place on each new piece of floor. Built once: the world asks
-   * on every frame, and a fresh set of functions per frame is garbage.
-   * Everything here reads the piece's own difficulty and biome, never the
-   * player's, so the same seed always fills the world the same way.
-   */
-  private readonly worldCallbacks: WorldCallbacks = {
-    onSegmentCreated: (segment: SegmentInfo) => {
-      // Pattern segments have their own structure — no extra spawning
-      // (their internal buildGround() calls already place grass)
-      if (segment.kind === 'pattern') return;
-
-      const { startX, endX, floorY, difficulty } = segment;
-      this.coinManager.trySpawnCoins(startX, endX, floorY, difficulty.coinChance);
-      this.decorationManager.spawnOnSegment(startX, endX, floorY, difficulty.biome);
-      // A rest zone is a breather: coins, no hazards.
-      if (segment.kind === 'rest') return;
-
-      this.obstacleManager.trySpawnObstacle(startX, endX, floorY, difficulty.obstacleChance);
-    },
-    onGapCreated: (startX: number, endX: number, floorY: number) => {
-      this.coinManager.spawnArcCoins(startX, endX, floorY);
-    },
-    onBridgeCreated: (bridge: BridgeInfo) => {
-      this.collapsingManager.spawnBridge(bridge.startX, bridge.endX, bridge.floorY);
-    },
-    onDualPathCreated: (info: DualPathInfo) => {
-      // Build exclusion zones from elevated platforms (prevent decoration overlap)
-      const exclusions = info.elevatedPlatforms.map(p => ({ x: p.x - 20, width: 104 }));
-
-      // Ground path: obstacle + decorations (with exclusion zones)
-      const midX = info.groundStartX + (info.groundEndX - info.groundStartX) * 0.3;
-      this.obstacleManager.trySpawnObstacle(
-        midX, info.groundEndX, info.groundFloorY, 0.6
-      );
-      this.decorationManager.spawnOnSegment(
-        info.groundStartX, info.groundEndX, info.groundFloorY, info.biome, exclusions
-      );
-
-      // Elevated path: coins on each platform (reward for taking the risk)
-      for (const plat of info.elevatedPlatforms) {
-        const platSurface = plat.y - 16;
-        this.coinManager.trySpawnCoins(plat.x, plat.x + 64, platSurface, 0.9);
-      }
-    },
-  };
 
   constructor() {
     super(SceneKeys.GAME);
@@ -155,7 +101,6 @@ export class GameScene extends Scene {
 
     this.actions = new PlayerActions();
     this.backgroundManager = new GameBackgroundManager();
-    this.difficultyManager = new DifficultyManager();
 
     this.background = this.add.tileSprite(
       0,
@@ -191,32 +136,30 @@ export class GameScene extends Scene {
     // Dust particle emitter
     this.createDustEmitter();
 
-    // Floor
-    this.floorY = this.scale.height - 16;
-    // Independent RNG streams — prevents butterfly effect between systems
-    this.floorManager = new GameFloorManager(
-      this,
-      this.difficultyManager,
-      this.rng.fork('terrain'),
-      this.rng.fork('grass')
-    );
-    this.floorManager.createInitialWorld(this.floorY);
-
-    // Decorations
-    this.decorationManager = new DecorationManager(this, this.rng.fork('deco'));
-
     // Score
     this.scoreManager = new ScoreManager(this, this.player.x);
     this.scoreManager.createHUD();
 
-    // Obstacles
-    this.obstacleManager = new ObstacleManager(this, this.rng.fork('obstacles'));
-
-    // Coins
-    this.coinManager = new CoinManager(this, this.scoreManager, this.rng.fork('coins'));
-
-    // Collapsing platforms: bridges the floor manager places over gaps
+    // What the world places and takes back
+    this.decorationManager = new DecorationManager(this);
+    this.obstacleManager = new ObstacleManager(this);
+    this.coinManager = new CoinManager(this, this.scoreManager);
     this.collapsingManager = new CollapsingPlatformManager(this);
+
+    // The world. Everything in it comes from the seed: the generator plans
+    // each chunk from it, the builder only draws the plans.
+    this.floorY = this.scale.height - 16;
+    this.world = new WorldBuilder(
+      this,
+      new WorldGenerator({ key: this.rng.seedKey, floorY: this.floorY }),
+      {
+        stones: this.obstacleManager,
+        coins: this.coinManager,
+        decoration: this.decorationManager,
+        bridges: this.collapsingManager,
+      }
+    );
+    this.world.fillAhead(0);
 
     // Animations
     this.startAnimations();
@@ -226,7 +169,7 @@ export class GameScene extends Scene {
     this.physics.world.setBounds(0, 0, Number.MAX_SAFE_INTEGER, this.scale.height);
 
     // Colliders
-    this.physics.add.collider(this.player, this.floorManager.floor);
+    this.physics.add.collider(this.player, this.world.floor);
     this.physics.add.collider(
       this.player,
       this.collapsingManager.getGroup(),
@@ -380,7 +323,7 @@ export class GameScene extends Scene {
       .sprite(50, 100, RetroRunnerKey.RUNNER)
       .setOrigin(0, 1)
       .setCollideWorldBounds(false)
-      .setGravityY(400)
+      .setGravityY(PLAYER_GRAVITY)
       .setState(RetroRunnerStates.RUNNER_STATE_IDLE)
       .setScale(1.6)
       .setDepth(10);
@@ -493,15 +436,10 @@ export class GameScene extends Scene {
     const isOnFloor = this.player.body.onFloor() || this.player.body.touching.down;
 
     // Asymmetric gravity: different feel for rising / apex / falling
-    this.actions.applyAsymmetricGravity(this.player, isOnFloor, 400);
+    this.actions.applyAsymmetricGravity(this.player, isOnFloor, PLAYER_GRAVITY);
 
-    // Speed ramp based on distance
-    const distance = Math.max(0, this.player.x - 50);
-    const speedMult = Math.min(
-      MAX_SPEED_MULTIPLIER,
-      BASE_SPEED_MULTIPLIER + (distance / SPEED_RAMP_DISTANCE) * (MAX_SPEED_MULTIPLIER - BASE_SPEED_MULTIPLIER)
-    );
-    this.actions.setSpeedMultiplier(speedMult);
+    // The player gets faster with the distance; the world is planned for it.
+    this.actions.setSpeedMultiplier(speedMultiplierAt(this.player.x));
 
     // Update coyote/buffer timers
     this.actions.updateTimers(isOnFloor, now);
@@ -552,7 +490,7 @@ export class GameScene extends Scene {
 
     // Biome transition: only the sky and particles follow the player. The
     // world's biome comes from each chunk's own position.
-    const biome = this.difficultyManager.getConfig(this.player.x).biome;
+    const biome = biomeAt(this.player.x);
     if (biome !== this.currentBiome) {
       this.currentBiome = biome;
       this.transitionBiome(biome);
@@ -561,15 +499,11 @@ export class GameScene extends Scene {
     // Update managers
     const scrollX = this.cameras.main.scrollX;
 
-    this.floorManager.generateAhead(scrollX, this.worldCallbacks);
+    this.world.fillAhead(scrollX);
 
     if (scrollX - this.lastRecycleX >= RECYCLE_EVERY_PX) {
       this.lastRecycleX = scrollX;
-      this.floorManager.destroyBehindCamera(scrollX);
-      this.obstacleManager.update(scrollX);
-      this.coinManager.update(scrollX);
-      this.decorationManager.update(scrollX);
-      this.collapsingManager.recycle(scrollX);
+      this.world.releaseBehind(scrollX);
     }
     this.collapsingManager.updateBlocks(now);
     this.scoreManager.update(this.player.x);

@@ -3,6 +3,7 @@ import { AUTO, Game } from 'phaser';
 import { GameScene } from '@app/data/services/retrorunner/scenes/GameScene';
 import { PreloaderScene } from '@app/data/services/retrorunner/scenes/PreloaderScene';
 import GameOverScene from '@app/data/services/retrorunner/scenes/GameOverScene';
+import { WORLD_GRAVITY } from '@app/data/services/retrorunner/generation/jump-model';
 
 export enum SceneKeys {
   GAME = 'Game',
@@ -28,7 +29,7 @@ const config: Phaser.Types.Core.GameConfig = {
   physics: {
     default: 'arcade',
     arcade: {
-      gravity: { y: 300, x: 0 },
+      gravity: { y: WORLD_GRAVITY, x: 0 },
       debug: false,
       // One physics step per rendered frame, sized by the frame's time.
       // The default is a fixed 60 Hz step on its own clock: on any screen

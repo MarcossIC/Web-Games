@@ -3,23 +3,27 @@ import {
   RetroRunnerStates,
 } from '@app/data/models/retro-runner/RetroRunnerKeys';
 import { PhaserPlayerWithBody } from '@app/data/services/phaser/types';
+import {
+  APEX_GRAVITY_MULT,
+  APEX_VELOCITY_THRESHOLD,
+  BASE_WALK_SPEED,
+  FALL_GRAVITY_MULT,
+  JUMP_SPEED,
+} from '@app/data/services/retrorunner/generation/jump-model';
+
+// The speeds and gravities of the jump live in jump-model, which the world
+// generator plans with: changing them here would build jumps nobody makes.
 
 // --- Movement ---
-const BASE_WALK_SPEED = 190;
 const GROUND_ACCEL = 1200;    // px/s^2 — snappy on ground
 const GROUND_DECEL = 1800;    // px/s^2 — quick stop
 const AIR_ACCEL = 600;        // px/s^2 — reduced air control
 const AIR_DECEL = 200;        // px/s^2 — keeps momentum in air
 
 // --- Jump ---
-const JUMP_VELOCITY = -510;
+const JUMP_VELOCITY = -JUMP_SPEED;
 const VARIABLE_JUMP_CUTOFF = -200;
 const FAST_FALL_SPEED = 250;
-
-// --- Asymmetric gravity ---
-const FALL_GRAVITY_MULT = 1.6;   // heavier when falling — snappy landings
-const APEX_GRAVITY_MULT = 0.55;  // lighter near apex — hang time
-const APEX_VELOCITY_THRESHOLD = 80; // |vy| below this = "near apex"
 
 // --- Timers ---
 const COYOTE_TIME_MS = 90;

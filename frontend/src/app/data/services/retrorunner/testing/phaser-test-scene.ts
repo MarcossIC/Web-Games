@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { RetroRunnerMedia } from '@app/data/models/retro-runner/RetroRunnerKeys';
+import { WORLD_GRAVITY } from '../generation/jump-model';
 
 /** Same internal size as the real game (see main.ts). */
 export const TEST_WIDTH = 550;
@@ -84,7 +85,7 @@ export function startTestScene(): Promise<TestScene> {
       audio: { noAudio: true },
       physics: {
         default: 'arcade',
-        arcade: { gravity: { x: 0, y: 300 } },
+        arcade: { gravity: { x: 0, y: WORLD_GRAVITY } },
       },
       scene: Harness,
     });

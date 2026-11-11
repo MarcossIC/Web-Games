@@ -4,7 +4,6 @@ import { Physics, Scene } from 'phaser';
 
 const COLLAPSE_DELAY_MS = 450;  // time standing before shaking starts
 const SHAKE_DURATION_MS = 300;  // shake before falling
-const RECYCLE_DISTANCE = 600;
 const BLOCK_WIDTH = RetroRunnerFloor.GRASS_BLOCK_WIDTH;
 // A block's centre sits this far below the floor's surface (it is 32 px tall).
 const BLOCK_CENTER_BELOW_SURFACE = 16;
@@ -59,12 +58,13 @@ class CollapsingPlatformManager {
    * @param holeEndX - where the floor on the right starts
    * @param floorY - the centre of the floor tiles on both sides
    */
-  spawnBridge(holeStartX: number, holeEndX: number, floorY: number) {
+  spawnBridge(holeStartX: number, holeEndX: number, floorY: number): Physics.Arcade.Sprite[] {
     const span = holeEndX - holeStartX;
     const count = Math.max(1, Math.ceil(span / BLOCK_WIDTH));
     // The blocks overhang both edges by the same amount.
     const firstX = holeStartX - (count * BLOCK_WIDTH - span) / 2;
     const y = floorY - SURFACE_ABOVE_FLOOR_Y + BLOCK_CENTER_BELOW_SURFACE;
+    const sprites: Physics.Arcade.Sprite[] = [];
 
     for (let i = 0; i < count; i++) {
       const block = this.group.create(firstX + i * BLOCK_WIDTH, y, RetroRunnerMedia.GRASS_BLOCK) as Physics.Arcade.Sprite;
@@ -87,7 +87,25 @@ class CollapsingPlatformManager {
         contactTime: 0,
         originalY: y,
       });
+      sprites.push(block);
     }
+    return sprites;
+  }
+
+  /**
+   * Destroys a bridge, whether or not anyone stepped on it, with the tweens
+   * that animate it: an idle block's breathing tween never ends on its own.
+   */
+  release(sprites: readonly Physics.Arcade.Sprite[]) {
+    for (const sprite of sprites) {
+      this.scene.tweens.killTweensOf(sprite);
+      sprite.destroy();
+    }
+    let kept = 0;
+    for (const block of this.blocks) {
+      if (!sprites.includes(block.sprite)) this.blocks[kept++] = block;
+    }
+    this.blocks.length = kept;
   }
 
   /**
@@ -120,25 +138,6 @@ class CollapsingPlatformManager {
         }
       }
     }
-  }
-
-  /**
-   * Destroys the blocks left far behind the camera, whether or not anyone
-   * stepped on them, with the tweens that animate them: an idle block's
-   * breathing tween never ends on its own.
-   */
-  recycle(cameraScrollX: number) {
-    const threshold = cameraScrollX - RECYCLE_DISTANCE;
-    let kept = 0;
-    for (const block of this.blocks) {
-      if (block.sprite.x < threshold) {
-        this.scene.tweens.killTweensOf(block.sprite);
-        block.sprite.destroy();
-      } else {
-        this.blocks[kept++] = block;
-      }
-    }
-    this.blocks.length = kept;
   }
 
   private startShake(block: CollapsingBlock) {
