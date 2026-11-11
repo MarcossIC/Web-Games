@@ -102,9 +102,14 @@
   gap: 0.25rem;
 }
 
-.legend-note {
+.legend-note,
+.legend-hold {
   font-size: 0.8125rem;
   color: var(--gg-muted);
+}
+
+.legend-hold {
+  align-self: center;
 }
 
 kbd {

@@ -1,5 +1,5 @@
 <div class="shared-container game-container">
-  <app-game-bar title="Runner" [canPause]="false" />
+  <app-game-bar title="Runner" (pause)="togglePause()" />
 
   <main class="play">
     <retro-runner-phaser-game class="screen" [initialSeed]="urlSeed" />
@@ -18,6 +18,14 @@
         <div class="legend-item">
           <dt>Crouch</dt>
           <dd><kbd>S</kbd></dd>
+        </div>
+        <div class="legend-item">
+          <dt>Pause</dt>
+          <dd><kbd>Esc</kbd><kbd>P</kbd></dd>
+        </div>
+        <div class="legend-item">
+          <dt>New run</dt>
+          <dd><span class="legend-hold">Hold</span><kbd>R</kbd></dd>
         </div>
         <div class="legend-item legend-note">Arrow keys work too</div>
       </dl>

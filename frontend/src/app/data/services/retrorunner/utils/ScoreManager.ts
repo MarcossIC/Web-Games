@@ -1,22 +1,29 @@
 import { GameObjects, Scene } from 'phaser';
+import { BEST_SCORE_KEY, formatRunTime, RunScore, RunSummary, SCORING } from './run-score';
 
 /**
  * The pixel typeface of the site. It is drawn at 16px, its native grid,
  * so it stays sharp when the 550x330 picture is enlarged.
  */
 const HUD_FONT = 'Silkscreen, monospace';
+/** Shown after the score while the rhythm makes the distance worth more. */
+const RHYTHM_MARK = `  x${1 + SCORING.RHYTHM_BONUS}`;
 
+/** The score of the run on screen; how it is counted lives in RunScore. */
 class ScoreManager {
   private scene: Scene;
-  private score: number = 0;
-  private scoreText!: GameObjects.Text;
-  private highScoreText!: GameObjects.Text;
-  private playerStartX: number;
-  private coinBonus: number = 0;
+  private run: RunScore;
+  private scoreText?: GameObjects.Text;
+  private highScoreText?: GameObjects.Text;
+  private clockText?: GameObjects.Text;
+  /** What the score line shows now, so it is redrawn only when it changes. */
+  private shownScore = -1;
+  private shownRhythm = false;
+  private shownSecond = -1;
 
   constructor(scene: Scene, startX: number) {
     this.scene = scene;
-    this.playerStartX = startX;
+    this.run = new RunScore(startX);
   }
 
   createHUD() {
@@ -31,9 +38,22 @@ class ScoreManager {
       .setScrollFactor(0)
       .setDepth(100);
 
-    const highScore = parseInt(localStorage.getItem('retroRunnerHighScore') ?? '0', 10);
+    // How long the run has lasted; a pause stops it.
+    this.clockText = this.scene.add
+      .text(this.scene.scale.width / 2, 8, formatRunTime(0), {
+        fontSize: '16px',
+        color: '#fff',
+        stroke: '#07060d',
+        strokeThickness: 3,
+        fontFamily: HUD_FONT,
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(100);
+
+    const best = parseInt(localStorage.getItem(BEST_SCORE_KEY) ?? '0', 10);
     this.highScoreText = this.scene.add
-      .text(this.scene.scale.width - 10, 8, `Best: ${highScore}`, {
+      .text(this.scene.scale.width - 10, 8, `Best: ${best}`, {
         fontSize: '16px',
         color: '#ffe14a',
         stroke: '#07060d',
@@ -45,14 +65,31 @@ class ScoreManager {
       .setDepth(100);
   }
 
-  update(playerX: number) {
-    const distance = Math.max(0, Math.floor((playerX - this.playerStartX) / 10));
-    this.score = distance + this.coinBonus;
-    this.scoreText.setText(`Score: ${this.score}`);
+  /**
+   * Called every frame with where the player is.
+   * @param topSpeed - the running speed at that point of the world
+   */
+  update(playerX: number, deltaMs: number, topSpeed: number) {
+    this.run.advance(playerX, deltaMs, topSpeed);
+
+    const score = this.run.score;
+    const rhythm = this.run.inRhythm;
+    if (this.scoreText && (score !== this.shownScore || rhythm !== this.shownRhythm)) {
+      this.shownScore = score;
+      this.shownRhythm = rhythm;
+      this.scoreText.setText(rhythm ? `Score: ${score}${RHYTHM_MARK}` : `Score: ${score}`);
+    }
+
+    const second = Math.floor(this.run.timeMs / 1000);
+    if (this.clockText && second !== this.shownSecond) {
+      this.shownSecond = second;
+      this.clockText.setText(formatRunTime(this.run.timeMs));
+    }
   }
 
-  addCoinBonus(points: number) {
-    this.coinBonus += points;
+  /** Scores a coin picked up at `now` and says what it was worth. */
+  collectCoin(now: number): { combo: number; points: number } {
+    return this.run.collectCoin(now);
   }
 
   showFloatingText(x: number, y: number, text: string, color: string = '#ffd700') {
@@ -78,12 +115,17 @@ class ScoreManager {
   }
 
   getScore(): number {
-    return this.score;
+    return this.run.score;
+  }
+
+  getSummary(): RunSummary {
+    return this.run.summary();
   }
 
   destroy() {
     this.scoreText?.destroy();
     this.highScoreText?.destroy();
+    this.clockText?.destroy();
   }
 }
 

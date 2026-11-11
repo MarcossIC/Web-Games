@@ -9,10 +9,10 @@ import {
   PhaserPlayerWithBody,
   PhaserSound,
 } from '@app/data/services/phaser/types';
-import { SceneKeys } from '@app/data/services/retrorunner/main';
+import { RESTART_HOLD_MS, RunnerEvents, SceneKeys } from '@app/data/services/retrorunner/main';
 import { BiomeType } from '@app/data/services/retrorunner/generation/chunk-plan';
 import { biomeAt, speedMultiplierAt } from '@app/data/services/retrorunner/generation/difficulty-curve';
-import { PLAYER_GRAVITY } from '@app/data/services/retrorunner/generation/jump-model';
+import { BASE_WALK_SPEED, PLAYER_GRAVITY } from '@app/data/services/retrorunner/generation/jump-model';
 import { WorldGenerator } from '@app/data/services/retrorunner/generation/world-generator';
 import CoinManager from '@app/data/services/retrorunner/utils/CoinManager';
 import CollapsingPlatformManager from '@app/data/services/retrorunner/utils/CollapsingPlatformManager';
@@ -26,6 +26,8 @@ import SeededRandom from '@app/data/services/retrorunner/utils/SeededRandom';
 import { followScroll, lerpForDelta } from '@app/data/services/retrorunner/utils/camera-smoothing';
 import PlayerView from '@app/data/services/retrorunner/utils/PlayerView';
 import WorldBuilder from '@app/data/services/retrorunner/utils/WorldBuilder';
+import HoldBar from '@app/data/services/retrorunner/utils/HoldBar';
+import { HoldToConfirm, isFreshPress } from '@app/data/services/retrorunner/utils/hold-to-confirm';
 import { Scene, GameObjects } from 'phaser';
 
 // How fast the camera catches up with the player, tuned at 60 fps.
@@ -70,6 +72,11 @@ export class GameScene extends Scene {
   private cameraX: number = 0;
   /** How long the current frame took, for the work done before drawing. */
   private frameDelta: number = 0;
+  /** Holding R throws the run away and starts one with a new seed. */
+  private restartHold!: HoldToConfirm;
+  private restartBar!: HoldBar;
+  /** The R down now was pressed in this run, not held from the last one. */
+  private restartPressFresh = false;
   public rng!: SeededRandom;
 
   constructor() {
@@ -222,7 +229,31 @@ export class GameScene extends Scene {
       s: Phaser.Input.Keyboard.KeyCodes.S,
       d: Phaser.Input.Keyboard.KeyCodes.D,
       space: Phaser.Input.Keyboard.KeyCodes.SPACE,
+      r: Phaser.Input.Keyboard.KeyCodes.R,
     }) as Record<string, Phaser.Input.Keyboard.Key>;
+
+    // Pause: Esc or P here; while paused this scene hears nothing, so the
+    // pause screen reads them. A key held down repeats: only a new press
+    // counts, or holding P would pause and resume over and over.
+    const onPauseKey = (event: KeyboardEvent) => {
+      if (!event.repeat) this.togglePause();
+    };
+    this.input.keyboard?.on('keydown-ESC', onPauseKey);
+    this.input.keyboard?.on('keydown-P', onPauseKey);
+    this.restartHold = new HoldToConfirm(RESTART_HOLD_MS);
+    this.restartBar = new HoldBar(this, this.scale.width / 2, 30, 'Restart');
+    this.restartPressFresh = false;
+    this.keys['r'].on(Phaser.Input.Keyboard.Events.DOWN, (_key: unknown, event: KeyboardEvent) => {
+      this.restartPressFresh = isFreshPress(event);
+    });
+
+    // The page's pause button and the pause screen ask through the EventBus.
+    EventBus.on(RunnerEvents.TOGGLE_PAUSE, this.togglePause, this);
+    EventBus.on(RunnerEvents.RESTART, this.restartWithNewSeed, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      EventBus.off(RunnerEvents.TOGGLE_PAUSE, this.togglePause, this);
+      EventBus.off(RunnerEvents.RESTART, this.restartWithNewSeed, this);
+    });
 
 
     this.prevOnFloor = false;
@@ -347,6 +378,8 @@ export class GameScene extends Scene {
    * scenery shivers as it scrolls.
    */
   private placeCamera() {
+    // A paused scene is still drawn: the camera stays where the run stopped.
+    if (this.sys.isPaused()) return;
     const camera = this.cameras.main;
     this.cameraX = followScroll(
       this.cameraX,
@@ -421,6 +454,12 @@ export class GameScene extends Scene {
     const now = this.time.now;
     const keys = this.keys;
 
+    if (this.restartHold.update(keys['r'].isDown && this.restartPressFresh, delta)) {
+      this.restartWithNewSeed();
+      return;
+    }
+    this.restartBar.setProgress(this.restartHold.progress);
+
     const isMovingLeft =
       keys['left'].isDown || keys['a'].isDown || this.joystick?.isMovingLeft();
     const isMovingRight =
@@ -439,7 +478,8 @@ export class GameScene extends Scene {
     this.actions.applyAsymmetricGravity(this.player, isOnFloor, PLAYER_GRAVITY);
 
     // The player gets faster with the distance; the world is planned for it.
-    this.actions.setSpeedMultiplier(speedMultiplierAt(this.player.x));
+    const speedMultiplier = speedMultiplierAt(this.player.x);
+    this.actions.setSpeedMultiplier(speedMultiplier);
 
     // Update coyote/buffer timers
     this.actions.updateTimers(isOnFloor, now);
@@ -506,7 +546,8 @@ export class GameScene extends Scene {
       this.world.releaseBehind(scrollX);
     }
     this.collapsingManager.updateBlocks(now);
-    this.scoreManager.update(this.player.x);
+    // Keeping the running speed of the place is the rhythm the score rewards.
+    this.scoreManager.update(this.player.x, delta, BASE_WALK_SPEED * speedMultiplier);
 
 
     // Player fell off screen
@@ -596,6 +637,28 @@ export class GameScene extends Scene {
     }
   }
 
+  /**
+   * Pauses the run, or resumes it. Once the player is dead there is nothing
+   * to pause: the game over screen is coming.
+   */
+  togglePause() {
+    if (this.player.state === RetroRunnerStates.RUNNER_STATE_DEAD) return;
+    if (this.scene.isPaused()) {
+      this.scene.stop(SceneKeys.PAUSE);
+      this.scene.resume();
+    } else {
+      this.scene.pause();
+      this.scene.launch(SceneKeys.PAUSE);
+    }
+  }
+
+  /** Throws the run away and starts a new one, with a new seed. */
+  restartWithNewSeed() {
+    if (this.jumpSound.isPlaying) this.jumpSound.stop();
+    this.scene.stop(SceneKeys.PAUSE);
+    this.scene.restart({ seed: undefined });
+  }
+
   private handlePlayerHitObstacle() {
     if (this.player.state === RetroRunnerStates.RUNNER_STATE_DEAD) return;
     this.handlePlayerDied();
@@ -618,12 +681,12 @@ export class GameScene extends Scene {
       this.player.setVelocityY(-350);
     });
 
-    const finalScore = this.scoreManager.getScore();
+    const run = this.scoreManager.getSummary();
 
     this.time.delayedCall(
       400,
       () => {
-        this.scene.launch(SceneKeys.GAME_OVER, { score: finalScore, seed: this.rng.seedKey });
+        this.scene.launch(SceneKeys.GAME_OVER, { run, seed: this.rng.seedKey });
       },
       [],
       this

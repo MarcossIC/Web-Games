@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventBus } from '@app/data/services/phaser/EventBus';
-import { SceneKeys } from '@app/data/services/retrorunner/main';
+import { RunnerEvents, SceneKeys } from '@app/data/services/retrorunner/main';
 import { RetroRunnerPhaserGameComponent } from '@app/presentation/components/retro-runner-game/retro-runner-game.component';
 import { Scene } from 'phaser';
 import { GameBarComponent } from '@app-components/game-bar/game-bar.component';
@@ -51,6 +51,11 @@ export class RetroRunnerComponent implements AfterViewInit, OnDestroy {
         replaceUrl: true,
       });
     });
+  }
+
+  /** The bar's pause button: the run pauses or resumes, as with Esc or P. */
+  protected togglePause(): void {
+    EventBus.emit(RunnerEvents.TOGGLE_PAUSE);
   }
 
   /** Copies the address of this exact level, seed included. */

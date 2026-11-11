@@ -3,16 +3,13 @@ import { PhaserSound } from '@app/data/services/phaser/types';
 import { GameObjects, Physics, Scene } from 'phaser';
 import ScoreManager from './ScoreManager';
 
-const BASE_COIN_POINTS = 50;
 const COIN_SCALE = 0.7;
-const COMBO_TIMEOUT_MS = 1500;
-const MAX_COMBO = 5;
 
 /**
  * The coins: a pool that puts each one where the world's plan says, and
- * the score and sparks of picking them up. A picked-up coin goes back to
- * the pool only when its chunk is released: until then its chunk still
- * counts it as its own.
+ * the sound and sparks of picking them up; what they are worth is in
+ * RunScore. A picked-up coin goes back to the pool only when its chunk is
+ * released: until then its chunk still counts it as its own.
  */
 class CoinManager {
   private scene: Scene;
@@ -20,8 +17,6 @@ class CoinManager {
   private free: Physics.Arcade.Sprite[] = [];
   private coinSound: PhaserSound;
   private scoreManager: ScoreManager;
-  private comboCount: number = 0;
-  private lastCoinTime: number = 0;
   /** The burst of sparks a coin leaves where it was picked up. */
   private sparks: GameObjects.Particles.ParticleEmitter;
 
@@ -80,24 +75,13 @@ class CoinManager {
     const coinY = coin.y;
     this.hide(coin);
 
-    // Combo system
-    const now = this.scene.time.now;
-    if (now - this.lastCoinTime < COMBO_TIMEOUT_MS) {
-      this.comboCount = Math.min(this.comboCount + 1, MAX_COMBO);
-    } else {
-      this.comboCount = 1;
-    }
-    this.lastCoinTime = now;
-
-    const multiplier = this.comboCount;
-    const points = BASE_COIN_POINTS * multiplier;
+    const { combo, points } = this.scoreManager.collectCoin(this.scene.time.now);
 
     this.coinSound.play();
     this.sparks.emitParticleAt(coinX, coinY, 7);
-    this.scoreManager.addCoinBonus(points);
 
-    const comboText = multiplier > 1 ? `+${points} x${multiplier}` : `+${points}`;
-    const comboColor = multiplier >= 4 ? '#ff4444' : multiplier >= 2 ? '#ff9900' : '#ffd700';
+    const comboText = combo > 1 ? `+${points} x${combo}` : `+${points}`;
+    const comboColor = combo >= 4 ? '#ff4444' : combo >= 2 ? '#ff9900' : '#ffd700';
     this.scoreManager.showFloatingText(coinX, coinY, comboText, comboColor);
   }
 

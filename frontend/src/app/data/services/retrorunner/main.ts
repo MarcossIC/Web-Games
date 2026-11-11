@@ -3,14 +3,25 @@ import { AUTO, Game } from 'phaser';
 import { GameScene } from '@app/data/services/retrorunner/scenes/GameScene';
 import { PreloaderScene } from '@app/data/services/retrorunner/scenes/PreloaderScene';
 import GameOverScene from '@app/data/services/retrorunner/scenes/GameOverScene';
+import { PauseScene } from '@app/data/services/retrorunner/scenes/PauseScene';
 import { WORLD_GRAVITY } from '@app/data/services/retrorunner/generation/jump-model';
 
 export enum SceneKeys {
   GAME = 'Game',
   PRELOADER = 'Preloader',
   GAME_OVER = 'GameOver',
+  PAUSE = 'Pause',
   SCENE_READY = 'current-scene-ready',
 }
+
+/** What the page and the pause screen ask of the run, through the EventBus. */
+export enum RunnerEvents {
+  TOGGLE_PAUSE = 'runner-toggle-pause',
+  RESTART = 'runner-restart',
+}
+
+/** How long R has to be held to throw the run away and start a new one. */
+export const RESTART_HOLD_MS = 700;
 
 // Internal resolution — all game logic is designed for this size.
 // Phaser Scale.FIT stretches the canvas via CSS to fill the container.
@@ -52,7 +63,7 @@ const config: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [PreloaderScene, GameScene, GameOverScene],
+  scene: [PreloaderScene, GameScene, GameOverScene, PauseScene],
 };
 
 const StartGame = (parent: string, initialSeed?: string) => {
