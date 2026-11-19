@@ -13,6 +13,8 @@ export interface ChunkStreams {
   /** Looks only. */
   decoration: SeededRandom;
   grass: SeededRandom;
+  /** What the budget is saved up for next. */
+  budget: SeededRandom;
 }
 
 /**
@@ -36,7 +38,9 @@ export class ChunkDraft {
     readonly biome: BiomeType,
     readonly rng: ChunkStreams,
     /** Handed down to the next chunk; filling updates it. */
-    readonly carry: Carry
+    readonly carry: Carry,
+    /** No hazard reaches back past this X: the player just landed before it. */
+    readonly clearUntilX: number = startX
   ) {
     this.x = startX;
   }
@@ -74,7 +78,7 @@ export class ChunkDraft {
   }
 
   stone(startX: number, endX: number, floorY: number, chance: number) {
-    const stone = planStone(this.rng.obstacles, startX, endX, floorY, chance, this.carry);
+    const stone = planStone(this.rng.obstacles, startX, endX, floorY, chance, this.carry, this.clearUntilX);
     if (stone) this.pieces.push(stone);
   }
 

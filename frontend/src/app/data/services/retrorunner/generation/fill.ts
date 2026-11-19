@@ -1,8 +1,8 @@
 import { RetroRunnerMedia } from '@app/data/models/retro-runner/RetroRunnerKeys';
 import SeededRandom from '../utils/SeededRandom';
 import { BiomeType, Carry, CoinPiece, DecoPiece, GrassPiece, StonePiece } from './chunk-plan';
-import { FLOOR_SURFACE_ABOVE_Y } from './geometry';
-import { BASE_WALK_SPEED, JUMP_SPEED, PLAYER_GRAVITY, WORLD_GRAVITY } from './jump-model';
+import { FLOOR_SURFACE_ABOVE_Y, STONE_HIT_HALF_WIDTH } from './geometry';
+import { airTime, jumpHeightAt } from './jump-model';
 
 /*
  * What goes on top of the ground once it is laid: coins, stones,
@@ -86,27 +86,31 @@ export function planCoins(
   return coins;
 }
 
-/*
- * I-15, left for D-08: the arc draws the rise of a full jump with one
- * gravity, cut at 110 px, not the parabola that joins both edges.
+/** Coins over a gap float this far above the feet: at the player's middle. */
+export const ARC_COIN_ABOVE_FEET = 17;
+
+/**
+ * Coins along the jump that leaves the edge of a gap and lands right on
+ * its far edge (D-08): the real rise, apex and fall of the jump, spread
+ * over the hole. Following them shows where to jump from.
+ * @param takeoffTop - the top of the floor the jump leaves
+ * @param landingTop - the top of the floor it lands on
  */
-const ARC_GRAVITY = WORLD_GRAVITY + PLAYER_GRAVITY;
+export function planArcCoins(
+  takeoffX: number,
+  landingX: number,
+  takeoffTop: number,
+  landingTop: number
+): CoinPiece[] {
+  const time = airTime(landingTop - takeoffTop);
+  const hole = landingX - takeoffX;
+  if (time === null || hole <= 0) return [];
 
-/** Coins along a jump over a gap, from its left edge. */
-export function planArcCoins(gapStartX: number, gapEndX: number, landingFloorY: number): CoinPiece[] {
-  const width = gapEndX - gapStartX;
-  if (width < 60) return [];
-
-  const surfaceY = landingFloorY - FLOOR_SURFACE_ABOVE_Y;
-  const totalTime = width / BASE_WALK_SPEED;
-  const count = Math.min(5, Math.max(3, Math.floor(width / 40)));
-
+  const count = Math.min(5, Math.max(3, Math.floor(hole / 60)));
   const coins: CoinPiece[] = [];
-  for (let i = 0; i < count; i++) {
-    const t = ((i + 0.5) / count) * totalTime;
-    const rise = JUMP_SPEED * t - 0.5 * ARC_GRAVITY * t * t;
-    const y = Math.max(surfaceY - 110, Math.min(surfaceY - 20, surfaceY - rise));
-    coins.push({ type: 'coin', x: gapStartX + BASE_WALK_SPEED * t, y });
+  for (let i = 1; i <= count; i++) {
+    const t = (i / (count + 1)) * time;
+    coins.push({ type: 'coin', x: takeoffX + (hole * t) / time, y: takeoffTop - jumpHeightAt(t) - ARC_COIN_ABOVE_FEET });
   }
   return coins;
 }
@@ -130,20 +134,25 @@ const STONES: readonly RetroRunnerMedia[] = [
 /** Two stones are never closer than this. */
 const STONE_MIN_SPACING = 400;
 
-/** Maybe a stone on a piece of floor; updates `carry.lastObstacleX`. */
+/**
+ * Maybe a stone on a piece of floor; updates `carry.lastObstacleX`.
+ * @param clearUntilX - the part that kills stays past this X
+ */
 export function planStone(
   rng: SeededRandom,
   startX: number,
   endX: number,
   floorY: number,
   chance: number,
-  carry: Carry
+  carry: Carry,
+  clearUntilX = startX
 ): StonePiece | null {
   if (!rng.chance(chance)) return null;
   if (endX - startX < 150) return null;
 
   const x = startX + rng.intBetween(1, Math.floor((endX - startX) * 0.5)) + 50;
   if (x - carry.lastObstacleX < STONE_MIN_SPACING) return null;
+  if (x - STONE_HIT_HALF_WIDTH < clearUntilX) return null;
 
   carry.lastObstacleX = x;
   return { type: 'stone', x, floorY, key: rng.pick(STONES) };

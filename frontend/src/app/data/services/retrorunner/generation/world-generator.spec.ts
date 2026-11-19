@@ -3,10 +3,12 @@ import SeededRandom from '../utils/SeededRandom';
 import {
   COST,
   ELEVATION,
-  HARD_CHUNK_COST,
+  GAP,
+  LANDING,
   MAX_ATTEMPTS,
-  REST_AFTER_HARD_CHUNKS,
   SAFE_START_END_X,
+  START_WALLET,
+  TENSION,
   UNLOCKS,
 } from './balance';
 import {
@@ -20,9 +22,10 @@ import {
   Piece,
   PlatformPiece,
 } from './chunk-plan';
-import { biomeAt } from './difficulty-curve';
-import { FLOOR_SURFACE_ABOVE_Y, floorRunEnd, HUT, TILE } from './geometry';
-import { jumpReach } from './jump-model';
+import { biomeAt, budgetAt, difficultyAt, speedMultiplierAt } from './difficulty-curve';
+import { ARC_COIN_ABOVE_FEET } from './fill';
+import { FLOOR_SURFACE_ABOVE_Y, floorRunEnd, HUT, STONE_HIT_HALF_WIDTH, TILE } from './geometry';
+import { airTime, BASE_WALK_SPEED, jumpHeightAt, jumpReach } from './jump-model';
 import { validateChunk } from './validate-chunk';
 import { firstContext, nextContext, planChunk, WorldGenerator } from './world-generator';
 
@@ -48,6 +51,10 @@ const isCosmetic = (piece: Piece) => COSMETIC_PIECES.includes(piece.type);
 const piecesOf = <T extends Piece['type']>(plan: ChunkPlan, type: T) =>
   plan.pieces.filter((piece): piece is Extract<Piece, { type: T }> => piece.type === type);
 const floorsOf = (plan: ChunkPlan): FloorPiece[] => piecesOf(plan, 'floor');
+const isHole = (plan: ChunkPlan) => plan.kind === 'gap' || plan.pattern === 'fishing-hut';
+/** The share of the jump at the speed of its X that a gap's hole takes. */
+const gapFraction = (gap: ChunkPlan) =>
+  (gap.endX - gap.startX - TILE.END_WIDTH) / jumpReach(gap.exitY - gap.entryY, speedMultiplierAt(gap.startX));
 
 /** Left and right of whatever the player can stand on or touch. */
 function solidSpan(piece: Piece): [number, number] | null {
@@ -99,7 +106,12 @@ describe('world generator', () => {
         plans.map((plan) => ({
           ...plan,
           pieces: plan.pieces.filter((p) => !isCosmetic(p)),
-          carry: { hardStreak: plan.carry.hardStreak, lastObstacleX: plan.carry.lastObstacleX },
+          carry: {
+            wallet: plan.carry.wallet,
+            tension: plan.carry.tension,
+            goal: plan.carry.goal,
+            lastObstacleX: plan.carry.lastObstacleX,
+          },
         }));
       const looks = (plans: ChunkPlan[], type: Piece['type']) =>
         plans.flatMap((plan) => plan.pieces.filter((p) => p.type === type));
@@ -197,22 +209,35 @@ describe('world generator', () => {
 
   describe('gaps', () => {
     let gaps: ChunkPlan[];
-    beforeAll(() => (gaps = SEEDS.flatMap((seed) => planWorld(seed)).filter((p) => p.kind === 'gap')));
+    beforeAll(
+      () => (gaps = manySeeds(40).flatMap((seed) => planWorld(seed, 40000)).filter((p) => p.kind === 'gap'))
+    );
 
     // I-08: the stepping stones needed a gap wider than any gap asked for.
-    it('stay within one jump and need no stepping stones', () => {
-      expect(gaps.length).toBeGreaterThan(10);
+    it('need no stepping stones', () => {
+      expect(gaps.length).toBeGreaterThan(100);
+      for (const gap of gaps) expect(piecesOf(gap, 'block')).toEqual([]);
+    });
+
+    // D-03: a hole measured in pixels got easier as the player sped up.
+    it('take a share of the jump at the speed of their X, as much as the curve lets them there', () => {
       for (const gap of gaps) {
-        expect(gap.endX - gap.startX).toBeLessThanOrEqual(200);
-        expect(piecesOf(gap, 'block')).toEqual([]);
+        const context = `gap at ${gap.startX}`;
+        expect(gapFraction(gap)).withContext(context).toBeGreaterThanOrEqual(GAP.MIN_FRACTION - 0.005);
+        expect(gapFraction(gap)).withContext(context).toBeLessThanOrEqual(difficultyAt(gap.startX).maxGapFraction);
       }
+    });
+
+    it('ask for up to 85 % of the jump in the hardest stretch', () => {
+      const hardest = Math.max(...gaps.filter((gap) => gap.startX >= 11000).map(gapFraction));
+      expect(hardest).toBeGreaterThan(0.8);
+      expect(hardest).toBeLessThanOrEqual(GAP.MAX_FRACTION);
     });
 
     it('never come two in a row, a fishing hut counting as one', () => {
       for (const seed of SEEDS) {
         const world = planWorld(seed, 40000);
         world.forEach((plan, i) => {
-          const isHole = (p: ChunkPlan) => p.kind === 'gap' || p.pattern === 'fishing-hut';
           if (i > 0 && isHole(plan)) {
             expect(isHole(world[i - 1])).withContext(`${seed} chunk ${i}`).toBeFalse();
           }
@@ -282,20 +307,57 @@ describe('world generator', () => {
           const bridged = piecesOf(plan, 'bridge').length > 0;
           expect(plan.cost)
             .withContext(context)
-            .toBeCloseTo(hole / jumpReach(plan.exitY - plan.entryY) + (bridged ? COST.BRIDGE : 0), 10);
+            .toBeCloseTo(
+              hole / jumpReach(plan.exitY - plan.entryY, speedMultiplierAt(plan.startX)) + (bridged ? COST.BRIDGE : 0),
+              10
+            );
         }
       }
     });
+  });
 
-    it('counts the hard chunks in a row', () => {
-      for (const seed of SEEDS) {
-        const world = planWorld(seed);
+  // D-01: the hazards used to be chances drawn one by one, so a stretch
+  // could pile them up or have none. Now the curve pays each chunk a budget
+  // and the generator saves it up and spends it on what it builds.
+  describe('budget', () => {
+    let worlds: ChunkPlan[][];
+    beforeAll(() => (worlds = manySeeds(100).map((seed) => planWorld(seed, 40000))));
+
+    const averageCost = (fromX: number, toX: number) => {
+      const plans = worlds.flat().filter((plan) => plan.startX >= fromX && plan.startX < toX);
+      return {
+        cost: plans.reduce((sum, plan) => sum + plan.cost, 0) / plans.length,
+        budget: plans.reduce((sum, plan) => sum + budgetAt(plan.startX), 0) / plans.length,
+      };
+    };
+
+    it('saves what the curve pays at its X and pays for what it builds', () => {
+      for (const world of worlds.slice(0, 10)) {
         world.forEach((plan, i) => {
-          const before = i === 0 ? 0 : world[i - 1].carry.hardStreak;
-          const expected = plan.cost >= HARD_CHUNK_COST ? before + 1 : 0;
-          expect(plan.carry.hardStreak).withContext(`${seed} chunk ${i}`).toBe(expected);
+          const before = i === 0 ? START_WALLET : world[i - 1].carry.wallet;
+          expect(plan.carry.wallet)
+            .withContext(`chunk ${i}`)
+            .toBeCloseTo(before + budgetAt(plan.startX) - plan.cost, 9);
         });
       }
+    });
+
+    it('spends about what the curve pays, stretch by stretch', () => {
+      for (const [fromX, toX] of [
+        [4000, 11000],
+        [11000, 20000],
+        [20000, 40000],
+      ]) {
+        const { cost, budget } = averageCost(fromX, toX);
+        expect(cost / budget).withContext(`${fromX} to ${toX}`).toBeGreaterThan(0.8);
+        expect(cost / budget).withContext(`${fromX} to ${toX}`).toBeLessThan(1.2);
+      }
+    });
+
+    // D-05: measured before the change, a chunk cost 0.22 on average from
+    // x = 11000 to x = 40000, with no change at all.
+    it('keeps getting harder after x = 11000', () => {
+      expect(averageCost(30000, 40000).cost).toBeGreaterThan(averageCost(11000, 15000).cost * 1.2);
     });
   });
 
@@ -303,21 +365,53 @@ describe('world generator', () => {
     let worlds: ChunkPlan[][];
     let rests: { world: ChunkPlan[]; i: number; plan: ChunkPlan }[];
     beforeAll(() => {
-      worlds = manySeeds(40).map((seed) => planWorld(seed));
+      // Rests come once the chunks get costly, past x = 11000.
+      worlds = manySeeds(40).map((seed) => planWorld(seed, 40000));
       rests = worlds.flatMap((world) =>
         world.map((plan, i) => ({ world, i, plan })).filter(({ plan }) => plan.kind === 'rest')
       );
     });
 
-    it('come only after hard chunks in a row', () => {
+    // D-02: a wave over X and a coin toss decided the breathers, not how
+    // hard the chunks before them had been.
+    it('build up tension with the cost of each chunk, which fades, and a rest clears it', () => {
+      for (const world of worlds.slice(0, 10)) {
+        world.forEach((plan, i) => {
+          const before = i === 0 ? 0 : world[i - 1].carry.tension;
+          const expected = plan.kind === 'rest' ? 0 : before * TENSION.DECAY + plan.cost;
+          expect(plan.carry.tension).withContext(`chunk ${i}`).toBeCloseTo(expected, 9);
+        });
+      }
+    });
+
+    it('come exactly when the tension passes its threshold', () => {
       expect(rests.length).toBeGreaterThan(10);
-      for (const { world, i } of rests) {
-        expect(world[i - 1].carry.hardStreak).toBeGreaterThanOrEqual(REST_AFTER_HARD_CHUNKS);
+      for (const world of worlds) {
+        world.forEach((plan, i) => {
+          if (i === 0 || plan.startX < SAFE_START_END_X) return;
+          const tense = world[i - 1].carry.tension >= TENSION.REST_AT;
+          expect(plan.kind === 'rest').withContext(`chunk ${i} at ${plan.startX}`).toBe(tense);
+        });
+      }
+    });
+
+    // A ground chunk the budget did not pay for has no stone: for the player
+    // it is a breather too, and the one that never runs out.
+    it('leave a quarter of the chunks free of hazards, however far the run goes', () => {
+      for (const [fromX, toX] of [
+        [SAFE_START_END_X, 11000],
+        [11000, 20000],
+        [20000, 40000],
+      ]) {
+        const chunks = worlds.flat().filter((plan) => plan.startX >= fromX && plan.startX < toX);
+        const calm = chunks.filter((plan) => plan.cost === 0);
+        expect(calm.length / chunks.length).withContext(`${fromX} to ${toX}`).toBeGreaterThan(0.2);
       }
     });
 
     it('are a breather, not a third of the world', () => {
       const chunks = worlds.flat().filter((plan) => plan.startX >= SAFE_START_END_X);
+      expect(rests.length / chunks.length).toBeGreaterThan(0.03);
       expect(rests.length / chunks.length).toBeLessThan(0.2);
     });
 
@@ -439,18 +533,59 @@ describe('world generator', () => {
     });
   });
 
-  describe('coins', () => {
-    it('follow a gap from one edge to the other', () => {
-      const gaps = SEEDS.flatMap((seed) => planWorld(seed)).filter((p) => p.kind === 'gap');
-      const withCoins = gaps.filter((gap) => piecesOf(gap, 'coin').length > 0);
-      expect(withCoins.length).toBeGreaterThan(0);
-      for (const gap of withCoins) {
-        for (const coin of piecesOf(gap, 'coin')) {
-          expect(coin.x).toBeGreaterThan(gap.startX);
-          expect(coin.x).toBeLessThan(gap.endX);
-          expect(coin.y).toBeLessThan(gap.exitY - FLOOR_SURFACE_ABOVE_Y);
+  // D-04: a stone could stand 51 px past a landing, less than the player
+  // covers before reacting to it.
+  describe('landings', () => {
+    it('keep every stone a reaction time away from where a hole ends', () => {
+      let checked = 0;
+      for (const world of manySeeds(100).map((seed) => planWorld(seed, 40000))) {
+        world.forEach((plan, i) => {
+          if (i === 0 || !isHole(world[i - 1])) return;
+          const clear = LANDING.REACTION_TIME * BASE_WALK_SPEED * speedMultiplierAt(plan.startX);
+          for (const stone of piecesOf(plan, 'stone')) {
+            checked++;
+            expect(stone.x - STONE_HIT_HALF_WIDTH - plan.startX)
+              .withContext(`stone at ${stone.x}`)
+              .toBeGreaterThanOrEqual(clear);
+          }
+        });
+      }
+      expect(checked).toBeGreaterThan(0);
+    });
+  });
+
+  // D-08 (I-15): the arc drew the rise of a jump with one gravity, from the
+  // landing's height, and cut it at 110 px.
+  describe('coins over a gap', () => {
+    let gaps: ChunkPlan[];
+    beforeAll(
+      () => (gaps = manySeeds(20).flatMap((seed) => planWorld(seed, 40000)).filter((p) => p.kind === 'gap'))
+    );
+
+    it('lie on the real jump that leaves one edge and lands on the other', () => {
+      for (const gap of gaps) {
+        const takeoffX = gap.startX + TILE.END_WIDTH;
+        const takeoffTop = gap.entryY - FLOOR_SURFACE_ABOVE_Y;
+        const time = airTime(gap.exitY - gap.entryY) as number;
+        const speed = (gap.endX - takeoffX) / time;
+        const coins = piecesOf(gap, 'coin');
+        expect(coins.length).withContext(`gap at ${gap.startX}`).toBeGreaterThanOrEqual(3);
+        for (const coin of coins) {
+          const t = (coin.x - takeoffX) / speed;
+          expect(t).toBeGreaterThan(0);
+          expect(t).toBeLessThan(time);
+          expect(coin.y)
+            .withContext(`coin at ${coin.x}`)
+            .toBeCloseTo(takeoffTop - jumpHeightAt(t) - ARC_COIN_ABOVE_FEET, 6);
         }
       }
+    });
+
+    it('rise as high as the jump does', () => {
+      const highest = Math.max(
+        ...gaps.flatMap((gap) => piecesOf(gap, 'coin').map((coin) => gap.entryY - FLOOR_SURFACE_ABOVE_Y - coin.y))
+      );
+      expect(highest).toBeGreaterThan(150);
     });
   });
 });

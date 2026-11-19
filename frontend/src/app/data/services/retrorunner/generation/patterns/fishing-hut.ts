@@ -1,4 +1,5 @@
 import { HUT_SHORE_CENTER_TILES } from '../balance';
+import { speedMultiplierAt } from '../difficulty-curve';
 import { FLOOR_SURFACE_ABOVE_Y, HUT, TILE } from '../geometry';
 import { jumpReach } from '../jump-model';
 import { PatternPlanner } from './pattern';
@@ -51,5 +52,5 @@ export const fishingHut: PatternPlanner = (draft) => {
 
   const hole = draft.x - dockEndX;
   draft.ground(4, floorY);
-  return { exitY: floorY, cost: hole / jumpReach(surfaceY - deckY) };
+  return { exitY: floorY, cost: hole / jumpReach(surfaceY - deckY, speedMultiplierAt(draft.startX)) };
 };

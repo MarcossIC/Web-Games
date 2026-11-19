@@ -1,4 +1,14 @@
-import { BIOMES, DIFFICULTY_LEVELS, DifficultyLevel, SPEED, UNLOCKS, WAVE } from './balance';
+import {
+  BIOMES,
+  BUDGET,
+  COIN_CHANCE,
+  FLOOR_TILES,
+  FULL_BUDGET,
+  GAP,
+  SAFE_START_END_X,
+  SPEED,
+  UNLOCKS,
+} from './balance';
 import { BiomeType } from './chunk-plan';
 
 /**
@@ -7,14 +17,14 @@ import { BiomeType } from './chunk-plan';
  * plans the same world.
  */
 export interface Difficulty {
-  gapChance: number;
-  minGapWidth: number;
-  maxGapWidth: number;
+  /** What a chunk here gets to spend on hazards, on average. */
+  budget: number;
+  /** The narrowest and the widest gap asked for here, as a share of the jump at this speed. */
+  minGapFraction: number;
+  maxGapFraction: number;
   minCenterTiles: number;
   maxCenterTiles: number;
-  obstacleChance: number;
   coinChance: number;
-  patternChance: number;
 }
 
 export type Feature = keyof typeof UNLOCKS;
@@ -23,41 +33,27 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
-/** The level reached at x, interpolated towards the next one. */
-function levelAt(x: number): Difficulty {
-  let index = 0;
-  while (index + 1 < DIFFICULTY_LEVELS.length && x >= DIFFICULTY_LEVELS[index + 1].from) index++;
-
-  const lower: DifficultyLevel = DIFFICULTY_LEVELS[index];
-  const upper: DifficultyLevel = DIFFICULTY_LEVELS[Math.min(index + 1, DIFFICULTY_LEVELS.length - 1)];
-  const range = upper.from - lower.from;
-  const t = range > 0 ? Math.min(1, Math.max(0, (x - lower.from) / range)) : 1;
-
-  return {
-    gapChance: lerp(lower.gapChance, upper.gapChance, t),
-    minGapWidth: lerp(lower.minGapWidth, upper.minGapWidth, t),
-    maxGapWidth: lerp(lower.maxGapWidth, upper.maxGapWidth, t),
-    minCenterTiles: Math.round(lerp(lower.minCenterTiles, upper.minCenterTiles, t)),
-    maxCenterTiles: Math.round(lerp(lower.maxCenterTiles, upper.maxCenterTiles, t)),
-    obstacleChance: lerp(lower.obstacleChance, upper.obstacleChance, t),
-    coinChance: lerp(lower.coinChance, upper.coinChance, t),
-    patternChance: lerp(lower.patternChance, upper.patternChance, t),
-  };
+/** The budget a chunk starting at x is paid: see {@link BUDGET}. */
+export function budgetAt(x: number): number {
+  const distance = x - SAFE_START_END_X;
+  return distance <= 0 ? 0 : BUDGET.SCALE * Math.log1p(distance / BUDGET.RAMP);
 }
 
 export function difficultyAt(x: number): Difficulty {
-  const level = levelAt(x);
-
-  // The calm half of the wave takes hazards away and puts coins in.
-  const calm = Math.max(0, -Math.sin((x / WAVE.PERIOD) * Math.PI * 2));
-  const hazards = 1 - WAVE.STRENGTH * calm;
+  const budget = budgetAt(x);
+  const hardness = Math.min(1, budget / FULL_BUDGET);
+  const { EASY, HARD } = FLOOR_TILES;
 
   return {
-    ...level,
-    gapChance: level.gapChance * hazards,
-    obstacleChance: level.obstacleChance * hazards,
-    patternChance: level.patternChance * hazards,
-    coinChance: Math.min(WAVE.MAX_COIN_CHANCE, level.coinChance + WAVE.STRENGTH * calm * WAVE.COIN_BONUS),
+    budget,
+    minGapFraction: Math.min(
+      GAP.LATE_MIN_FRACTION,
+      GAP.MIN_FRACTION + Math.max(0, budget - FULL_BUDGET) * GAP.FRACTION_PER_BUDGET
+    ),
+    maxGapFraction: Math.min(GAP.MAX_FRACTION, GAP.MIN_FRACTION + budget * GAP.FRACTION_PER_BUDGET),
+    minCenterTiles: Math.round(lerp(EASY.minCenterTiles, HARD.minCenterTiles, hardness)),
+    maxCenterTiles: Math.round(lerp(EASY.maxCenterTiles, HARD.maxCenterTiles, hardness)),
+    coinChance: COIN_CHANCE,
   };
 }
 

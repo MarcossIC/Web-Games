@@ -1,5 +1,6 @@
 import { JUMP_SAFETY } from './balance';
 import { ChunkPlan, Piece, Surface } from './chunk-plan';
+import { speedMultiplierAt } from './difficulty-curve';
 import { BLOCK_TOP_ABOVE_Y, FLOOR_SURFACE_ABOVE_Y, floorRunEnd, TILE } from './geometry';
 import { JUMP_APEX, jumpReach } from './jump-model';
 
@@ -77,14 +78,14 @@ export function canJump(from: Surface, to: Surface, speedMultiplier = 1): boolea
   return dx <= jumpReach(drop, speedMultiplier) * JUMP_SAFETY;
 }
 
-function reaches(from: Surface, to: Surface, surfaces: Surface[]): boolean {
+function reaches(from: Surface, to: Surface, surfaces: Surface[], speedMultiplier: number): boolean {
   const seen = new Set<Surface>([from]);
   const queue: Surface[] = [from];
   while (queue.length > 0) {
     const current = queue.shift() as Surface;
-    if (canJump(current, to)) return true;
+    if (canJump(current, to, speedMultiplier)) return true;
     for (const next of surfaces) {
-      if (!seen.has(next) && canJump(current, next)) {
+      if (!seen.has(next) && canJump(current, next, speedMultiplier)) {
         seen.add(next);
         queue.push(next);
       }
@@ -113,8 +114,9 @@ export interface ChunkEntry {
 
 /**
  * Checks that a chunk can be crossed: it continues the chunk before, its
- * exit can be reached from its entry with the jump at base speed, and it
- * keeps its ground inside itself.
+ * exit can be reached from its entry with the jump at the speed of the
+ * chunk's X, and it keeps its ground inside itself. The player has no
+ * run-up to make: it runs at that speed from its first step.
  * @returns what is wrong, or nothing
  */
 export function checkChunk(plan: ChunkPlan, entry: ChunkEntry): string[] {
@@ -135,7 +137,7 @@ export function checkChunk(plan: ChunkPlan, entry: ChunkEntry): string[] {
   const exit = exitSurfaceOf(plan);
   if (!exit) {
     problems.push(`does not end on a floor at ${plan.endX} at height ${plan.exitY}`);
-  } else if (!reaches(entry.surface, exit, surfacesOf(plan))) {
+  } else if (!reaches(entry.surface, exit, surfacesOf(plan), speedMultiplierAt(plan.startX))) {
     problems.push('its exit cannot be reached from its entry');
   }
 

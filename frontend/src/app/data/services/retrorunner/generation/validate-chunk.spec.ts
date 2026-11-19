@@ -1,5 +1,8 @@
 import { BiomeType, ChunkPlan, Piece } from './chunk-plan';
-import { floorRunEnd } from './geometry';
+import { GAP } from './balance';
+import { speedMultiplierAt } from './difficulty-curve';
+import { floorRunEnd, TILE } from './geometry';
+import { jumpReach } from './jump-model';
 import { validateChunk } from './validate-chunk';
 
 const FLOOR_Y = 314;
@@ -17,14 +20,18 @@ function plan(overrides: Partial<ChunkPlan>): ChunkPlan {
     pattern: null,
     cost: 0,
     pieces: [],
-    carry: { hardStreak: 0, lastObstacleX: 0, lastTreeX: 0, lastLargeDecoX: 0 },
+    carry: { wallet: 0, tension: 0, goal: null, lastObstacleX: 0, lastTreeX: 0, lastLargeDecoX: 0 },
     ...overrides,
   };
 }
 
 /** A chunk of plain ground: one run of floor at the height it starts at. */
-function ground(previous: ChunkPlan | null, centerTiles: number, y = previous?.exitY ?? FLOOR_Y): ChunkPlan {
-  const startX = previous?.endX ?? 0;
+function ground(
+  previous: ChunkPlan | null,
+  centerTiles: number,
+  y = previous?.exitY ?? FLOOR_Y,
+  startX = previous?.endX ?? 0
+): ChunkPlan {
   return plan({
     index: previous ? previous.index + 1 : 0,
     startX,
@@ -55,12 +62,22 @@ describe('validateChunk', () => {
     expect(validateChunk(ground(first, 4), first)).toEqual([]);
   });
 
-  it('accepts the widest gap the generator asks for', () => {
-    expect(validateChunk(gap(first, 200), first)).toEqual([]);
-  });
+  // D-03: a gap takes a share of the jump at the speed of its own X, and the
+  // player runs at that speed from the first step: there is no run-up.
+  describe('the widest gap the generator asks for', () => {
+    const fast = ground(null, 6, FLOOR_Y, 15000);
+    const hole = Math.floor(GAP.MAX_FRACTION * jumpReach(0, speedMultiplierAt(fast.endX)));
 
-  it('rejects a gap wider than the jump allows', () => {
-    expect(validateChunk(gap(first, 300), first)).toContain(jasmine.stringMatching(/cannot be reached/));
+    it('is accepted where the player runs fast enough to cross it', () => {
+      expect(hole).toBeGreaterThan(300);
+      expect(validateChunk(gap(fast, hole + TILE.END_WIDTH), fast)).toEqual([]);
+    });
+
+    it('is rejected at the start, where the player runs at base speed', () => {
+      expect(validateChunk(gap(first, hole + TILE.END_WIDTH), first)).toContain(
+        jasmine.stringMatching(/cannot be reached/)
+      );
+    });
   });
 
   it('accepts the floor a gap promised, where it promised it', () => {

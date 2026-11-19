@@ -136,10 +136,26 @@ export interface Surface {
   top: number;
 }
 
+/**
+ * What the budget is being saved up for. A gap carries its width as a
+ * share of the jump, so a hard gap takes longer to save for.
+ */
+export type Goal =
+  | { kind: 'gap'; fraction: number; bridged: boolean }
+  | { kind: 'pattern' }
+  | { kind: 'stone' };
+
 /** What a chunk hands down to the next one, besides its end and height. */
 export interface Carry {
-  /** Hard chunks in a row up to this one: decides the rest zones. */
-  hardStreak: number;
+  /**
+   * Budget saved and not spent yet. A pattern's stone can take it a little
+   * below zero; the chunks after it pay that back.
+   */
+  wallet: number;
+  /** What the wallet is being saved for. */
+  goal: Goal | null;
+  /** How hard the last chunks were, fading with each one: decides the rest zones. */
+  tension: number;
   /** Stones keep their distance across chunks. */
   lastObstacleX: number;
   /** Trees and large decorations keep their distance across chunks. */
@@ -179,7 +195,7 @@ export interface ChunkPlan {
   biome: BiomeType;
   kind: ChunkKind;
   pattern: PatternName | null;
-  /** How hard what was built actually is: decides the rest zones. */
+  /** How hard what was built actually is: paid from the wallet, added to the tension. */
   cost: number;
   pieces: Piece[];
   carry: Carry;

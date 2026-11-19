@@ -7,8 +7,24 @@ import {
   PLAYER_GRAVITY,
   WORLD_GRAVITY,
   airTime,
+  jumpHeightAt,
   jumpReach,
 } from './jump-model';
+
+/** The feet's height above the take-off after `time` s, stepped like the game. */
+function simulatedHeightAt(time: number, fps: number): number {
+  const dt = 1 / fps;
+  let vy = -JUMP_SPEED;
+  let y = 0;
+  for (let t = 0; t < time - dt / 2; t += dt) {
+    let multiplier = 1;
+    if (Math.abs(vy) < APEX_VELOCITY_THRESHOLD) multiplier = APEX_GRAVITY_MULT;
+    else if (vy > 0) multiplier = FALL_GRAVITY_MULT;
+    vy += (WORLD_GRAVITY + PLAYER_GRAVITY * multiplier) * dt;
+    y += vy * dt;
+  }
+  return -y;
+}
 
 /**
  * The game's own rule, stepped frame by frame the way Arcade Physics does
@@ -72,5 +88,32 @@ describe('jump model', () => {
 
   it('scales its reach with the speed', () => {
     expect(jumpReach(25, 1.2)).toBeCloseTo(jumpReach(25) * 1.2, 6);
+  });
+
+  // D-08: the coins over a gap follow the jump, so the jump has to be known
+  // at every moment, not only where it lands.
+  describe('height over time', () => {
+    it('starts at the take-off and tops out at the apex', () => {
+      expect(jumpHeightAt(0)).toBe(0);
+      let highest = 0;
+      for (let t = 0; t <= 1.5; t += 0.005) highest = Math.max(highest, jumpHeightAt(t));
+      expect(highest).toBeCloseTo(JUMP_APEX, 1);
+    });
+
+    it('comes down through each landing when its air time says', () => {
+      for (const drop of [-150, -60, 0, 40, 90]) {
+        expect(jumpHeightAt(airTime(drop) as number)).withContext(`drop ${drop}`).toBeCloseTo(-drop, 6);
+      }
+    });
+
+    // The fine step is the physics itself. The game steps each frame and
+    // drifts on its own, up to 5 px late in the fall at 144 fps: less than
+    // half a coin.
+    it("agrees with the game's gravity, stepped finely and at 144 fps", () => {
+      for (const t of [0.1, 0.4, 0.65, 0.8, 1.1, 1.4]) {
+        expect(Math.abs(jumpHeightAt(t) - simulatedHeightAt(t, 1000))).withContext(`at ${t} s`).toBeLessThan(1);
+        expect(Math.abs(jumpHeightAt(t) - simulatedHeightAt(t, 144))).withContext(`at ${t} s`).toBeLessThan(6);
+      }
+    });
   });
 });

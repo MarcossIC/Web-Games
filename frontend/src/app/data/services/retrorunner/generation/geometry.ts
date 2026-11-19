@@ -16,6 +16,12 @@ export const FLOOR_SURFACE_ABOVE_Y = 17;
 export const BLOCK_TOP_ABOVE_Y = TILE.BLOCK_SIZE / 2;
 
 /**
+ * Half the width of the part of a stone that kills, for the widest stone
+ * (Stones/7.png, 160 px at scale 0.45, 60 % of it: 21.6 px).
+ */
+export const STONE_HIT_HALF_WIDTH = 22;
+
+/**
  * Where a run of floor starting at `x` puts its end tile. The next chunk
  * starts there, its first tile over that end tile.
  */

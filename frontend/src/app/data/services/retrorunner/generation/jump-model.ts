@@ -57,6 +57,20 @@ export function airTime(drop: number): number | null {
 }
 
 /**
+ * How high the feet are above the take-off `time` s into a jump, through
+ * the rise, the apex and the fall. Negative once they drop below it.
+ */
+export function jumpHeightAt(time: number): number {
+  if (time <= RISE_TIME) return JUMP_SPEED * time - 0.5 * RISE_GRAVITY * time * time;
+
+  const apex = time - RISE_TIME;
+  if (apex <= APEX_TIME) return RISE_HEIGHT + V * apex - 0.5 * APEX_GRAVITY * apex * apex;
+
+  const fall = apex - APEX_TIME;
+  return RISE_HEIGHT - V * fall - 0.5 * FALL_GRAVITY * fall * fall;
+}
+
+/**
  * How far a jump at full running speed carries the player before landing
  * `drop` px below the take-off (negative: above it).
  * @param speedMultiplier - the speed ramp at that point of the world

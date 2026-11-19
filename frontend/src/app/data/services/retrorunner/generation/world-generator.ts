@@ -1,23 +1,26 @@
 import SeededRandom from '../utils/SeededRandom';
 import {
-  BRIDGE_CHANCE_PER_OBSTACLE,
+  BRIDGE_SHARE,
   COST,
   ELEVATION,
   FIRST_GAP_INDEX,
-  HARD_CHUNK_COST,
+  GAP,
+  GOAL_WEIGHTS,
   HUT_CHANCE,
   HUT_MAX_ELEVATION,
+  LANDING,
   MAX_ATTEMPTS,
-  REST_AFTER_HARD_CHUNKS,
-  REST_CHANCE,
+  REST_COIN_CHANCE,
   SAFE_START_END_X,
+  START_WALLET,
+  TENSION,
 } from './balance';
 import { ChunkDraft, ChunkStreams } from './chunk-draft';
-import { BiomeType, ChunkContext, ChunkKind, ChunkPlan, PatternName } from './chunk-plan';
-import { biomeAt, difficultyAt, isUnlocked } from './difficulty-curve';
+import { BiomeType, ChunkContext, ChunkKind, ChunkPlan, Goal, PatternName } from './chunk-plan';
+import { biomeAt, budgetAt, difficultyAt, isUnlocked, speedMultiplierAt } from './difficulty-curve';
 import { planArcCoins } from './fill';
-import { TILE } from './geometry';
-import { jumpReach } from './jump-model';
+import { FLOOR_SURFACE_ABOVE_Y, TILE } from './geometry';
+import { BASE_WALK_SPEED, jumpReach } from './jump-model';
 import { availablePatterns, PATTERNS } from './patterns';
 import { checkChunk, entrySurfaceAfter } from './validate-chunk';
 
@@ -40,7 +43,7 @@ export function firstContext(floorY: number): ChunkContext {
     previousKind: null,
     previousPattern: null,
     entrySurface: entrySurfaceAfter(null, 0, floorY),
-    carry: { hardStreak: 0, lastObstacleX: 0, lastTreeX: 0, lastLargeDecoX: 0 },
+    carry: { wallet: START_WALLET, goal: null, tension: 0, lastObstacleX: 0, lastTreeX: 0, lastLargeDecoX: 0 },
   };
 }
 
@@ -71,6 +74,7 @@ function streamsFor(seed: WorldSeed, index: number, attempt: number): ChunkStrea
     coins: new SeededRandom(`${seed.key}:${chunk}:coins`),
     decoration: new SeededRandom(`${looks}:${chunk}:decoration`),
     grass: new SeededRandom(`${looks}:${chunk}:grass`),
+    budget: new SeededRandom(`${seed.key}:${chunk}:budget`),
   };
 }
 
@@ -88,8 +92,9 @@ function stoneCost(draft: ChunkDraft): number {
 /**
  * Plain ground, a bounded step up or down from the floor before.
  * @param arriving - the player just arrived: nothing to pick up or avoid
+ * @param stone - the budget pays for a stone on it
  */
-function planGround(draft: ChunkDraft, arriving = false): Shape {
+function planGround(draft: ChunkDraft, { arriving = false, stone = false } = {}): Shape {
   const { terrain } = draft.rng;
   const d = draft.difficulty;
 
@@ -112,7 +117,7 @@ function planGround(draft: ChunkDraft, arriving = false): Shape {
   draft.decoration(floor.startX, floor.endX, y);
   if (!arriving) {
     draft.coins(floor.startX, floor.endX, y, d.coinChance);
-    draft.stone(floor.startX, floor.endX, y, d.obstacleChance);
+    if (stone) draft.stone(floor.startX, floor.endX, y, 1);
   }
   return { kind: 'ground', pattern: null, exitY: y, cost: stoneCost(draft) };
 }
@@ -123,33 +128,32 @@ function planRest(draft: ChunkDraft): Shape {
     ? draft.entryY
     : draft.floorY + Math.min(0, draft.entryElevation + ELEVATION.RETURN);
   const floor = draft.ground(draft.rng.terrain.intBetween(8, 12), y);
-  draft.coins(floor.startX, floor.endX, y, draft.difficulty.coinChance);
+  draft.coins(floor.startX, floor.endX, y, REST_COIN_CHANCE);
   draft.decoration(floor.startX, floor.endX, y);
   return { kind: 'rest', pattern: null, exitY: y, cost: 0 };
 }
 
 /**
- * A hole up to the next chunk, which starts with the landing. An open
- * hole brings the floor down; one with a bridge keeps both edges level.
+ * A hole up to the next chunk, which starts with the landing. Its width is
+ * a share of the jump at the speed of this X (D-03). An open hole brings
+ * the floor down; one with a bridge keeps both edges level.
  */
-function planGap(draft: ChunkDraft): Shape {
-  const { terrain } = draft.rng;
-  const d = draft.difficulty;
-  const width = terrain.intBetween(d.minGapWidth, d.maxGapWidth);
-  const bridged =
-    isUnlocked('bridges', draft.startX) && terrain.chance(d.obstacleChance * BRIDGE_CHANCE_PER_OBSTACLE);
+function planGap(draft: ChunkDraft, goal: Extract<Goal, { kind: 'gap' }>): Shape {
+  const exitY = goal.bridged ? draft.entryY : draft.floorY + Math.min(0, draft.entryElevation + ELEVATION.RETURN);
+  const reach = jumpReach(exitY - draft.entryY, speedMultiplierAt(draft.startX));
+  const hole = Math.floor(goal.fraction * reach);
+  const takeoffX = draft.startX + TILE.END_WIDTH;
+  const endX = takeoffX + hole;
 
-  const exitY = bridged ? draft.entryY : draft.floorY + Math.min(0, draft.entryElevation + ELEVATION.RETURN);
-  const endX = draft.startX + width;
-  if (bridged) {
-    draft.add({ type: 'bridge', startX: draft.startX + TILE.END_WIDTH, endX, floorY: draft.entryY });
+  if (goal.bridged) {
+    draft.add({ type: 'bridge', startX: takeoffX, endX, floorY: draft.entryY });
   }
-  draft.add(...planArcCoins(draft.startX, endX, exitY));
+  draft.add(
+    ...planArcCoins(takeoffX, endX, draft.entryY - FLOOR_SURFACE_ABOVE_Y, exitY - FLOOR_SURFACE_ABOVE_Y)
+  );
   draft.x = endX;
 
-  const hole = width - TILE.END_WIDTH;
-  const cost = hole / jumpReach(exitY - draft.entryY) + (bridged ? COST.BRIDGE : 0);
-  return { kind: 'gap', pattern: null, exitY, cost };
+  return { kind: 'gap', pattern: null, exitY, cost: hole / reach + (goal.bridged ? COST.BRIDGE : 0) };
 }
 
 function planPattern(draft: ChunkDraft, pattern: PatternName): Shape {
@@ -162,36 +166,87 @@ function planPattern(draft: ChunkDraft, pattern: PatternName): Shape {
   };
 }
 
-/** Decides what the chunk is, in the order the draws were always taken. */
-function shapeChunk(draft: ChunkDraft, context: ChunkContext): Shape {
+/** What a goal takes to buy. */
+function priceOf(goal: Goal): number {
+  switch (goal.kind) {
+    case 'gap':
+      return goal.fraction + (goal.bridged ? COST.BRIDGE : 0);
+    case 'pattern':
+      return COST.PATTERN;
+    case 'stone':
+      return COST.STONE;
+  }
+}
+
+/** The next thing to save up for, drawn by weight (D-01). */
+function pickGoal(draft: ChunkDraft): Goal {
+  const { budget } = draft.rng;
+  const total = GOAL_WEIGHTS.gap + GOAL_WEIGHTS.pattern + GOAL_WEIGHTS.stone;
+  const roll = budget.next() * total;
+  const fraction = budget.range(draft.difficulty.minGapFraction, draft.difficulty.maxGapFraction);
+  const bridged = isUnlocked('bridges', draft.startX) && budget.chance(BRIDGE_SHARE);
+
+  if (roll < GOAL_WEIGHTS.gap) return { kind: 'gap', fraction, bridged };
+  if (roll < GOAL_WEIGHTS.gap + GOAL_WEIGHTS.pattern) return { kind: 'pattern' };
+  return { kind: 'stone' };
+}
+
+/**
+ * Builds what the wallet was saved for, if it fits here.
+ * @returns null when it cannot go in this chunk: the goal waits
+ */
+function buyGoal(draft: ChunkDraft, context: ChunkContext, goal: Goal): { shape: Shape; bought: boolean } | null {
   const { terrain } = draft.rng;
-  const d = draft.difficulty;
-  if (draft.startX < SAFE_START_END_X) return planGround(draft, true);
-
-  if (context.carry.hardStreak >= REST_AFTER_HARD_CHUNKS && terrain.chance(REST_CHANCE)) {
-    return planRest(draft);
-  }
-
-  const afterHole = context.previousKind === 'gap' || context.previousPattern === 'fishing-hut';
-  if (context.index >= FIRST_GAP_INDEX && !afterHole && terrain.chance(d.gapChance)) {
-    if (
-      draft.biome === BiomeType.DUSK &&
-      draft.entryElevation > HUT_MAX_ELEVATION &&
-      terrain.chance(HUT_CHANCE)
-    ) {
-      return planPattern(draft, 'fishing-hut');
+  switch (goal.kind) {
+    case 'gap': {
+      const afterHole = context.previousKind === 'gap' || context.previousPattern === 'fishing-hut';
+      if (context.index < FIRST_GAP_INDEX || afterHole) return null;
+      if (
+        draft.biome === BiomeType.DUSK &&
+        draft.entryElevation > HUT_MAX_ELEVATION &&
+        terrain.chance(HUT_CHANCE)
+      ) {
+        return { shape: planPattern(draft, 'fishing-hut'), bought: true };
+      }
+      return { shape: planGap(draft, goal), bought: true };
     }
-    return planGap(draft);
+    case 'pattern':
+      if (draft.entryElevation <= ELEVATION.MAX) return null;
+      return { shape: planPattern(draft, terrain.pick(availablePatterns(draft))), bought: true };
+    case 'stone': {
+      // The stone may not fit: too close to another one, or to a landing.
+      const shape = planGround(draft, { stone: true });
+      return { shape, bought: shape.cost > 0 };
+    }
   }
+}
 
-  if (draft.entryElevation > ELEVATION.MAX && terrain.chance(d.patternChance)) {
-    return planPattern(draft, terrain.pick(availablePatterns(draft)));
+/**
+ * Decides what the chunk is: a rest when the tension is high (D-02), the
+ * goal once the wallet can pay for it (D-01), plain ground otherwise.
+ */
+function shapeChunk(draft: ChunkDraft, context: ChunkContext): Shape {
+  if (draft.startX < SAFE_START_END_X) return planGround(draft, { arriving: true });
+  if (context.carry.tension >= TENSION.REST_AT) return planRest(draft);
+
+  const goal = draft.carry.goal;
+  if (goal && draft.carry.wallet >= priceOf(goal)) {
+    const bought = buyGoal(draft, context, goal);
+    if (bought) {
+      if (bought.bought) draft.carry.goal = null;
+      return bought.shape;
+    }
   }
-
   return planGround(draft);
 }
 
 function draftChunk(seed: WorldSeed, context: ChunkContext, attempt: number, fallback: boolean): ChunkPlan {
+  // D-04: after a hole the player lands at the start of this chunk.
+  const afterHole = context.previousKind === 'gap' || context.previousPattern === 'fishing-hut';
+  const clearUntilX = afterHole
+    ? context.startX + LANDING.REACTION_TIME * BASE_WALK_SPEED * speedMultiplierAt(context.startX)
+    : context.startX;
+
   const draft = new ChunkDraft(
     context.startX,
     seed.floorY,
@@ -200,7 +255,8 @@ function draftChunk(seed: WorldSeed, context: ChunkContext, attempt: number, fal
     difficultyAt(context.startX),
     biomeAt(context.startX),
     streamsFor(seed, context.index, attempt),
-    { ...context.carry }
+    { ...context.carry, wallet: context.carry.wallet + budgetAt(context.startX) },
+    clearUntilX
   );
 
   // The fallback is the safest thing there is: flat ground at the height
@@ -209,6 +265,10 @@ function draftChunk(seed: WorldSeed, context: ChunkContext, attempt: number, fal
     ? { kind: 'ground', pattern: null, exitY: context.entryY, cost: 0 }
     : shapeChunk(draft, context);
   if (fallback) draft.ground(6, context.entryY);
+
+  draft.carry.wallet -= shape.cost;
+  draft.carry.tension = shape.kind === 'rest' ? 0 : context.carry.tension * TENSION.DECAY + shape.cost;
+  if (!draft.carry.goal) draft.carry.goal = pickGoal(draft);
 
   return {
     index: context.index,
@@ -222,10 +282,7 @@ function draftChunk(seed: WorldSeed, context: ChunkContext, attempt: number, fal
     pattern: shape.pattern,
     cost: shape.cost,
     pieces: draft.pieces,
-    carry: {
-      ...draft.carry,
-      hardStreak: shape.cost >= HARD_CHUNK_COST ? context.carry.hardStreak + 1 : 0,
-    },
+    carry: { ...draft.carry },
   };
 }
 

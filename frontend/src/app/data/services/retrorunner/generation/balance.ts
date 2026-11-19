@@ -9,103 +9,50 @@ import { BiomeType } from './chunk-plan';
 
 // --- Difficulty curve ---
 
-export interface DifficultyLevel {
-  /** World X where the level is reached in full. */
-  from: number;
-  gapChance: number;
-  minGapWidth: number;
-  maxGapWidth: number;
-  minCenterTiles: number;
-  maxCenterTiles: number;
-  obstacleChance: number;
-  coinChance: number;
-  patternChance: number;
-}
-
-/** Between two levels every value is interpolated by X. */
-export const DIFFICULTY_LEVELS: readonly DifficultyLevel[] = [
-  {
-    from: 0,
-    gapChance: 0,
-    minGapWidth: 40,
-    maxGapWidth: 70,
-    minCenterTiles: 7,
-    maxCenterTiles: 14,
-    obstacleChance: 0,
-    coinChance: 0.5,
-    patternChance: 0.1,
-  },
-  {
-    from: 800,
-    gapChance: 0.15,
-    minGapWidth: 40,
-    maxGapWidth: 80,
-    minCenterTiles: 6,
-    maxCenterTiles: 12,
-    obstacleChance: 0,
-    coinChance: 0.5,
-    patternChance: 0.2,
-  },
-  {
-    from: 2000,
-    gapChance: 0.2,
-    minGapWidth: 50,
-    maxGapWidth: 100,
-    minCenterTiles: 5,
-    maxCenterTiles: 10,
-    obstacleChance: 0.08,
-    coinChance: 0.45,
-    patternChance: 0.3,
-  },
-  {
-    from: 4000,
-    gapChance: 0.25,
-    minGapWidth: 60,
-    maxGapWidth: 120,
-    minCenterTiles: 4,
-    maxCenterTiles: 8,
-    obstacleChance: 0.15,
-    coinChance: 0.4,
-    patternChance: 0.35,
-  },
-  {
-    from: 7000,
-    gapChance: 0.3,
-    minGapWidth: 70,
-    maxGapWidth: 150,
-    minCenterTiles: 3,
-    maxCenterTiles: 7,
-    obstacleChance: 0.2,
-    coinChance: 0.4,
-    patternChance: 0.4,
-  },
-  {
-    from: 11000,
-    gapChance: 0.35,
-    minGapWidth: 80,
-    // Measured from the end of one floor to the start of the next; the
-    // hole itself is the end tile narrower (185 px).
-    maxGapWidth: 200,
-    minCenterTiles: 2,
-    maxCenterTiles: 6,
-    obstacleChance: 0.25,
-    coinChance: 0.45,
-    patternChance: 0.45,
-  },
-];
+/**
+ * What a chunk gets to spend on hazards at X, on average (D-01). One curve
+ * with no levels and no ceiling (D-05): nothing during the safe start, then
+ * it keeps growing, slower and slower.
+ *
+ *   budget(x) = SCALE * ln(1 + (x - SAFE_START_END_X) / RAMP)
+ *
+ * About 0.08 at x = 2000, 0.25 at x = 11000, 0.31 at x = 20000 and 0.375
+ * at x = 40000.
+ */
+export const BUDGET = {
+  SCALE: 0.096,
+  RAMP: 800,
+} as const;
 
 /**
- * A wave over X lowers the hazards for a while and then lets them back:
- * every WAVE_PERIOD px, half of it is calmer.
+ * What the wallet holds when the run starts: the first challenge is saved
+ * up already, so it comes right after the safe start.
  */
-export const WAVE = {
-  PERIOD: 3000,
-  /** How much of the hazards the calm half takes away at its lowest. */
-  STRENGTH: 0.25,
-  /** The calm half has more coins, up to this chance. */
-  COIN_BONUS: 0.2,
-  MAX_COIN_CHANCE: 0.7,
+export const START_WALLET = 0.3;
+
+/** Floors are as short as they get from this budget on. */
+export const FULL_BUDGET = 0.25;
+export const FLOOR_TILES = {
+  EASY: { minCenterTiles: 7, maxCenterTiles: 14 },
+  HARD: { minCenterTiles: 2, maxCenterTiles: 6 },
 } as const;
+
+/** A gap's hole as a share of the jump at the speed of its X (D-03). */
+export const GAP = {
+  MIN_FRACTION: 0.35,
+  /** The open decision "Hueco máximo": the hardest stretch asks for 85 %. */
+  MAX_FRACTION: 0.85,
+  /**
+   * How much the widest gap grows per unit of budget: 0.85 at x = 11000.
+   * Past FULL_BUDGET the narrowest grows at the same rate instead.
+   */
+  FRACTION_PER_BUDGET: 2,
+  /** The narrowest gap stops growing here, so gaps never all look alike. */
+  LATE_MIN_FRACTION: 0.7,
+} as const;
+
+export const COIN_CHANCE = 0.45;
+export const REST_COIN_CHANCE = 0.7;
 
 /** Each biome starts at its X and lasts until the next one. */
 export const BIOMES: readonly { from: number; biome: BiomeType }[] = [
@@ -139,8 +86,6 @@ export const SAFE_START_END_X = 950;
 /** The first chunks are never gaps. */
 export const FIRST_GAP_INDEX = 2;
 
-/** A gap's chance of a bridge, per unit of obstacle chance. */
-export const BRIDGE_CHANCE_PER_OBSTACLE = 2;
 /** In the dusk, a gap's chance of becoming a fishing hut. */
 export const HUT_CHANCE = 0.25;
 /** The hut needs the floor close to its lowest height (an elevation). */
@@ -163,11 +108,12 @@ export const ELEVATION = {
   RETURN: 40,
 } as const;
 
-// --- What things cost ---
+// --- What things cost, and how the budget is spent ---
 
 /**
  * The cost of a chunk is how hard what it holds really is. A gap costs the
- * share of the jump its hole takes; the rest are fixed.
+ * share of the jump its hole takes; the rest are fixed. The generator pays
+ * it from what it saved (D-01).
  */
 export const COST = {
   STONE: 0.3,
@@ -175,11 +121,31 @@ export const COST = {
   PATTERN: 0.2,
 } as const;
 
-/** A chunk this costly or more is hard. */
-export const HARD_CHUNK_COST = 0.25;
-/** After this many hard chunks in a row a rest zone may come. */
-export const REST_AFTER_HARD_CHUNKS = 2;
-export const REST_CHANCE = 0.7;
+/**
+ * What the generator saves up for next, by weight. A gap goal carries how
+ * wide it will be, so the saving lasts as long as the gap is hard.
+ */
+export const GOAL_WEIGHTS = {
+  gap: 0.35,
+  pattern: 0.4,
+  stone: 0.25,
+} as const;
+/** Once bridges are unlocked, a gap goal is a bridged gap this often. */
+export const BRIDGE_SHARE = 0.35;
+
+/**
+ * Each chunk adds its cost to the tension and the tension fades by DECAY;
+ * past REST_AT the next chunk is a rest zone, which clears it (D-02).
+ */
+export const TENSION = {
+  DECAY: 0.7,
+  REST_AT: 1.2,
+} as const;
+
+/** Nothing dangerous where a hole ends, for as long as a player takes to react (D-04). */
+export const LANDING = {
+  REACTION_TIME: 0.35,
+} as const;
 
 /** The share of the jump the generator lets a crossing take. */
 export const JUMP_SAFETY = 0.85;
