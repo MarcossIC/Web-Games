@@ -126,6 +126,29 @@ describe('BreakerControllerService', () => {
     expect(emitted.length).toBe(0);
   });
 
+  describe('PAUSE_REQUESTED (the HUD Pause button)', () => {
+    it('pauses the run and tells the scene to freeze, like the P key does', () => {
+      fromScene(BreakerBridgeEvents.READY);
+      controller.play();
+      emitted.length = 0;
+      fromScene(BreakerBridgeEvents.PAUSE_REQUESTED);
+      expect(controller.phase()).toBe('paused');
+      expect(sent(BreakerBridgeEvents.PAUSE).length).toBe(1);
+    });
+
+    it('is ignored outside a run, while it is ending, and after the visit is over', () => {
+      fromScene(BreakerBridgeEvents.READY);
+      fromScene(BreakerBridgeEvents.PAUSE_REQUESTED);
+      expect(controller.phase()).toBe('intro');
+      controller.play();
+      fromScene(BreakerBridgeEvents.RUN_ENDING);
+      fromScene(BreakerBridgeEvents.PAUSE_REQUESTED);
+      expect(controller.phase()).toBe('playing');
+      owner.destroy();
+      expect(EventBus.listenerCount(BreakerBridgeEvents.PAUSE_REQUESTED)).toBe(0);
+    });
+  });
+
   it('GAME_OVER stores the summary, records the run and moves to over', () => {
     fromScene(BreakerBridgeEvents.READY);
     controller.play();

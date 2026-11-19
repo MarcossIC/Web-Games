@@ -1,4 +1,8 @@
-<div class="modal-scrim">
+<div
+  class="modal-scrim"
+  [class.is-paused]="controller.phase() === 'paused'"
+  [class.show-help]="helpOpen()"
+>
   <div
     class="modal modal-bg sheet breaker-sheet"
     trapFocus
@@ -7,11 +11,56 @@
     aria-labelledby="breaker-dialog-title"
   >
     <h2 id="breaker-dialog-title" class="modal-title-with-bar">
-      {{ controller.phase() === "paused" ? "Paused" : "How to play" }}
+      {{ controller.phase() === "paused" && !helpOpen() ? "Paused" : "How to play" }}
     </h2>
 
+    @if (controller.phase() === "paused") {
+    <!-- Portrait touch screens only (display: none elsewhere): the pause menu. -->
+    <div class="pause-menu">
+      <p class="pause-best">
+        @if (controller.records().best; as best) {
+        Best {{ best.score | number }} &middot; Sector {{ best.sector }}
+        } @else { No record yet }
+      </p>
+      <button class="abstract-button menu-button menu-resume" type="button" (click)="playGame()">
+        Resume
+      </button>
+      <button class="abstract-button menu-button menu-restart" type="button" (click)="restartGame()">
+        Restart
+      </button>
+      <button
+        class="abstract-button menu-button menu-sound"
+        type="button"
+        [attr.aria-pressed]="controller.muted()"
+        (click)="controller.toggleMute()"
+      >
+        {{ controller.muted() ? "Sound off" : "Sound on" }}
+      </button>
+      <button class="abstract-button menu-button menu-help" type="button" (click)="openHelp()">
+        How to play
+      </button>
+      <button class="abstract-button menu-button menu-exit" type="button" (click)="close()">
+        Exit game
+      </button>
+    </div>
+    }
+
+    <div class="help">
+
     <dl class="keys">
-      <div class="key-row">
+      <div class="key-row touch-row">
+        <dt>Move</dt>
+        <dd><span class="word">Drag anywhere to move the paddle</span></dd>
+      </div>
+      <div class="key-row touch-row">
+        <dt>Launch</dt>
+        <dd><span class="word">Tap to launch</span></dd>
+      </div>
+      <div class="key-row touch-row">
+        <dt>Nova</dt>
+        <dd><span class="word">Tap NOVA when the meter is full</span></dd>
+      </div>
+      <div class="key-row keyboard-row">
         <dt>Move</dt>
         <dd>
           <span class="word">Mouse</span>
@@ -19,7 +68,7 @@
           <kbd>A</kbd><kbd>D</kbd>
         </dd>
       </div>
-      <div class="key-row">
+      <div class="key-row keyboard-row">
         <dt>Launch &amp; fire</dt>
         <dd>
           <span class="word">Click</span>
@@ -27,7 +76,7 @@
           <kbd>Space</kbd>
         </dd>
       </div>
-      <div class="key-row">
+      <div class="key-row keyboard-row">
         <dt>Overdrive</dt>
         <dd>
           <kbd>Shift</kbd>
@@ -35,13 +84,7 @@
           <kbd>E</kbd>
         </dd>
       </div>
-      <div class="key-row touch-row">
-        <dt>Touch</dt>
-        <dd>
-          <span class="word">Drag to move, tap to launch, tap with a 2nd finger for Overdrive</span>
-        </dd>
-      </div>
-      <div class="key-row">
+      <div class="key-row keyboard-row">
         <dt>Pause/Resume</dt>
         <dd>
           <kbd>P</kbd>
@@ -49,11 +92,11 @@
           <kbd>Esc</kbd>
         </dd>
       </div>
-      <div class="key-row">
+      <div class="key-row keyboard-row">
         <dt>Mute</dt>
         <dd><kbd>M</kbd></dd>
       </div>
-      <div class="key-row lock-row">
+      <div class="key-row keyboard-row lock-row">
         <dt>Lock mouse</dt>
         <dd>
           <kbd>L</kbd>
@@ -86,12 +129,22 @@
       </p>
     </section>
 
-    <p class="tip">
+    <p class="tip keyboard-tip">
       Early sectors drop lots of power-ups. Fill the Overdrive meter and press
       Shift for a Nova.
     </p>
+    <p class="tip touch-tip">
+      Early sectors drop lots of power-ups. Fill the Overdrive meter and tap
+      NOVA.
+    </p>
+    </div>
 
     <div class="sheet-actions">
+      @if (helpOpen()) {
+      <button class="abstract-button help-back" type="button" (click)="closeHelp()">
+        Back
+      </button>
+      }
       <button class="abstract-button exit-button" type="button" (click)="close()">
         Exit Game
       </button>

@@ -62,6 +62,13 @@ describe('BreakerComponent', () => {
     expect(getComputedStyle(screen).touchAction).toBe('none');
   });
 
+  it('keeps the game screen and the strip in the DOM for the portrait-touch CSS to reshape', () => {
+    // The layout switch is pure CSS: the elements the media query targets must exist.
+    expect(el().querySelector('app-game-bar')).not.toBeNull();
+    expect(el().querySelector('.play > .screen')).not.toBeNull();
+    expect(el().querySelector('.play > .strip')).not.toBeNull();
+  });
+
   it('shows No record yet, then the best record', () => {
     expect(el().querySelector('.best')?.textContent).toContain('No record yet');
     (controller['records'] as ReturnType<typeof signal<unknown>>).set({

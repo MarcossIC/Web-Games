@@ -298,4 +298,9 @@ export interface BreakerEngineOptions {
   seed: number;
   /** Sector to start in (1 by default). */
   startSector?: number;
+  /**
+   * Height of the world in px (720 by default, the desktop one; the width
+   * is always 960). Taller worlds are for phones held upright.
+   */
+  height?: number;
 }

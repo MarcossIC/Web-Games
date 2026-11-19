@@ -1,3 +1,4 @@
+import { WORLD } from '../engine/config';
 import type { BreakerInput } from '../engine/types';
 
 /** What a key does in the game; the Phaser side maps key codes onto these. */
@@ -5,6 +6,16 @@ export type InputAction = 'left' | 'right' | 'fire' | 'overdrive';
 
 /** A touch shorter and stiller than this is a tap (launch); anything else is a drag (steer). */
 export const TAP = { MAX_MS: 280, MAX_MOVE: 14 } as const;
+
+/**
+ * How far the paddle goes per px the finger travels. A little over 1: the
+ * thumb lives in a small area, so the paddle reaches the walls without the
+ * finger having to.
+ */
+export const TOUCH_DRAG_GAIN = 1.25;
+
+/** What the touch drag needs of the paddle: where it is and how wide. */
+export type PaddleSource = () => Readonly<{ x: number; w: number }>;
 
 /**
  * Under pointer lock the cursor stands still and only its motion (dx, in
@@ -25,8 +36,11 @@ export function lockedTargetX(from: number, dx: number, min: number, max: number
  * Steering: the pointer steers until a steering key is pressed; then the
  * keyboard steers until the mouse really moves again (SCENE.md, Entrada).
  * Mouse: a press launches at once and holds fire. Touch: a drag steers and
- * holds fire (lasers), a quick tap launches. Only the first finger down
- * steers: a second one never moves the paddle nor ends the first one's drag;
+ * holds fire (lasers), a quick tap launches. With a paddle source the drag is
+ * relative: the target walks from where the paddle was when the finger went
+ * down by TOUCH_DRAG_GAIN times the finger's travel, so the paddle never
+ * jumps under the finger and the finger can be anywhere (the thumb room).
+ * Only the first finger down steers: a second one never moves the paddle nor ends the first one's drag;
  * pressing it while the first is down triggers Overdrive.
  */
 export class InputState {
@@ -52,7 +66,14 @@ export class InputState {
   private touchId = 0;
   private touchDownAt = 0;
   private touchDownX = 0;
+  private lastTouchX = 0;
+  /** Where the paddle stood when the steering finger went down. */
+  private touchPaddleX = 0;
   private touching = false;
+  /** Pointers whose press landed on the HUD: they never steer, launch nor count as Overdrive. */
+  private readonly blocked = new Set<number>();
+
+  constructor(private readonly paddle?: PaddleSource) {}
 
   get steering(): 'pointer' | 'keyboard' {
     return this.steerer;
@@ -84,23 +105,47 @@ export class InputState {
     else if (action === 'fire') this.fireKey = false;
   }
 
+  /** The Overdrive button of the HUD: the same edge the two-finger tap makes. */
+  requestOverdrive(): void {
+    this.pendingOverdrive = true;
+  }
+
   pointerMove(x: number, touch: boolean, id = 0): void {
-    if (!Number.isFinite(x)) return;
+    if (!Number.isFinite(x) || this.blocked.has(id)) return;
     if (touch && (!this.touching || id !== this.touchId)) return;
+    if (touch && this.paddle) {
+      const last = this.lastTouchX;
+      this.lastTouchX = x;
+      if (this.steerer === 'keyboard' && Math.abs(x - last) < 1) return;
+      const half = this.paddle().w / 2;
+      const target = this.touchPaddleX + (x - this.touchDownX) * TOUCH_DRAG_GAIN;
+      this.pointerX = Math.max(WORLD.LEFT_WALL_X + half, Math.min(WORLD.RIGHT_WALL_X - half, target));
+      this.steerer = 'pointer';
+      return;
+    }
     // A move event with no real motion (a click, a scroll) keeps the keyboard steering.
     if (this.steerer === 'keyboard' && this.pointerX !== null && Math.abs(x - this.pointerX) < 1) return;
     this.pointerX = x;
     this.steerer = 'pointer';
   }
 
-  pointerDown(x: number, touch: boolean, timeMs: number, id = 0): void {
+  /**
+   * `onHud`: the press landed on the HUD (the caller knows its geometry). It is
+   * swallowed whole: its moves and its release are ignored too.
+   */
+  pointerDown(x: number, touch: boolean, timeMs: number, id = 0, onHud = false): void {
+    if (onHud) {
+      this.blocked.add(id);
+      return;
+    }
     if (touch && this.touching) {
       // A second finger never steers nor launches: it is the Overdrive tap.
       if (id !== this.touchId) this.pendingOverdrive = true;
       return;
     }
     if (Number.isFinite(x)) {
-      this.pointerX = x;
+      // A finger keeps the paddle where it is; a mouse points at the spot.
+      this.pointerX = touch && this.paddle ? this.paddle().x : x;
       this.steerer = 'pointer';
     }
     this.pointerHeld = true;
@@ -110,12 +155,15 @@ export class InputState {
       this.touchId = id;
       this.touchDownAt = timeMs;
       this.touchDownX = Number.isFinite(x) ? x : 0;
+      this.lastTouchX = this.touchDownX;
+      this.touchPaddleX = this.paddle?.().x ?? 0;
     } else {
       this.pendingLaunch = true;
     }
   }
 
   pointerUp(x: number, touch: boolean, timeMs: number, id = 0): void {
+    if (this.blocked.delete(id)) return;
     if (touch && this.touching && id !== this.touchId) return; // a second finger lifting
     this.pointerHeld = false;
     if (!touch || !this.touching) return;
@@ -134,6 +182,7 @@ export class InputState {
     this.pendingLaunch = false;
     this.pendingOverdrive = false;
     this.pressedSinceSample = false;
+    this.blocked.clear();
   }
 
   /** This frame's input; edges are cleared once sampled. */
@@ -158,8 +207,13 @@ export interface InputHints {
 }
 
 /** On-screen wording for the device in use. */
-export function inputHints(touch: boolean): InputHints {
+export function inputHints(touch: boolean, hudButtons = true): InputHints {
   return touch
-    ? { launch: 'TAP TO LAUNCH', cardFooter: 'TAP TO CONTINUE', nova: '2-FINGER TAP · NOVA' }
+    ? {
+        launch: 'TAP TO LAUNCH',
+        cardFooter: 'TAP TO CONTINUE',
+        // Without the HUD button (a landscape tablet) the only way is the second finger.
+        nova: hudButtons ? 'TAP NOVA' : '2-FINGER TAP · NOVA',
+      }
     : { launch: 'CLICK OR SPACE TO LAUNCH', cardFooter: 'CLICK OR SPACE TO CONTINUE', nova: 'SHIFT · NOVA' };
 }

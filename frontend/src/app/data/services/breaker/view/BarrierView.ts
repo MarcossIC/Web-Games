@@ -17,9 +17,9 @@ export class BarrierView {
   private clockMs = 0;
   private burnMs = -1;
 
-  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer) {
+  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, barrierY: number = EFFECTS.BARRIER_Y) {
     this.strip = scene.add
-      .tileSprite(BarrierArt.WIDTH / 2, EFFECTS.BARRIER_Y, BarrierArt.WIDTH, BarrierArt.HEIGHT, BreakerTexture.BARRIER)
+      .tileSprite(BarrierArt.WIDTH / 2, barrierY, BarrierArt.WIDTH, BarrierArt.HEIGHT, BreakerTexture.BARRIER)
       .setTileScale(1 / TEXTURE_SCALE)
       .setDepth(DEPTH.BARRIER)
       .setVisible(false);

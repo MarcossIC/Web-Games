@@ -17,6 +17,8 @@ import {
   ROW_MOTION_WALL_GAP,
   STEP,
   WORLD,
+  worldLayout,
+  type WorldLayout,
 } from './config';
 import {
   bossBonus,
@@ -76,6 +78,16 @@ export const IDLE_INPUT: Readonly<BreakerInput> = Object.freeze({
 });
 
 /**
+ * How fast (1/s) the paddle closes on a pointer `gap` px away: POINTER_EASE
+ * right at it, growing linearly to POINTER_EASE_FAR at POINTER_FAR_GAP and
+ * flat beyond. Gentle up close, quick when far.
+ */
+export function pointerEaseRate(gap: number): number {
+  const k = Math.min(1, Math.abs(gap) / PADDLE.POINTER_FAR_GAP);
+  return PADDLE.POINTER_EASE + (PADDLE.POINTER_EASE_FAR - PADDLE.POINTER_EASE) * k;
+}
+
+/**
  * Test-only levers: a fixed layout for every sector, tuned sector params
  * and a starting score. Not part of the contract with the view; use
  * {@link BreakerEngine.forTest}.
@@ -109,6 +121,8 @@ interface SimBrick extends Brick {
 }
 interface SimCapsule extends Capsule {
   id: number;
+  /** px/s, set on every spawn: FALL_SPEED scaled by the world's fallScale. */
+  vy: number;
   kind: PowerUpKind;
 }
 interface SimLaser extends Laser {
@@ -151,6 +165,8 @@ const MAX_BOUNCE_RAD = PADDLE.MAX_BOUNCE_DEG * DEG;
  */
 export class BreakerEngine {
   private readonly seed: number;
+  /** Everything that depends on the world height, built once: restarts and new sectors keep it. */
+  readonly layout: WorldLayout;
   private readonly rng: Rng;
   private layoutOverride: readonly string[] | null = null;
   private paramsOverride: Partial<SectorParams> | null = null;
@@ -269,6 +285,8 @@ export class BreakerEngine {
   constructor(options: BreakerEngineOptions) {
     this.seed = Math.floor(options.seed) >>> 0;
     this.rng = new Rng(options.seed);
+    this.layout = worldLayout(options.height);
+    (this.paddle as { y: number }).y = this.layout.paddleY;
     this.view = {
       phase: 'serve',
       sector: 1,
@@ -672,9 +690,10 @@ export class BreakerEngine {
       p.vx += (axis * PADDLE.KEY_SPEED - p.vx) * Math.min(1, dt * PADDLE.KEY_EASE);
       p.x += p.vx * dt;
     } else {
-      // Pointer: close in on the target fast, but never teleport.
+      // Pointer: close in on the target, harder the farther it is, but never teleport.
       const maxStep = PADDLE.POINTER_MAX_SPEED * dt;
-      let step = (input.pointerX - p.x) * Math.min(1, dt * PADDLE.POINTER_EASE);
+      const gap = input.pointerX - p.x;
+      let step = gap * Math.min(1, dt * pointerEaseRate(gap));
       if (step > maxStep) step = maxStep;
       else if (step < -maxStep) step = -maxStep;
       p.x += step;
@@ -709,7 +728,7 @@ export class BreakerEngine {
 
   /**
    * From sector 8 the formation creeps down. A breakable brick whose bottom
-   * edge reaches y = 600 costs a life and pushes the whole formation back up
+   * edge reaches the danger line (y = 600 on desktop) costs a life and pushes the whole formation back up
    * 90 px (never above where it started). The rally goes on: the ball is
    * not reset, so the penalty is the life, not the momentum.
    */
@@ -728,9 +747,9 @@ export class BreakerEngine {
       if (isBreakable(brick.kind)) lowest = Math.max(lowest, bottom);
       else lowestFixed = Math.max(lowestFixed, bottom);
     }
-    if (lowestFixed > CEILING.DANGER_Y) this.formationY -= lowestFixed - CEILING.DANGER_Y;
+    if (lowestFixed > this.layout.dangerY) this.formationY -= lowestFixed - this.layout.dangerY;
     for (const brick of this.bricks) if (brick.shield < 0) brick.y = brick.baseY + this.formationY;
-    if (lowest < CEILING.DANGER_Y) return;
+    if (lowest < this.layout.dangerY) return;
 
     this.formationY = Math.max(0, this.formationY - CEILING.PUSH_BACK);
     for (const brick of this.bricks) if (brick.shield < 0) brick.y = brick.baseY + this.formationY;
@@ -746,7 +765,7 @@ export class BreakerEngine {
   private ballSpeed(): number {
     const speedup = Math.min(BALL.MAX_SPEEDUP, BALL.SPEEDUP_PER_PADDLE_HIT * this.paddleHits);
     const nova = this.novaMs > 0 ? OVERDRIVE.NOVA_SPEED_FACTOR : 1;
-    return this.params.ballSpeed * (1 + speedup) * ballSpeedFactor(this.effects) * nova;
+    return this.params.ballSpeed * this.layout.ballSpeedScale * (1 + speedup) * ballSpeedFactor(this.effects) * nova;
   }
 
   private newBall(): SimBall {
@@ -850,13 +869,13 @@ export class BreakerEngine {
 
       this.collide(ball, dtMs / 1000, speed, live && this.phase === 'playing');
 
-      if (!ball.stuck && ball.vy > 0 && barrierUp && !barrierUsed && ball.y + ball.r >= EFFECTS.BARRIER_Y) {
-        ball.y = EFFECTS.BARRIER_Y - ball.r;
+      if (!ball.stuck && ball.vy > 0 && barrierUp && !barrierUsed && ball.y + ball.r >= this.layout.barrierY) {
+        ball.y = this.layout.barrierY - ball.r;
         ball.vy = -ball.vy;
         barrierUsed = true;
         this.effects.remove('barrier');
         this.emit({ type: 'barrier-used', x: ball.x });
-      } else if (ball.y - ball.r > WORLD.LOST_Y) {
+      } else if (ball.y - ball.r > this.layout.lostY) {
         ball.alive = false;
         this.emit({ type: 'ball-lost', x: ball.x });
       }
@@ -1329,7 +1348,8 @@ export class BreakerEngine {
   }
 
   private spawnCapsule(kind: PowerUpKind, x: number, y: number): void {
-    const capsule = this.capsulePool.pop() ?? ({ id: 0, kind, x: 0, y: 0, prevY: 0, vy: CAPSULE.FALL_SPEED, alive: true } as SimCapsule);
+    const capsule = this.capsulePool.pop() ?? ({ id: 0, kind, x: 0, y: 0, prevY: 0, vy: 0, alive: true } as SimCapsule);
+    capsule.vy = CAPSULE.FALL_SPEED * this.layout.fallScale;
     capsule.id = this.nextId++;
     capsule.kind = kind;
     capsule.x = x;
@@ -1354,7 +1374,7 @@ export class BreakerEngine {
         this.powerUpsCaught++;
         this.emit({ type: 'capsule-caught', kind: c.kind, x: c.x, y: c.y });
         this.applyPowerUp(c.kind);
-      } else if (c.y - CAPSULE.H / 2 > WORLD.LOST_Y) {
+      } else if (c.y - CAPSULE.H / 2 > this.layout.lostY) {
         c.alive = false;
       }
     }
@@ -1766,7 +1786,7 @@ export class BreakerEngine {
     const y = core.y + core.h;
     const p = this.paddle;
     const aim = Math.atan2(p.x - x, Math.max(1, p.y - y));
-    const speed = BOSS.PELLET_SPEED[core.phase - 1];
+    const speed = BOSS.PELLET_SPEED[core.phase - 1] * this.layout.fallScale;
     const count = volleyCount(core.phase);
     let fired = 0;
     for (let k = 0; k < count && this.pellets.length < BOSS.MAX_PELLETS; k++) {
@@ -1815,7 +1835,7 @@ export class BreakerEngine {
         this.emit({ type: 'pellet-hit-paddle', x: pellet.x, y: p.y, stunMs: BOSS.STUN_MS });
         continue;
       }
-      if (pellet.y - r > WORLD.LOST_Y || pellet.x < -r || pellet.x > WORLD.WIDTH + r) {
+      if (pellet.y - r > this.layout.lostY || pellet.x < -r || pellet.x > WORLD.WIDTH + r) {
         pellet.alive = false;
         continue;
       }

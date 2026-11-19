@@ -22,6 +22,8 @@ export enum BreakerBridgeEvents {
   READY = 'breaker-ready',
   /** The window lost focus or the tab was hidden while playing. */
   AUTO_PAUSED = 'breaker-auto-paused',
+  /** The player tapped the HUD Pause button: the page decides (it owns the flow) and answers PAUSE. */
+  PAUSE_REQUESTED = 'breaker-pause-requested',
   /** The last life is gone: GAME_OVER follows after a short delay, and the run can no longer be paused. */
   RUN_ENDING = 'breaker-run-ending',
   /** Payload: RunSummary (from engine/types). No lives left. */

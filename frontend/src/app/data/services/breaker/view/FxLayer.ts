@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { BreakerTexture, TEXTURE_SCALE } from '@app/data/models/breaker/BreakerKeys';
+import { type Board, canvasHeight, DESKTOP_BOARD, isTallBoard } from './board-layout';
 import { Pool } from './pool';
 import { addLabel } from './bitmap-fonts';
 import { COLOR, DEPTH, FONT } from './scene-kit';
@@ -29,6 +30,8 @@ interface Floater {
 }
 
 const FLOAT_MS = 820;
+/** Floating labels on a tall board: 18 px at 0.4 display scale is ~7 CSS px, unreadable. */
+const TALL_FLOAT_SCALE = 1.7;
 
 /** Paints the edge glow once per texture manager (it survives scene restarts). */
 function ensureEdgeGlow(scene: Phaser.Scene): void {
@@ -66,6 +69,8 @@ export class FxLayer {
   private readonly flares: Pool<Sprite>;
   private readonly floaters: Pool<Floater>;
   private readonly edge: Phaser.GameObjects.Image;
+  private readonly worldHeight: number;
+  private readonly floatScale: number;
   private edgeAlpha = 0;
   private edgeColor: number = COLOR.RED;
   private nova = false;
@@ -76,8 +81,11 @@ export class FxLayer {
   constructor(
     private readonly scene: Phaser.Scene,
     world: Phaser.GameObjects.Layer,
-    ui: Phaser.GameObjects.Layer
+    ui: Phaser.GameObjects.Layer,
+    board: Board = DESKTOP_BOARD
   ) {
+    this.worldHeight = board.height;
+    this.floatScale = isTallBoard(board) ? TALL_FLOAT_SCALE : 1;
     const s = 1 / TEXTURE_SCALE;
     this.shards = scene.add.particles(0, 0, BreakerTexture.SHARD, {
       emitting: false,
@@ -135,8 +143,10 @@ export class FxLayer {
     ensureEdgeGlow(scene);
     this.edge = scene.add
       .image(0, 0, EDGE_GLOW_KEY)
+      // The whole canvas: the flash also tints the HUD rows above the world.
       .setOrigin(0, 0)
-      .setDisplaySize(scene.scale.width, scene.scale.height)
+      .setPosition(0, -board.extra)
+      .setDisplaySize(scene.scale.width, canvasHeight(board))
       .setDepth(DEPTH.EDGE_GLOW)
       .setVisible(false);
     ui.add(this.edge);
@@ -174,7 +184,7 @@ export class FxLayer {
     const f = this.floaters.acquire() ?? this.oldestFloater();
     if (!f) return;
     f.age = 0;
-    f.scale = scale;
+    f.scale = scale * this.floatScale;
     f.baseY = y;
     f.life = FLOAT_MS;
     f.text.setText(label).setTint(tint).setPosition(x, y).setVisible(true).setAlpha(1).setScale(0.4 * scale);
@@ -209,7 +219,7 @@ export class FxLayer {
     this.focused = false;
     const cam = this.scene.cameras.main;
     cam.zoomTo(1, 320, 'Sine.easeInOut', true);
-    cam.pan(this.scene.scale.width / 2, this.scene.scale.height / 2, 320, 'Sine.easeInOut', true);
+    cam.pan(this.scene.scale.width / 2, this.worldHeight / 2, 320, 'Sine.easeInOut', true);
   }
 
   update(dtMs: number): void {

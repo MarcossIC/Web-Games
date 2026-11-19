@@ -9,14 +9,22 @@ import { WelcomeBreakerModalComponent } from './welcome-breaker-modal.component'
 describe('WelcomeBreakerModalComponent', () => {
   let fixture: ComponentFixture<WelcomeBreakerModalComponent>;
   let phase: ReturnType<typeof signal<string>>;
-  let controller: { phase: typeof phase; captureMouse: ReturnType<typeof signal<boolean>>; play: jasmine.Spy; restart: jasmine.Spy };
+  let controller: { phase: typeof phase; captureMouse: ReturnType<typeof signal<boolean>>; muted: ReturnType<typeof signal<boolean>>; records: ReturnType<typeof signal<unknown>>; play: jasmine.Spy; restart: jasmine.Spy; toggleMute: jasmine.Spy };
   let router: jasmine.SpyObj<Router>;
 
   const el = () => fixture.nativeElement as HTMLElement;
 
   beforeEach(async () => {
     phase = signal('intro');
-    controller = { phase, captureMouse: signal(true), play: jasmine.createSpy('play'), restart: jasmine.createSpy('restart') };
+    controller = {
+      phase,
+      captureMouse: signal(true),
+      muted: signal(false),
+      records: signal({ version: 1, best: null, bestSectorTimes: {}, bestCombo: 0 }),
+      play: jasmine.createSpy('play'),
+      restart: jasmine.createSpy('restart'),
+      toggleMute: jasmine.createSpy('toggleMute'),
+    };
     router = jasmine.createSpyObj('Router', ['navigate']);
     await TestBed.configureTestingModule({
       imports: [WelcomeBreakerModalComponent],
@@ -63,10 +71,90 @@ describe('WelcomeBreakerModalComponent', () => {
     });
   });
 
-  it('explains the touch controls, Overdrive included', () => {
-    const text = el().querySelector('.key-row.touch-row')?.textContent ?? '';
-    expect(text).toContain('Touch');
-    expect(text).toContain('2nd finger');
+  it('explains the touch gestures, NOVA included', () => {
+    const text = Array.from(el().querySelectorAll('.key-row.touch-row'))
+      .map((r) => r.textContent)
+      .join(' ');
+    expect(text).toContain('Drag anywhere to move the paddle');
+    expect(text).toContain('Tap to launch');
+    expect(text).toContain('Tap NOVA when the meter is full');
+  });
+
+  it('marks every keyboard row (Lock mouse included) so touch devices can hide them', () => {
+    const keyboardRows = el().querySelectorAll('.key-row.keyboard-row');
+    expect(keyboardRows.length).toBeGreaterThanOrEqual(5);
+    expect(el().querySelector('.lock-row')?.classList).toContain('keyboard-row');
+    expect(el().querySelector('.touch-row')?.classList).not.toContain('keyboard-row');
+  });
+
+  describe('pause screen', () => {
+    const menu = () => el().querySelector('.pause-menu') as HTMLElement | null;
+    const btn = (cls: string) => el().querySelector(`.pause-menu .${cls}`) as HTMLButtonElement;
+
+    beforeEach(() => {
+      phase.set('paused');
+      fixture.detectChanges();
+    });
+
+    it('is not rendered in the intro', () => {
+      phase.set('intro');
+      fixture.detectChanges();
+      expect(menu()).toBeNull();
+    });
+
+    it('stacks Resume, Restart, Sound, How to play and Exit', () => {
+      const labels = Array.from(menu()!.querySelectorAll('button')).map((b) => b.textContent!.trim());
+      expect(labels).toEqual(['Resume', 'Restart', 'Sound on', 'How to play', 'Exit game']);
+    });
+
+    it('shows the best record', () => {
+      expect(menu()!.querySelector('.pause-best')?.textContent).toContain('No record yet');
+      controller.records.set({ version: 1, best: { score: 12340, sector: 4 }, bestSectorTimes: {}, bestCombo: 1 });
+      fixture.detectChanges();
+      expect(menu()!.querySelector('.pause-best')?.textContent).toContain('Best 12,340');
+      expect(menu()!.querySelector('.pause-best')?.textContent).toContain('Sector 4');
+    });
+
+    it('Resume and Restart call the controller', () => {
+      btn('menu-resume').click();
+      expect(controller.play).toHaveBeenCalled();
+      btn('menu-restart').click();
+      expect(controller.restart).toHaveBeenCalled();
+    });
+
+    it('Sound toggles mute and shows its state', () => {
+      btn('menu-sound').click();
+      expect(controller.toggleMute).toHaveBeenCalled();
+      expect(btn('menu-sound').getAttribute('aria-pressed')).toBe('false');
+      controller.muted.set(true);
+      fixture.detectChanges();
+      expect(btn('menu-sound').textContent).toContain('Sound off');
+      expect(btn('menu-sound').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('Exit goes to the catalog', () => {
+      btn('menu-exit').click();
+      expect(router.navigate).toHaveBeenCalledWith(['/games']);
+    });
+
+    it('How to play opens the help in the same screen and Back returns', () => {
+      const root = () => el().querySelector('.modal-scrim') as HTMLElement;
+      expect(root().classList).not.toContain('show-help');
+      expect(el().querySelector('.help-back')).toBeNull();
+      btn('menu-help').click();
+      fixture.detectChanges();
+      expect(root().classList).toContain('show-help');
+      expect(el().querySelector('h2')?.textContent).toContain('How to play');
+      (el().querySelector('.help-back') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(root().classList).not.toContain('show-help');
+      expect(el().querySelector('h2')?.textContent).toContain('Paused');
+    });
+
+    it('is a modal dialog', () => {
+      const dialog = el().querySelector('[role=dialog]')!;
+      expect(dialog.getAttribute('aria-modal')).toBe('true');
+    });
   });
 
   it('Play calls the controller', () => {

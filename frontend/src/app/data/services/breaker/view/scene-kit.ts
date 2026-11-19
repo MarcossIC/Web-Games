@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { type Board, canvasHeight, DESKTOP_BOARD } from './board-layout';
 
 /**
  * Shared bits of the Nova Breaker view: draw order, colors, fonts and the
@@ -68,13 +69,22 @@ export interface SceneLayers {
   uiCamera: Phaser.Cameras.Scene2D.Camera;
 }
 
-export function createLayers(scene: Phaser.Scene): SceneLayers {
+/**
+ * The canvas is `board.extra` rows taller than the world on a tall board (the
+ * HUD rows). Both cameras keep engine coordinates: the main one is pushed down
+ * by `extra` (its viewport), the UI one covers the whole canvas and looks
+ * `extra` px above y = 0 (its scroll), so the HUD draws at negative y and
+ * nothing that is placed in engine coordinates has to know about the rows.
+ */
+export function createLayers(scene: Phaser.Scene, board: Board = DESKTOP_BOARD): SceneLayers {
   const world = scene.add.layer().setDepth(0);
   const ui = scene.add.layer().setDepth(1);
   const main = scene.cameras.main;
+  main.setViewport(0, board.extra, scene.scale.width, board.height);
   // Bounds keep the slow-motion zoom from ever showing past the world's edge.
-  main.setBounds(0, 0, scene.scale.width, scene.scale.height);
-  const uiCamera = scene.cameras.add(0, 0, scene.scale.width, scene.scale.height, false, 'breaker-ui');
+  main.setBounds(0, 0, scene.scale.width, board.height);
+  const uiCamera = scene.cameras.add(0, 0, scene.scale.width, canvasHeight(board), false, 'breaker-ui');
+  uiCamera.setScroll(0, -board.extra);
   main.ignore(ui);
   uiCamera.ignore(world);
   return { world, ui, uiCamera };

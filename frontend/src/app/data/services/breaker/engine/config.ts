@@ -36,9 +36,21 @@ export const PADDLE = {
   /** Keyboard steering: top speed and how fast it gets there (1/s). */
   KEY_SPEED: 1100,
   KEY_EASE: 22,
-  /** Pointer steering: how fast the center closes on the pointer (1/s), and its top speed. */
+  /**
+   * Pointer steering: how fast the center closes on the pointer (1/s). Close
+   * to it the ease is gentle (it soaks up the hand's tremor); it grows with
+   * the gap up to POINTER_EASE_FAR at POINTER_FAR_GAP px, so a fast flick
+   * does not trail behind the cursor.
+   */
   POINTER_EASE: 34,
-  POINTER_MAX_SPEED: 2600,
+  POINTER_EASE_FAR: 70,
+  POINTER_FAR_GAP: 64,
+  /**
+   * Its top speed. Kept modest (~28 px per 120 Hz step): the ball's paddle
+   * test takes the paddle as standing still, so a bigger jump could land the
+   * paddle on the ball and push it out sideways.
+   */
+  POINTER_MAX_SPEED: 3400,
   /** How fast the width eases to its target (1/s), so wide and shrink grow instead of popping. */
   WIDTH_EASE: 10,
   /** Bounce angle at the very edge of the paddle, from vertical. */
@@ -254,3 +266,61 @@ export const RESCUE = {
   /** How much each bent bounce may turn, at most. */
   NUDGE_DEG: 6,
 } as const;
+
+/** The world never gets shorter than the desktop one, nor taller than this (a very tall phone). */
+export const WORLD_HEIGHT_RANGE = { MIN: 720, MAX: 2080 } as const;
+
+/**
+ * Tall worlds (phones held upright) leave this much empty room under the
+ * paddle, so a finger dragging below it never covers the paddle or the ball.
+ */
+export const THUMB_ROOM = 160;
+
+/**
+ * How much of the extra field depth makes the ball faster, as a power of
+ * `fallScale`. 1 would cross the long field in the desktop time (frantic),
+ * 0 would keep the desktop speed (a very slow trip). 0.5 is the compromise:
+ * a bit faster, so a long field is not boring, but with more reaction time.
+ */
+export const BALL_SPEED_SCALE_EXPONENT = 0.5;
+
+/**
+ * Everything that depends on the height of the world, computed once per
+ * engine. The top of the world (HUD, ceiling, grid, boss) never moves; only
+ * what hangs from the bottom does.
+ */
+export interface WorldLayout {
+  height: number;
+  /** Past this y a ball, a capsule or a pellet is gone. */
+  lostY: number;
+  paddleY: number;
+  barrierY: number;
+  /** A breakable brick whose bottom edge reaches this y costs a life. */
+  dangerY: number;
+  /**
+   * Capsules and boss pellets fall this many times faster than on desktop, so
+   * they take the same time to reach the paddle.
+   */
+  fallScale: number;
+  /** Multiplies the ball's speed: `fallScale ** BALL_SPEED_SCALE_EXPONENT`. */
+  ballSpeedScale: number;
+}
+
+/** The layout of a world `height` px tall. 720 (the default) is exactly the legacy desktop one. */
+export function worldLayout(height: number = WORLD.HEIGHT): WorldLayout {
+  const h = Number.isFinite(height)
+    ? Math.round(Math.max(WORLD_HEIGHT_RANGE.MIN, Math.min(WORLD_HEIGHT_RANGE.MAX, height)))
+    : WORLD.HEIGHT;
+  const thumb = h > WORLD.HEIGHT ? THUMB_ROOM : 0;
+  const paddleY = h - 56 - thumb;
+  const fallScale = (paddleY - GRID.TOP) / (PADDLE.Y - GRID.TOP);
+  return {
+    height: h,
+    lostY: h,
+    paddleY,
+    barrierY: paddleY + 40,
+    dangerY: paddleY - 64,
+    fallScale,
+    ballSpeedScale: Math.pow(fallScale, BALL_SPEED_SCALE_EXPONENT),
+  };
+}

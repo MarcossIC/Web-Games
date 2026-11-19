@@ -1,7 +1,9 @@
 import * as Phaser from 'phaser';
 import { AUTO, Game } from 'phaser';
 import { BootScene } from '@app/data/services/breaker/scenes/BootScene';
+import { boardFor, canvasHeight } from '@app/data/services/breaker/view/board-layout';
 import {
+  BREAKER_BOARD,
   BREAKER_RECORDS_SOURCE,
   type BreakerRecordsSource,
   GameScene,
@@ -41,16 +43,37 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [BootScene, GameScene],
 };
 
+/** The parent's size in CSS px, (0, 0) while it is missing or not laid out. */
+function measure(parent: string): { width: number; height: number } {
+  const element = typeof document === 'undefined' ? null : document.getElementById(parent);
+  const rect = element?.getBoundingClientRect();
+  return { width: rect?.width ?? 0, height: rect?.height ?? 0 };
+}
+
 /**
  * Starts the game inside the element with id `parent`. `records` is how the
  * scene reads the records the page's controller owns.
+ *
+ * The world's height is chosen here, once: a portrait parent (a phone held
+ * upright) gets a taller world so the game fills the screen, everything else
+ * the 960x720 of the desktop. Turning the phone mid-run keeps it: Scale.FIT
+ * letterboxes.
  */
-const StartBreaker = (parent: string, records: BreakerRecordsSource): Game =>
-  new Game({
+const StartBreaker = (parent: string, records: BreakerRecordsSource): Game => {
+  const { width, height } = measure(parent);
+  const board = boardFor(width, height);
+  return new Game({
     ...config,
+    height: canvasHeight(board),
     parent,
-    // Before any scene boots: GameScene reads it in create.
-    callbacks: { preBoot: (game) => game.registry.set(BREAKER_RECORDS_SOURCE, records) },
+    callbacks: {
+      // Before any scene boots: GameScene reads them in create.
+      preBoot: (game) => {
+        game.registry.set(BREAKER_RECORDS_SOURCE, records);
+        game.registry.set(BREAKER_BOARD, board);
+      },
+    },
   });
+};
 
 export default StartBreaker;

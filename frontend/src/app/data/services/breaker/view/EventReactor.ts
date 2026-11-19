@@ -45,6 +45,16 @@ const HIT_SHARD = 0xd8d0ff;
 const STEEL_SPARK = 0xc9d1e6;
 const WALL_SPARK = 0x8cf0ff;
 
+/** Where the reactor puts what depends on the world's height; the defaults are the desktop 960x720. */
+export interface ReactorPlacement {
+  barrierY: number;
+  /** A lost ball's sparks fall at this y (just inside the bottom edge). */
+  lostY: number;
+  novaFloatY: number;
+}
+
+export const DESKTOP_PLACEMENT: ReactorPlacement = { barrierY: EFFECTS.BARRIER_Y, lostY: 712, novaFloatY: 360 };
+
 /**
  * BreakerEvent -> sound and effects (SCENE.md, Eventos -> reacción). The
  * events array is the engine's and is only valid during handle(): nothing
@@ -53,7 +63,8 @@ const WALL_SPARK = 0x8cf0ff;
 export class EventReactor {
   constructor(
     private readonly views: ReactorViews,
-    private readonly host: ReactorHost
+    private readonly host: ReactorHost,
+    private readonly place: ReactorPlacement = DESKTOP_PLACEMENT
   ) {}
 
   handle(events: readonly BreakerEvent[], state: BreakerState): void {
@@ -135,12 +146,12 @@ export class EventReactor {
         break;
       case 'ball-lost':
         audio.ballLost(e.x);
-        fx.spark(e.x, 712, 8, COLOR.RED);
+        fx.spark(e.x, this.place.lostY, 8, COLOR.RED);
         break;
       case 'barrier-used':
         audio.barrier(e.x);
         this.views.barrier.burn();
-        fx.spark(e.x, EFFECTS.BARRIER_Y, 10, WALL_SPARK);
+        fx.spark(e.x, this.place.barrierY, 10, WALL_SPARK);
         break;
       case 'life-lost':
         audio.lifeLost();
@@ -161,7 +172,7 @@ export class EventReactor {
         fx.setNova(true);
         this.views.background.setNova(true);
         fx.ring(paddle.x, paddle.y, 40, 900, 700, COLOR.MAGENTA, 0.8);
-        fx.float(480, 360, 'NOVA', COLOR.MAGENTA, 2);
+        fx.float(480, this.place.novaFloatY, 'NOVA', COLOR.MAGENTA, 2);
         break;
       case 'nova-ended':
         fx.setNova(false);

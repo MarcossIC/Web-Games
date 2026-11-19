@@ -231,3 +231,148 @@
   border-color: var(--gg-yellow);
   color: var(--gg-yellow);
 }
+
+/* ---- Hints by input device. Keys by default (a mouse or keyboard is there);
+   a touch screen with no hover shows the gestures only. Pure CSS so the
+   server renders the right one. */
+.touch-row,
+.touch-tip,
+.pause-menu,
+.help-back {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .keyboard-row,
+  .keyboard-tip {
+    display: none;
+  }
+
+  .touch-row {
+    display: flex;
+  }
+
+  .touch-tip {
+    display: block;
+  }
+}
+
+/* ---- Phone held upright: the dialog is a full-screen pause screen. Same
+   query as breaker.component.css, keep the two in step. */
+@media (orientation: portrait) and (pointer: coarse) {
+  .modal-scrim {
+    display: block;
+    padding: 0;
+    overflow: hidden;
+    background: rgba(7, 6, 13, 0.88);
+  }
+
+  .modal.breaker-sheet {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    gap: 1.25rem;
+    padding: max(1.25rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right))
+      max(1.25rem, env(safe-area-inset-bottom)) max(1.25rem, env(safe-area-inset-left));
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .breaker-sheet .modal-title-with-bar {
+    font-size: 2.5rem;
+    padding-block-end: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  /* Paused: the menu centered, the help out of the way until asked for. */
+  .is-paused:not(.show-help) .help,
+  .is-paused:not(.show-help) .sheet-actions {
+    display: none;
+  }
+
+  .is-paused:not(.show-help) .pause-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    margin-block: auto;
+  }
+
+  .pause-best {
+    margin: 0 0 0.5rem;
+    text-align: center;
+    font-family: var(--gg-font-pixel);
+    font-size: 1rem;
+    color: var(--gg-yellow);
+  }
+
+  .breaker-sheet .menu-button {
+    width: 100%;
+    min-height: 56px;
+    font-size: 1.125rem;
+    background-color: transparent;
+    border: 2px solid var(--gg-line);
+    color: var(--gg-text);
+  }
+
+  .breaker-sheet .menu-resume {
+    background-color: var(--gg-magenta);
+    border-color: var(--gg-magenta);
+    color: var(--gg-ink);
+    box-shadow: 4px 4px 0 var(--gg-cyan);
+  }
+
+  .breaker-sheet .menu-button:focus-visible,
+  .breaker-sheet .help-back:focus-visible {
+    outline: 3px solid var(--gg-yellow);
+    outline-offset: 3px;
+  }
+
+  /* The help page: scrollable content, big buttons stuck to the bottom. */
+  .help {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .sheet-actions {
+    flex-direction: column;
+    margin-block-start: auto;
+    gap: 0.875rem;
+  }
+
+  .breaker-sheet .sheet-actions .abstract-button {
+    width: 100%;
+    min-height: 56px;
+    font-size: 1.125rem;
+  }
+
+  /* Intro: Play first, then Exit. */
+  .sheet-actions .play-button {
+    order: -1;
+  }
+
+  /* Help inside the pause screen: only Back. */
+  .show-help .sheet-actions .help-back {
+    display: block;
+    background-color: var(--gg-magenta);
+    color: var(--gg-ink);
+    box-shadow: 4px 4px 0 var(--gg-cyan);
+  }
+
+  .show-help .sheet-actions .exit-button,
+  .show-help .sheet-actions .restart-button,
+  .show-help .sheet-actions .play-button {
+    display: none;
+  }
+
+  /* While paused, the menu is the action set: the sheet's own buttons are for the intro. */
+  .is-paused.show-help .sheet-actions {
+    display: flex;
+  }
+}

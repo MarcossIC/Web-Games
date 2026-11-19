@@ -3,9 +3,12 @@ import { BreakerBridgeEvents } from '@app/data/models/breaker/BreakerBridge';
 import { EventBus } from '@app/data/services/phaser/EventBus';
 import { BreakerEngine } from '../engine/breaker-engine';
 import type { PowerUpKind, RunSummary } from '../engine/types';
+import { worldLayout } from '../engine/config';
+import { type Board, boardFor, canvasHeight, DESKTOP_BOARD, NOVA_BUTTON, PAUSE_BUTTON } from '../view/board-layout';
 import { BootScene } from './BootScene';
 import { emptyRecords, RECORDS_KEY } from '../engine/records';
 import {
+  BREAKER_BOARD,
   BREAKER_ENGINE_FACTORY,
   BREAKER_RECORDS_SOURCE,
   type BreakerEngineFactory,
@@ -43,7 +46,8 @@ function listeners(): number[] {
 function bootGame(
   factory?: BreakerEngineFactory,
   type: number = Phaser.CANVAS,
-  records?: BreakerRecordsSource
+  records?: BreakerRecordsSource,
+  board: Board = DESKTOP_BOARD
 ): Promise<Booted> {
   return new Promise((resolve) => {
     const parent = document.createElement('div');
@@ -52,13 +56,14 @@ function bootGame(
       type,
       parent,
       width: 960,
-      height: 720,
+      height: canvasHeight(board),
       banner: false,
       audio: { noAudio: true },
       scene: [BootScene, GameScene],
     });
     if (factory) game.registry.set(BREAKER_ENGINE_FACTORY, factory);
     if (records) game.registry.set(BREAKER_RECORDS_SOURCE, records);
+    game.registry.set(BREAKER_BOARD, board);
     let time = 0;
 
     EventBus.once(BreakerBridgeEvents.READY, () => {
@@ -500,5 +505,135 @@ describe('GameScene (smoke, real Phaser on Canvas)', () => {
       EventBus.emit(BreakerBridgeEvents.PLAY);
       EventBus.emit(BreakerBridgeEvents.SET_MUTED, false);
     }).not.toThrow();
+  });
+});
+
+describe('GameScene on a tall board (a phone held upright)', () => {
+  let booted: Booted | null = null;
+  const board = boardFor(390, 844);
+
+  /** A finger (or the mouse) as Phaser would report it, in canvas px. */
+  function pointer(x: number, y: number, id = 1) {
+    return { x, y, id, wasTouch: true, locked: false, downTime: 0, upTime: 40 } as unknown as Phaser.Input.Pointer;
+  }
+  const tap = (b: Booted, p: Phaser.Input.Pointer) => {
+    b.scene.input.emit(Phaser.Input.Events.POINTER_DOWN, p);
+    b.scene.input.emit(Phaser.Input.Events.POINTER_UP, p);
+  };
+  /** Canvas y of a point in UI coordinates (the HUD rows are above y = 0). */
+  const canvasY = (uiY: number) => uiY + board.extra;
+
+  afterEach(async () => {
+    if (booted) await booted.destroy();
+    booted = null;
+  });
+
+  it('builds the engine with the board height, and the cameras keep engine coordinates', async () => {
+    booted = await bootGame(undefined, Phaser.CANVAS, undefined, board);
+    const layout = worldLayout(board.height);
+    expect(booted.scene.run.layout.height).toBe(board.height);
+    expect(booted.scene.run.state.paddle.y).toBe(layout.paddleY);
+    const main = booted.scene.cameras.main;
+    expect([main.x, main.y, main.width, main.height]).toEqual([0, board.extra, 960, board.height]);
+    const ui = booted.scene.cameras.getCamera('breaker-ui')!;
+    expect([ui.height, ui.scrollY]).toEqual([canvasHeight(board), -board.extra]);
+  });
+
+  it('keeps the desktop board exactly as it was', async () => {
+    booted = await bootGame();
+    const main = booted.scene.cameras.main;
+    expect([main.x, main.y, main.width, main.height]).toEqual([0, 0, 960, 720]);
+    expect(booted.scene.run.state.paddle.y).toBe(664);
+  });
+
+  it('puts the barrier strip on the layout line and nothing but decoration in the thumb room', async () => {
+    booted = await bootGame(undefined, Phaser.CANVAS, undefined, board);
+    const layout = worldLayout(board.height);
+    const strip = allObjects(booted.scene).find((o) => o instanceof Phaser.GameObjects.TileSprite) as Phaser.GameObjects.TileSprite;
+    expect(strip.y).toBe(layout.barrierY);
+    // Read-outs that sit under the paddle on desktop (effects, combo) live above it here.
+    const thumbTop = layout.paddleY + 18;
+    const intruders = allObjects(booted.scene).filter(
+      (o) => o instanceof Phaser.GameObjects.BitmapText && o.visible && (o as Phaser.GameObjects.BitmapText).y > thumbTop
+    );
+    expect(intruders.length).toBe(0);
+  });
+
+  it('the Pause button asks the page to pause, once, on release', async () => {
+    booted = await bootGame(undefined, Phaser.CANVAS, undefined, board);
+    const b = booted;
+    EventBus.emit(BreakerBridgeEvents.PLAY);
+    b.step(2);
+    const asked = jasmine.createSpy('pauseRequested');
+    EventBus.on(BreakerBridgeEvents.PAUSE_REQUESTED, asked);
+    try {
+      const p = pointer(PAUSE_BUTTON.x + PAUSE_BUTTON.w / 2, canvasY(PAUSE_BUTTON.y + PAUSE_BUTTON.h / 2));
+      b.scene.input.emit(Phaser.Input.Events.POINTER_DOWN, p);
+      expect(asked).not.toHaveBeenCalled();
+      b.scene.input.emit(Phaser.Input.Events.POINTER_UP, p);
+      expect(asked).toHaveBeenCalledTimes(1);
+      // The scene itself waits for the page's answer.
+      expect(b.scene.runMode).toBe('running');
+    } finally {
+      EventBus.off(BreakerBridgeEvents.PAUSE_REQUESTED, asked);
+    }
+  });
+
+  it('a press that slides off the Pause button does not pause', async () => {
+    booted = await bootGame(undefined, Phaser.CANVAS, undefined, board);
+    const b = booted;
+    EventBus.emit(BreakerBridgeEvents.PLAY);
+    b.step(2);
+    const asked = jasmine.createSpy('pauseRequested');
+    EventBus.on(BreakerBridgeEvents.PAUSE_REQUESTED, asked);
+    try {
+      b.scene.input.emit(Phaser.Input.Events.POINTER_DOWN, pointer(PAUSE_BUTTON.x + 10, canvasY(PAUSE_BUTTON.y + 10)));
+      b.scene.input.emit(Phaser.Input.Events.POINTER_UP, pointer(300, canvasY(500)));
+      expect(asked).not.toHaveBeenCalled();
+    } finally {
+      EventBus.off(BreakerBridgeEvents.PAUSE_REQUESTED, asked);
+    }
+  });
+
+  it('the NOVA button feeds Overdrive like the two-finger tap', async () => {
+    booted = await bootGame(undefined, Phaser.CANVAS, undefined, board);
+    const b = booted;
+    EventBus.emit(BreakerBridgeEvents.PLAY);
+    b.step(2);
+    tap(b, pointer(NOVA_BUTTON.x + NOVA_BUTTON.w / 2, canvasY(NOVA_BUTTON.y + NOVA_BUTTON.h / 2)));
+    expect(b.scene.inputState.sample().overdrivePressed).toBeTrue();
+  });
+
+  it('a tap on the HUD band never launches nor steers', async () => {
+    booted = await bootGame(undefined, Phaser.CANVAS, undefined, board);
+    const b = booted;
+    EventBus.emit(BreakerBridgeEvents.PLAY);
+    b.step(2);
+    const x = b.scene.run.state.paddle.x;
+    tap(b, pointer(40, canvasY(-90)));
+    tap(b, pointer(40, canvasY(30)));
+    const frame = b.scene.inputState.sample();
+    expect(frame.launchPressed).toBeFalse();
+    expect(frame.pointerX).not.toBe(40);
+    expect(frame.fireHeld).toBeFalse();
+    expect(b.scene.run.state.paddle.x).toBe(x);
+  });
+
+  it('a drag in the thumb room moves the paddle relatively and a still tap there launches', async () => {
+    booted = await bootGame(undefined, Phaser.CANVAS, undefined, board);
+    const b = booted;
+    EventBus.emit(BreakerBridgeEvents.PLAY);
+    b.step(2);
+    const layout = worldLayout(board.height);
+    const paddleX = b.scene.run.state.paddle.x;
+    const down = pointer(100, canvasY(layout.height - 40));
+    b.scene.input.emit(Phaser.Input.Events.POINTER_DOWN, down);
+    expect(b.scene.inputState.sample().pointerX).toBe(paddleX);
+    b.scene.input.emit(Phaser.Input.Events.POINTER_MOVE, pointer(140, canvasY(layout.height - 40)));
+    expect(b.scene.inputState.sample().pointerX).toBeGreaterThan(paddleX);
+    b.scene.input.emit(Phaser.Input.Events.POINTER_UP, pointer(140, canvasY(layout.height - 40)));
+    b.scene.input.emit(Phaser.Input.Events.POINTER_DOWN, pointer(500, canvasY(layout.height - 40)));
+    b.scene.input.emit(Phaser.Input.Events.POINTER_UP, pointer(502, canvasY(layout.height - 40)));
+    expect(b.scene.inputState.sample().launchPressed).toBeTrue();
   });
 });

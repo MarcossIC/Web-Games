@@ -40,6 +40,11 @@ export class SceneBridge {
     EventBus.emit(BreakerBridgeEvents.AUTO_PAUSED);
   }
 
+  /** The HUD Pause button was tapped: the page owns the flow, it will answer PAUSE. */
+  pauseRequested(): void {
+    EventBus.emit(BreakerBridgeEvents.PAUSE_REQUESTED);
+  }
+
   runEnding(): void {
     EventBus.emit(BreakerBridgeEvents.RUN_ENDING);
   }

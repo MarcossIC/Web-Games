@@ -1,4 +1,4 @@
-import { BreakerEngine, IDLE_INPUT } from './breaker-engine';
+import { BreakerEngine, IDLE_INPUT, pointerEaseRate } from './breaker-engine';
 import { BALL, CEILING, CLEARING, EFFECT_MS, EFFECTS, GRID, LASER, OVERDRIVE, PADDLE, STEP, WORLD } from './config';
 import { sectorParams } from './difficulty';
 import { Rng } from './rng';
@@ -203,12 +203,59 @@ describe('BreakerEngine', () => {
       expect(engine.state.paddle.vx).toBeLessThanOrEqual(PADDLE.KEY_SPEED + 1e-6);
     });
 
-    it('follows the pointer fast but no faster than 2600 px/s', () => {
+    it('follows the pointer fast but no faster than its top speed', () => {
       const engine = new BreakerEngine({ seed: 1 });
       engine.update(STEP.MS, input({ pointerX: 900 }));
       expect(engine.state.paddle.vx).toBeLessThanOrEqual(PADDLE.POINTER_MAX_SPEED + 1e-6);
       run(engine, 400, input({ pointerX: 700 }));
       expect(engine.state.paddle.x).toBeCloseTo(700, 0);
+    });
+
+    it('keeps a modest pointer top speed, so a step never jumps the paddle far', () => {
+      expect(PADDLE.POINTER_MAX_SPEED).toBeGreaterThan(2600);
+      expect(PADDLE.POINTER_MAX_SPEED * (STEP.MS / 1000)).toBeLessThanOrEqual(30);
+    });
+
+    it('eases gently near the pointer and harder the farther it is', () => {
+      expect(pointerEaseRate(0)).toBe(PADDLE.POINTER_EASE);
+      expect(pointerEaseRate(PADDLE.POINTER_FAR_GAP)).toBe(PADDLE.POINTER_EASE_FAR);
+      expect(pointerEaseRate(PADDLE.POINTER_FAR_GAP * 5)).toBe(PADDLE.POINTER_EASE_FAR);
+      expect(pointerEaseRate(-40)).toBe(pointerEaseRate(40));
+      expect(pointerEaseRate(20)).toBeGreaterThan(pointerEaseRate(10));
+      expect(PADDLE.POINTER_EASE_FAR).toBeGreaterThan(PADDLE.POINTER_EASE);
+      // Even the hardest ease never overshoots in one step.
+      expect(PADDLE.POINTER_EASE_FAR * (STEP.MS / 1000)).toBeLessThan(1);
+    });
+
+    it('catches a pointer that jumped far in under 120 ms', () => {
+      const engine = new BreakerEngine({ seed: 1 });
+      const target = engine.state.paddle.x + 220;
+      let ms = 0;
+      while (Math.abs(engine.state.paddle.x - target) > 2 && ms < 1000) {
+        engine.update(STEP.MS, input({ pointerX: target }));
+        ms += STEP.MS;
+      }
+      expect(ms).toBeLessThan(120);
+    });
+
+    /** How far the paddle trails a mouse that sweeps right at `speed` px/s for 0.2 s (a steady trail by then). */
+    function trailAt(speed: number): number {
+      const engine = new BreakerEngine({ seed: 1 });
+      let target = 150;
+      run(engine, 400, input({ pointerX: target }));
+      for (let t = 0; t < 200; t += STEP.MS) {
+        target += speed * (STEP.MS / 1000);
+        engine.update(STEP.MS, input({ pointerX: target }));
+      }
+      return target - engine.state.paddle.x;
+    }
+
+    it('trails a mouse sweeping at 2000 px/s by under 25 px (it was ~42)', () => {
+      expect(trailAt(2000)).toBeLessThan(25);
+    });
+
+    it('keeps up with a 3000 px/s flick instead of falling behind (it trailed ~400 px)', () => {
+      expect(trailAt(3000)).toBeLessThan(40);
     });
   });
 
@@ -305,21 +352,28 @@ describe('BreakerEngine', () => {
       const engine = BreakerEngine.forTest({ seed: 5, layout, params: { ballSpeed: 2000 } });
       engine.applyPowerUp('wide');
       aim(engine, engine.state.paddle.x, 500, 0.4, -1);
-      const steelBottom = rowBottom(3);
+      const steelMid = rowBottom(3) - GRID.BRICK_H / 2;
+      // The steel row does not reach the walls: a ball fits through the gap
+      // beside each wall. Crossing the row anywhere else means through a brick.
+      const rowLeft = GRID.LEFT;
+      const rowRight = GRID.LEFT + (GRID.COLS - 1) * GRID.STRIDE_X + GRID.BRICK_W;
       const lost: BreakerEvent[] = [];
       let lowest = 0;
-      let highest: number = WORLD.HEIGHT;
       for (let t = 0; t < 10000; t += 1000 / 60) {
         const b = ball(engine);
+        const fromX = b.x;
+        const fromY = b.y;
         const events = engine.update(1000 / 60, input({ pointerX: b.x + 25 * Math.sin(t / 300) }));
         lost.push(...events.filter((e) => e.type === 'ball-lost' || e.type === 'life-lost'));
         const now = ball(engine);
+        if ((fromY - steelMid) * (now.y - steelMid) < 0) {
+          const crossX = fromX + ((now.x - fromX) * (steelMid - fromY)) / (now.y - fromY);
+          expect(crossX < rowLeft || crossX > rowRight).withContext(`crossed the steel row at x=${crossX}`).toBeTrue();
+        }
         lowest = Math.max(lowest, now.y);
-        highest = Math.min(highest, now.y);
         expect(Math.hypot(now.vx, now.vy)).toBeGreaterThanOrEqual(2000 - 1e-6);
       }
       expect(lost).toEqual([]);
-      expect(highest).toBeGreaterThanOrEqual(steelBottom + BALL.R - 0.01);
       expect(lowest).toBeLessThanOrEqual(PADDLE.Y - BALL.R + 0.01);
     });
 

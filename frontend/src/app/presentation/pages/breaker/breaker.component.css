@@ -267,3 +267,58 @@ kbd {
     box-shadow: 5px 5px 0 2px var(--gg-orange, #ff9a3d);
   }
 }
+
+/* ---- Phone held upright (portrait + touch): a native-feeling screen. The
+   game fills the viewport; the Phaser HUD draws Pause and Nova itself, so
+   the bar and the strip are gone (record and mute live on the pause
+   screen). Same query as welcome-breaker-modal.component.css. */
+@media (orientation: portrait) and (pointer: coarse) {
+  :host {
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+    overscroll-behavior: none;
+  }
+
+  .game-container {
+    min-height: 0;
+    height: 100dvh;
+  }
+
+  app-game-bar,
+  .strip {
+    display: none;
+  }
+
+  .play {
+    display: block;
+    height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+  }
+
+  .screen {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+    touch-action: none;
+  }
+
+  .screen ::ng-deep #breaker-game {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+}
+
+/* The page cannot scroll or bounce under a finger. Unscoped on purpose
+   (html and body are outside this component); :has keeps it to this page. */
+@media (orientation: portrait) and (pointer: coarse) {
+  ::ng-deep html:has(breaker),
+  ::ng-deep html:has(breaker) body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}

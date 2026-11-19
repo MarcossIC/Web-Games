@@ -1,7 +1,9 @@
 import * as Phaser from 'phaser';
 import { themeAt } from '../assets/breaker-themes';
 import { hexToNumber } from '../assets/color';
+import { type WorldLayout, worldLayout } from '../engine/config';
 import type { BreakerState } from '../engine/types';
+import { type Board, DESKTOP_BOARD, viewMetrics } from './board-layout';
 import { sectorLabel } from './hud-format';
 import { inputHints } from './input-state';
 import { addLabel } from './bitmap-fonts';
@@ -9,7 +11,7 @@ import { COLOR, CSS, DEPTH, FONT } from './scene-kit';
 import type { SectorCardText } from './sector-card';
 import { clamp01, easeOutBack, easeOutCubic, pulse } from './view-math';
 
-const BANNER = { IN_MS: 360, HOLD_MS: 1000, OUT_MS: 340, Y: 330 } as const;
+const BANNER = { IN_MS: 360, HOLD_MS: 1000, OUT_MS: 340 } as const;
 const CARD_W = 440;
 const CARD_H = 262;
 /** One value row of the card; the CORE row of a boss sector grows the card by it. */
@@ -31,6 +33,9 @@ export class Banners {
   private readonly lineL: Phaser.GameObjects.Rectangle;
   private readonly lineR: Phaser.GameObjects.Rectangle;
   private bannerMs = -1;
+  /** Banner center y, and how much bigger everything but the hint is (tall boards). */
+  private readonly bannerY: number;
+  private readonly k: number;
 
   private readonly hint: Text;
   private touch = false;
@@ -50,8 +55,12 @@ export class Banners {
   private cardOutMs = -1;
   private clockMs = 0;
 
-  constructor(scene: Phaser.Scene, ui: Phaser.GameObjects.Layer) {
+  constructor(scene: Phaser.Scene, ui: Phaser.GameObjects.Layer, board: Board = DESKTOP_BOARD, layout: WorldLayout = worldLayout()) {
     const cx = scene.scale.width / 2;
+    const m = viewMetrics(board, layout);
+    const k = m.bannerScale;
+    this.k = k;
+    this.bannerY = m.bannerY;
     const add = <T extends Phaser.GameObjects.GameObject>(obj: T): T => {
       ui.add(obj);
       return obj;
@@ -59,21 +68,21 @@ export class Banners {
 
     const center = { originX: 0.5, originY: 0.5 };
     this.title = add(
-      addLabel(scene, cx, BANNER.Y, '', FONT.DISPLAY, 56, CSS.TEXT, center)
-        .setDropShadow(0, 4, COLOR.INK, 1)
+      addLabel(scene, cx, m.bannerY, '', FONT.DISPLAY, 56 * k, CSS.TEXT, center)
+        .setDropShadow(0, 4 * k, COLOR.INK, 1)
         .setDepth(DEPTH.BANNERS)
         .setVisible(false)
     );
     this.subtitle = add(
-      addLabel(scene, cx, BANNER.Y + 46, '', FONT.PIXEL, 16, CSS.CYAN, { ...center, spacing: 6 })
+      addLabel(scene, cx, m.bannerY + 46 * k, '', FONT.PIXEL, 16 * k, CSS.CYAN, { ...center, spacing: 6 * k })
         .setDepth(DEPTH.BANNERS)
         .setVisible(false)
     );
-    this.lineL = add(scene.add.rectangle(cx - 20, BANNER.Y + 46, 150, 2, COLOR.CYAN).setOrigin(1, 0.5).setDepth(DEPTH.BANNERS).setVisible(false));
-    this.lineR = add(scene.add.rectangle(cx + 20, BANNER.Y + 46, 150, 2, COLOR.CYAN).setOrigin(0, 0.5).setDepth(DEPTH.BANNERS).setVisible(false));
+    this.lineL = add(scene.add.rectangle(cx - 20 * k, m.bannerY + 46 * k, 150 * k, 2 * k, COLOR.CYAN).setOrigin(1, 0.5).setDepth(DEPTH.BANNERS).setVisible(false));
+    this.lineR = add(scene.add.rectangle(cx + 20 * k, m.bannerY + 46 * k, 150 * k, 2 * k, COLOR.CYAN).setOrigin(0, 0.5).setDepth(DEPTH.BANNERS).setVisible(false));
 
     this.hint = add(
-      addLabel(scene, cx, 612, 'CLICK OR SPACE TO LAUNCH', FONT.PIXEL, 13, CSS.CYAN, { ...center, spacing: 3 })
+      addLabel(scene, cx, m.hintY, 'CLICK OR SPACE TO LAUNCH', FONT.PIXEL, 13 * m.hintScale, CSS.CYAN, { ...center, spacing: 3 * m.hintScale })
         .setDepth(DEPTH.BANNERS)
         .setVisible(false)
     );
@@ -98,7 +107,7 @@ export class Banners {
     this.cardFooter = addLabel(scene, 0, 100, 'CLICK OR SPACE TO CONTINUE', FONT.PIXEL, 11, CSS.DIM, { ...center, spacing: 2 });
     parts.push(this.cardNew, this.cardCoreLabel, this.cardCore, this.cardFooter);
     for (const part of parts) if (part !== this.cardPanel) this.cardLayout.push({ part: part as Text, y: (part as Text).y });
-    this.card = add(scene.add.container(cx, scene.scale.height / 2, parts).setDepth(DEPTH.BANNERS).setVisible(false));
+    this.card = add(scene.add.container(cx, m.cardY, parts).setDepth(DEPTH.BANNERS).setVisible(false));
   }
 
   get cardUp(): boolean {
@@ -161,7 +170,7 @@ export class Banners {
     this.cardCore.setVisible(core).setText(text.core.replace('CORE ', ''));
     this.cardMs = 0;
     this.cardOutMs = -1;
-    this.card.setVisible(true).setAlpha(0).setScale(0.92);
+    this.card.setVisible(true).setAlpha(0).setScale(0.92 * this.k);
   }
 
   hideCard(): void {
@@ -208,7 +217,7 @@ export class Banners {
     } else {
       const k = clamp01((t - BANNER.IN_MS - BANNER.HOLD_MS) / BANNER.OUT_MS);
       alpha = 1 - k;
-      rise = -16 * easeOutCubic(k);
+      rise = -16 * this.k * easeOutCubic(k);
       line = 1 - k;
       if (k >= 1) {
         this.bannerMs = -1;
@@ -219,12 +228,12 @@ export class Banners {
         return;
       }
     }
-    this.title.setVisible(true).setAlpha(alpha).setScale(scale).setY(BANNER.Y + rise);
-    this.subtitle.setVisible(true).setAlpha(alpha).setY(BANNER.Y + 46 + rise);
-    const half = this.subtitle.displayWidth / 2 + 16;
+    this.title.setVisible(true).setAlpha(alpha).setScale(scale).setY(this.bannerY + rise);
+    this.subtitle.setVisible(true).setAlpha(alpha).setY(this.bannerY + 46 * this.k + rise);
+    const half = this.subtitle.displayWidth / 2 + 16 * this.k;
     const w = Math.max(0.01, line);
-    this.lineL.setVisible(true).setAlpha(alpha).setPosition(this.title.x - half, BANNER.Y + 46 + rise).setScale(w, 1);
-    this.lineR.setVisible(true).setAlpha(alpha).setPosition(this.title.x + half, BANNER.Y + 46 + rise).setScale(w, 1);
+    this.lineL.setVisible(true).setAlpha(alpha).setPosition(this.title.x - half, this.bannerY + 46 * this.k + rise).setScale(w, 1);
+    this.lineR.setVisible(true).setAlpha(alpha).setPosition(this.title.x + half, this.bannerY + 46 * this.k + rise).setScale(w, 1);
   }
 
   private syncCard(dtMs: number): void {
@@ -233,7 +242,7 @@ export class Banners {
     if (this.cardOutMs >= 0) {
       this.cardOutMs += dtMs;
       const k = clamp01(this.cardOutMs / CARD_OUT_MS);
-      this.card.setAlpha(1 - k).setScale(1 + 0.04 * k);
+      this.card.setAlpha(1 - k).setScale((1 + 0.04 * k) * this.k);
       if (k >= 1) {
         this.cardMs = this.cardOutMs = -1;
         this.card.setVisible(false);
@@ -241,7 +250,7 @@ export class Banners {
       return;
     }
     const k = clamp01(this.cardMs / CARD_IN_MS);
-    this.card.setAlpha(easeOutCubic(k)).setScale(0.92 + 0.08 * easeOutBack(k));
+    this.card.setAlpha(easeOutCubic(k)).setScale((0.92 + 0.08 * easeOutBack(k)) * this.k);
     if (this.cardNew.visible) this.cardNew.setAlpha(0.5 + 0.5 * pulse(this.clockMs, 600));
   }
 }

@@ -3,13 +3,14 @@ import * as Phaser from 'phaser';
 import { BreakerTexture } from '@app/data/models/breaker/BreakerKeys';
 import { BreakerAudio } from '../assets/breaker-audio';
 import { BreakerEngine } from '../engine/breaker-engine';
-import { WORLD } from '../engine/config';
+import { WORLD, type WorldLayout, worldLayout } from '../engine/config';
 import { type BreakerRecords, emptyRecords } from '../engine/records';
 import type { RunSummary } from '../engine/types';
 import { BackgroundView } from '../view/BackgroundView';
 import { BallLayer } from '../view/BallLayer';
 import { Banners } from '../view/Banners';
 import { BarrierView } from '../view/BarrierView';
+import { type Board, canvasHeight, DESKTOP_BOARD, isTallBoard, viewMetrics } from '../view/board-layout';
 import { BossView } from '../view/BossView';
 import { BrickLayer } from '../view/BrickLayer';
 import { CapsuleLayer } from '../view/CapsuleLayer';
@@ -39,6 +40,13 @@ export type BreakerEngineFactory = (seed: number) => BreakerEngine;
  */
 export const BREAKER_RECORDS_SOURCE = 'breaker-records-source';
 export type BreakerRecordsSource = () => BreakerRecords;
+
+/**
+ * Registry key of the `Board` (world height + the HUD rows above it) that
+ * main.ts measured from the parent element before booting. Missing (the
+ * specs): the desktop 960x720.
+ */
+export const BREAKER_BOARD = 'breaker-board';
 
 export interface GameSceneData {
   /** Start playing at once (RESTART) instead of waiting for PLAY. */
@@ -73,6 +81,8 @@ export class GameScene extends Phaser.Scene implements BridgeHost, ReactorHost {
   private bridge!: SceneBridge;
   private reactor!: EventReactor;
   private records: BreakerRecords = emptyRecords();
+  private board: Board = DESKTOP_BOARD;
+  private layout: WorldLayout = worldLayout();
 
   private background!: BackgroundView;
   private bricks!: BrickLayer;
@@ -116,25 +126,36 @@ export class GameScene extends Phaser.Scene implements BridgeHost, ReactorHost {
     const flags = readBreakerFlags(typeof window === 'undefined' ? '' : window.location.search, isDevMode());
     const source = this.registry.get(BREAKER_RECORDS_SOURCE) as BreakerRecordsSource | undefined;
     this.records = typeof source === 'function' ? source() : emptyRecords();
+    this.board = (this.registry.get(BREAKER_BOARD) as Board | undefined) ?? DESKTOP_BOARD;
+    this.layout = worldLayout(this.board.height);
+    const board = this.board;
+    const layout = this.layout;
     this.mode = 'ready';
     this.timeScale = 1;
     this.gameOverTimer = null;
     this.finalSummary = null;
 
-    const layers = createLayers(this);
+    const layers = createLayers(this, board);
     const { world, ui } = layers;
-    this.background = new BackgroundView(this, world, randomSeed());
+    this.background = new BackgroundView(this, world, randomSeed(), board.height);
     this.bricks = new BrickLayer(this, world);
     this.capsules = new CapsuleLayer(this, world);
     this.lasers = new LaserLayer(this, world);
-    this.barrier = new BarrierView(this, world);
+    this.barrier = new BarrierView(this, world, layout.barrierY);
     this.balls = new BallLayer(this, world);
     this.paddle = new PaddleView(this, world);
-    this.fx = new FxLayer(this, world, ui);
+    this.fx = new FxLayer(this, world, ui, board);
     this.boss = new BossView(this, world, ui, this.fx);
-    ui.add(this.add.image(0, 0, BreakerTexture.CRT_OVERLAY).setOrigin(0, 0).setDepth(DEPTH.OVERLAY));
-    this.hud = new Hud(this, ui, this.records.best?.score ?? 0, flags.fps);
-    this.banners = new Banners(this, ui);
+    // Over the whole canvas, the HUD rows included.
+    ui.add(
+      this.add
+        .image(0, -board.extra, BreakerTexture.CRT_OVERLAY)
+        .setOrigin(0, 0)
+        .setDisplaySize(WORLD.WIDTH, canvasHeight(board))
+        .setDepth(DEPTH.OVERLAY)
+    );
+    this.hud = new Hud(this, ui, this.records.best?.score ?? 0, flags.fps, board);
+    this.banners = new Banners(this, ui, board, layout);
 
     this.audio ??= new BreakerAudio();
     const audio = this.audio;
@@ -143,7 +164,9 @@ export class GameScene extends Phaser.Scene implements BridgeHost, ReactorHost {
     this.controls = new InputController(
       this,
       () => audio.unlock(),
-      () => this.engine.state.paddle
+      () => this.engine.state.paddle,
+      // Only a tall board has the touch HUD (Pause and NOVA buttons).
+      isTallBoard(board) ? { extra: board.extra, onPause: () => this.requestPause() } : null
     );
     this.reactor = new EventReactor(
       {
@@ -157,7 +180,8 @@ export class GameScene extends Phaser.Scene implements BridgeHost, ReactorHost {
         background: this.background,
         boss: this.boss,
       },
-      this
+      this,
+      { barrierY: layout.barrierY, lostY: layout.lostY - 8, novaFloatY: viewMetrics(board, layout).novaFloatY }
     );
     this.engine = this.newEngine();
     this.bridge = new SceneBridge(this.game, this);
@@ -227,6 +251,11 @@ export class GameScene extends Phaser.Scene implements BridgeHost, ReactorHost {
     this.audio?.setMuted(muted);
   }
 
+  /** The HUD Pause button: the page owns the flow, so ask it; it answers PAUSE. */
+  private requestPause(): void {
+    if (this.mode === 'running') this.bridge.pauseRequested();
+  }
+
   lostFocus(): void {
     if (this.mode !== 'running') return;
     this.pause();
@@ -284,7 +313,7 @@ export class GameScene extends Phaser.Scene implements BridgeHost, ReactorHost {
     const factory = this.registry.get(BREAKER_ENGINE_FACTORY) as BreakerEngineFactory | undefined;
     if (typeof factory === 'function') return factory(seed);
     const startSector = readStartSector(typeof window === 'undefined' ? '' : window.location.search, isDevMode());
-    return new BreakerEngine({ seed, startSector });
+    return new BreakerEngine({ seed, startSector, height: this.board.height });
   }
 
   private draw(dtMs: number): void {

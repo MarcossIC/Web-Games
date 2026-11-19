@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { WORLD } from '../engine/config';
 import type { BreakerInput, Paddle } from '../engine/types';
+import { type HudZone, hudZoneAt } from './board-layout';
 import { startsAsTouch } from './input-device';
 import { type InputAction, InputState, lockedTargetX } from './input-state';
 
@@ -25,13 +26,23 @@ const CAPTURED = [
   Phaser.Input.Keyboard.KeyCodes.DOWN,
 ];
 
+/** The touch HUD of a tall board: where it is on the canvas and what its Pause button does. */
+export interface TouchHud {
+  /** Rows above the world: pointer.y is canvas y, the HUD zones are in world y. */
+  extra: number;
+  onPause: () => void;
+}
+
 /**
  * Phaser pointer and keyboard events -> InputState. P, Esc and M are the
  * page's (BreakerControllerService.handleKey): this never reads them, so
  * mute has exactly one owner. Handlers are named and removed in destroy().
  */
 export class InputController {
-  readonly state = new InputState();
+  /** Finger touch is relative to the paddle: it asks for where the paddle is and how wide. */
+  readonly state = new InputState(() => this.paddle());
+  /** Pointers whose press started on a HUD zone: the button fires when the same one lets go on it. */
+  private readonly hudPress = new Map<number, HudZone>();
   private capturing = false;
   /** The last pointer that pressed was a finger; before any press, what the device suggests. */
   touch = startsAsTouch(typeof window === 'undefined' ? undefined : window);
@@ -47,7 +58,9 @@ export class InputController {
     /** Called on every press: the audio unlock (cheap after the first). */
     private readonly onGesture: () => void,
     /** The paddle the locked target starts from and is held within. */
-    private readonly paddle: () => Readonly<Paddle>
+    private readonly paddle: () => Readonly<Paddle>,
+    /** Tall boards only: a press on the HUD is a button or nothing, never steering nor a launch. */
+    private readonly hud: TouchHud | null = null
   ) {
     const input = scene.input;
     // Phaser has one touch pointer by default: a second finger (the Overdrive tap) needs its own.
@@ -75,6 +88,7 @@ export class InputController {
 
   releaseAll(): void {
     this.state.releaseAll();
+    this.hudPress.clear();
     // A pause or a restart ends the lock: the next one starts again from the paddle.
     this.lockedX = null;
   }
@@ -114,10 +128,28 @@ export class InputController {
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
     this.onGesture();
     this.touch = pointer.wasTouch;
-    this.state.pointerDown(this.pointerX(pointer), pointer.wasTouch, pointer.downTime, pointer.id);
+    const zone = this.hudZone(pointer);
+    if (zone) this.hudPress.set(pointer.id, zone);
+    this.state.pointerDown(this.pointerX(pointer), pointer.wasTouch, pointer.downTime, pointer.id, zone !== null);
+  }
+
+  /** The HUD zone under the pointer, null on the play field (and always under a mouse lock, which has no cursor). */
+  private hudZone(pointer: Phaser.Input.Pointer): HudZone | null {
+    if (!this.hud || pointer.locked) return null;
+    return hudZoneAt(pointer.x, pointer.y - this.hud.extra, true);
   }
 
   private onPointerUp(pointer: Phaser.Input.Pointer): void {
+    const pressed = this.hudPress.get(pointer.id);
+    if (pressed) {
+      this.hudPress.delete(pointer.id);
+      this.state.pointerUp(pointer.x, pointer.wasTouch, pointer.upTime, pointer.id);
+      // A button fires on release, and only if the finger is still on it.
+      if (this.hudZone(pointer) !== pressed) return;
+      if (pressed === 'pause') this.hud?.onPause();
+      else if (pressed === 'nova') this.state.requestOverdrive();
+      return;
+    }
     this.state.pointerUp(this.pointerX(pointer), pointer.wasTouch, pointer.upTime, pointer.id);
   }
 

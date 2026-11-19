@@ -73,6 +73,7 @@ export class BreakerControllerService {
 
     EventBus.on(BreakerBridgeEvents.READY, this.onReady, this);
     EventBus.on(BreakerBridgeEvents.AUTO_PAUSED, this.onAutoPaused, this);
+    EventBus.on(BreakerBridgeEvents.PAUSE_REQUESTED, this.onPauseRequested, this);
     EventBus.on(BreakerBridgeEvents.RUN_ENDING, this.onRunEnding, this);
     EventBus.on(BreakerBridgeEvents.GAME_OVER, this.onGameOver, this);
     this.connected = true;
@@ -84,6 +85,7 @@ export class BreakerControllerService {
     this.connected = false;
     EventBus.off(BreakerBridgeEvents.READY, this.onReady, this);
     EventBus.off(BreakerBridgeEvents.AUTO_PAUSED, this.onAutoPaused, this);
+    EventBus.off(BreakerBridgeEvents.PAUSE_REQUESTED, this.onPauseRequested, this);
     EventBus.off(BreakerBridgeEvents.RUN_ENDING, this.onRunEnding, this);
     EventBus.off(BreakerBridgeEvents.GAME_OVER, this.onGameOver, this);
     const unregister = this.unregisterOwner;
@@ -174,6 +176,11 @@ export class BreakerControllerService {
 
   private readonly onAutoPaused = (): void => {
     if (this.phase() === 'playing' && !this.ending) this.phase.set('paused');
+  };
+
+  /** The HUD Pause button: the same path as P, so the page shows its pause screen and the scene hears PAUSE. */
+  private readonly onPauseRequested = (): void => {
+    this.pause();
   };
 
   private readonly onRunEnding = (): void => {

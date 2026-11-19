@@ -17,8 +17,8 @@ export class BackgroundView {
   private readonly field: Starfield;
   private novaOn = false;
 
-  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, seed: number) {
-    const { width, height } = scene.scale;
+  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, seed: number, height: number = scene.scale.height) {
+    const width = scene.scale.width;
     this.bg = scene.add.image(0, 0, BreakerTexture.BG_SPACE).setOrigin(0, 0).setDisplaySize(width, height).setDepth(DEPTH.BG);
     layer.add(this.bg);
     this.field = new Starfield(STARS, width, height, seed);

@@ -1,5 +1,8 @@
+import { DecimalPipe } from '@angular/common';
 import {
   afterNextRender,
+  Injector,
+  signal,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -17,7 +20,7 @@ import { TrapFocusDirective } from '@app/shared/directives/TrapFocus.directive';
 
 @Component({
   standalone: true,
-  imports: [TrapFocusDirective],
+  imports: [TrapFocusDirective, DecimalPipe],
   selector: 'welcome-breaker-modal',
   templateUrl: './welcome-breaker-modal.component.html',
   styleUrls: [
@@ -37,9 +40,35 @@ export class WelcomeBreakerModalComponent {
     cells: glyphCells(PIXEL_GLYPHS[kind]),
   }));
 
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private injector = inject(Injector);
+
+  /** Portrait touch screens: the help is a page of the pause screen, not always there. */
+  protected readonly helpOpen = signal(false);
+
   constructor() {
     // Enter starts or resumes without reaching for the mouse.
-    afterNextRender(() => this.playButton().nativeElement.focus());
+    afterNextRender(() => this.focusFirst());
+  }
+
+  protected openHelp(): void {
+    this.helpOpen.set(true);
+    afterNextRender(() => this.focusFirst(), { injector: this.injector });
+  }
+
+  protected closeHelp(): void {
+    this.helpOpen.set(false);
+    afterNextRender(() => this.focusFirst(), { injector: this.injector });
+  }
+
+  /** The first button the person can actually see: the CSS decides which set is shown. */
+  private focusFirst(): void {
+    const root = this.host.nativeElement;
+    const candidates = root.querySelectorAll<HTMLButtonElement>(
+      '.menu-resume, .help-back, .play-button',
+    );
+    const visible = Array.from(candidates).find((b) => b.getClientRects().length > 0);
+    (visible ?? this.playButton().nativeElement).focus();
   }
 
   protected close(): void {
