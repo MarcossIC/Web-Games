@@ -1,5 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import {
+  ALL_COLOR_PIECE,
   DEFAULT_COLOR,
   NEXT_POSITION,
 } from '../../../../assets/constants/tetrisConstanst';
@@ -36,7 +37,8 @@ export class BoardService {
    * @param height - La altura del canvas en píxeles.
    *
    * Primero dibuja un fondo negro, luego recorre el tablero y
-   * dibuja cada celda ocupada con el color predeterminado.
+   * dibuja cada celda ocupada con el color de la pieza que la ocupó:
+   * cada celda guarda la clave de ALL_COLOR_PIECE de esa pieza.
    */
   public drawBoard(
     context: CanvasRenderingContext2D,
@@ -49,9 +51,9 @@ export class BoardService {
     this._board().forEach((row, x) => {
       row.forEach((value, y) => {
         if (value > 0) {
-          // Configuración
-          context.fillStyle = DEFAULT_COLOR.fill;
-          context.strokeStyle = DEFAULT_COLOR.stroke;
+          const color = ALL_COLOR_PIECE[value] ?? DEFAULT_COLOR;
+          context.fillStyle = color.fill;
+          context.strokeStyle = color.stroke;
 
           // Dibujando
           context.fillRect(y, x, 1, 1);
@@ -63,14 +65,23 @@ export class BoardService {
 
   public solidifyPieceInBoard(piece: Piece): void {
     const boardCopy = this._board().map((row) => [...row]);
+    const colorKey = this.colorKeyOf(piece);
     piece.shape.forEach((row, x) => {
       row.forEach((value, y) => {
         if (value > 0) {
-          boardCopy[y + piece.position.y][x + piece.position.x] = 1;
+          boardCopy[y + piece.position.y][x + piece.position.x] = colorKey;
         }
       });
     });
     this._board.set(boardCopy);
+  }
+
+  /** Clave de ALL_COLOR_PIECE del color de la pieza; 1 si no está en la paleta. */
+  private colorKeyOf(piece: Piece): number {
+    const entry = Object.entries(ALL_COLOR_PIECE).find(
+      ([, color]) => color.fill === piece.color.fill
+    );
+    return entry ? Number(entry[0]) : 1;
   }
 
   /**
@@ -179,7 +190,7 @@ export class BoardService {
           boardX < 0 ||
           boardX >= this.boardSize.WIDTH;
 
-        const isOccupied = this._board()[boardY][boardX] === 1;
+        const isOccupied = this._board()[boardY][boardX] > 0;
 
         return isOutOfBounds || isOccupied;
       })
