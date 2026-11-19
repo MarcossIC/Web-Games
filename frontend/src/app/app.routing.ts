@@ -106,6 +106,14 @@ const routes: Routes = [
     providers: [],
   },
   {
+    path: 'breaker',
+    title: 'Game Galaxy - Nova Breaker',
+    loadComponent: () => import('@app-pages/breaker/breaker.component'),
+    // Provided by the page itself: importing the controller here would pull Phaser
+    // (via EventBus) into the initial bundle.
+    providers: [],
+  },
+  {
     path: '**',
     title: 'GG - Not found',
     loadComponent: () => import('@app-pages/notfound/notfound.component'),

@@ -1,0 +1,61 @@
+<div class="shared-container game-container">
+  <app-game-bar title="Nova Breaker" (pause)="controller.togglePause()" />
+
+  <main class="play">
+    <breaker-game class="screen" [class.is-playing]="controller.phase() === 'playing'" />
+
+    <div class="strip">
+      <dl class="legend">
+        <div class="legend-item">
+          <dt>Move</dt>
+          <dd><span class="legend-word">Mouse</span><kbd>A</kbd><kbd>D</kbd></dd>
+        </div>
+        <div class="legend-item">
+          <dt>Launch &amp; fire</dt>
+          <dd><span class="legend-word">Click</span><kbd>Space</kbd></dd>
+        </div>
+        <div class="legend-item">
+          <dt>Overdrive</dt>
+          <dd><kbd>Shift</kbd><kbd>E</kbd></dd>
+        </div>
+        <div class="legend-item">
+          <dt>Pause</dt>
+          <dd><kbd>P</kbd><kbd>Esc</kbd></dd>
+        </div>
+        <div class="legend-item">
+          <dt>Mute</dt>
+          <dd><kbd>M</kbd></dd>
+        </div>
+        <div class="legend-item" title="Keeps the mouse inside the game while you play">
+          <dt>Lock mouse</dt>
+          <dd><kbd>L</kbd></dd>
+        </div>
+        <div class="legend-item legend-note">Arrow keys work too</div>
+      </dl>
+
+      <div class="side">
+        <p class="best">
+          @if (controller.records().best; as best) {
+          Best {{ best.score | number }} &middot; Sector {{ best.sector }}
+          } @else { No record yet }
+        </p>
+        <button
+          class="mute"
+          type="button"
+          [attr.aria-pressed]="controller.muted()"
+          (click)="controller.toggleMute()"
+        >
+          {{ controller.muted() ? "Sound off" : "Sound on" }}
+        </button>
+      </div>
+    </div>
+  </main>
+
+  @switch (controller.phase()) { @case ('intro') {
+  <welcome-breaker-modal />
+  } @case ('paused') {
+  <welcome-breaker-modal />
+  } @case ('over') {
+  <endgame-modal-breaker />
+  } }
+</div>

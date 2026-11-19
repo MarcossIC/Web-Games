@@ -114,4 +114,20 @@ export const GAMES: iGAMES[] = [
     EMBLEM:
       '...YY......YY.....CCCC...C.CC.C....CC.....C..C...C....C.GGGGGGGG',
   },
+  {
+    ID: 'BREAKER-GAME',
+    IMG: 'assets/images/breaker/frontpage.svg',
+    NAME: 'Nova Breaker',
+    ALT: 'Nova Breaker front page image',
+    PATH: '/breaker',
+    priority: true,
+    NUM: '07',
+    COLOR: '#ff9a3d',
+    TYPE: 'Arcade',
+    PLAYERS: '1 player',
+    CONTROLS: 'Mouse, keyboard or touch',
+    DESC: 'Break every brick, catch the power-ups and charge a Nova.',
+    EMBLEM:
+      'MM.OO.YY........CC.GG.PP...................W..............OOOO..',
+  },
 ];

@@ -1,0 +1,113 @@
+<div class="modal-scrim">
+  <div
+    class="modal modal-bg sheet breaker-sheet"
+    trapFocus
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="breaker-dialog-title"
+  >
+    <h2 id="breaker-dialog-title" class="modal-title-with-bar">
+      {{ controller.phase() === "paused" ? "Paused" : "How to play" }}
+    </h2>
+
+    <dl class="keys">
+      <div class="key-row">
+        <dt>Move</dt>
+        <dd>
+          <span class="word">Mouse</span>
+          <span class="or">or</span>
+          <kbd>A</kbd><kbd>D</kbd>
+        </dd>
+      </div>
+      <div class="key-row">
+        <dt>Launch &amp; fire</dt>
+        <dd>
+          <span class="word">Click</span>
+          <span class="or">or</span>
+          <kbd>Space</kbd>
+        </dd>
+      </div>
+      <div class="key-row">
+        <dt>Overdrive</dt>
+        <dd>
+          <kbd>Shift</kbd>
+          <span class="or">or</span>
+          <kbd>E</kbd>
+        </dd>
+      </div>
+      <div class="key-row touch-row">
+        <dt>Touch</dt>
+        <dd>
+          <span class="word">Drag to move, tap to launch, tap with a 2nd finger for Overdrive</span>
+        </dd>
+      </div>
+      <div class="key-row">
+        <dt>Pause/Resume</dt>
+        <dd>
+          <kbd>P</kbd>
+          <span class="or">or</span>
+          <kbd>Esc</kbd>
+        </dd>
+      </div>
+      <div class="key-row">
+        <dt>Mute</dt>
+        <dd><kbd>M</kbd></dd>
+      </div>
+      <div class="key-row lock-row">
+        <dt>Lock mouse</dt>
+        <dd>
+          <kbd>L</kbd>
+          <span class="word">{{ controller.captureMouse() ? "On" : "Off" }} &middot; keeps the mouse inside the game</span>
+        </dd>
+      </div>
+    </dl>
+
+    <section aria-labelledby="breaker-powerups-title">
+      <h3 id="breaker-powerups-title" class="legend-title">Power-ups</h3>
+      <ul class="powerups">
+        @for (p of powerUps; track p.kind) {
+        <li class="powerup" [class.is-hazard]="p.hazard" [style.--tone]="p.color">
+          <span class="capsule" aria-hidden="true">
+            <svg viewBox="0 0 7 7" shape-rendering="crispEdges" fill="currentColor">
+              @for (c of p.cells; track $index) {
+              <rect [attr.x]="c.col" [attr.y]="c.row" width="1" height="1" />
+              }
+            </svg>
+          </span>
+          <span class="powerup-text">
+            <strong>{{ p.label }}</strong>
+            <span>{{ p.description }}</span>
+          </span>
+        </li>
+        }
+      </ul>
+      <p class="hazard-note">
+        Red ones are hazards, and they show up from sector 5.
+      </p>
+    </section>
+
+    <p class="tip">
+      Early sectors drop lots of power-ups. Fill the Overdrive meter and press
+      Shift for a Nova.
+    </p>
+
+    <div class="sheet-actions">
+      <button class="abstract-button exit-button" type="button" (click)="close()">
+        Exit Game
+      </button>
+      @if (controller.phase() === "paused") {
+      <button class="abstract-button restart-button" type="button" (click)="restartGame()">
+        Restart
+      </button>
+      }
+      <button
+        #play
+        class="abstract-button play-button"
+        type="button"
+        (click)="playGame()"
+      >
+        {{ controller.phase() === "paused" ? "Resume Game" : "Play Game" }}
+      </button>
+    </div>
+  </div>
+</div>

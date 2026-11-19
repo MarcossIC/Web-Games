@@ -1,0 +1,269 @@
+/* The page is exactly one screen: the game is sized from the window. */
+:host {
+  --game-bar-height: 4rem;
+  /* The frame drawn around the screen, on both sides: 2 x (border + outline). */
+  --frame: 24px;
+  /* Room the screen leaves across (side padding, a strip beside it) and
+     down (padding, the gap and the strip under it). */
+  --room-x: 2.5rem;
+  --room-y: 7rem;
+  /* The game is a 960 by 720 picture, 4:3. It gets the largest size of that
+     shape that fits: limited by the width of the window, and by the height
+     left under the bar and beside the strip. */
+  --screen-width: min(
+    100vw - var(--room-x) - var(--frame),
+    (100dvh - var(--game-bar-height) - var(--room-y) - var(--frame)) * 4 / 3
+  );
+
+  display: block;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.play {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  height: calc(100dvh - var(--game-bar-height));
+  padding: 0.25rem 1.25rem 1.25rem;
+}
+
+/* The cabinet frame goes on this outer element and not on the one
+   Phaser draws into: Phaser sizes its canvas from the full box of its
+   parent, border included, so a border there makes the canvas too big. */
+.screen {
+  display: block;
+  width: fit-content;
+  border: 10px solid var(--gg-panel);
+  outline: 2px solid #3a3360;
+  box-shadow: 8px 8px 0 2px var(--gg-orange, #ff9a3d);
+  /* A finger dragging the paddle must not scroll or zoom the page (the body
+     only asks for manipulation, which still pans and pinches). */
+  touch-action: none;
+  /* A fade only. Phaser measures its parent once, as it starts: an
+     entrance that scales it would be measured small, and the game would
+     stay that size. */
+  animation: screen-in 0.5s linear 0.1s backwards;
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Giving this element a size is what makes the game fill the screen:
+   Phaser fits its canvas to it. */
+.screen ::ng-deep #breaker-game {
+  width: var(--screen-width);
+  aspect-ratio: 4 / 3;
+  background: #07060d;
+}
+
+.screen ::ng-deep canvas {
+  display: block;
+}
+
+/* The paddle is the cursor while the run is on. */
+.screen.is-playing ::ng-deep canvas {
+  cursor: none;
+}
+
+/* ---- The strip under the screen: keys on the left, record and mute on the right */
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  width: calc(var(--screen-width) + var(--frame) - 4px);
+  max-width: 100%;
+  font-family: var(--gg-font-mono);
+  animation: gg-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.35s backwards;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-item dt {
+  font-family: var(--gg-font-pixel);
+  font-size: 0.8125rem;
+  letter-spacing: 1px;
+  color: var(--gg-muted);
+}
+
+.legend-item dd {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.legend-note,
+.legend-word {
+  font-size: 0.8125rem;
+  color: var(--gg-muted);
+}
+
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  background: var(--gg-ink);
+  border: 2px solid #3a3360;
+  /* The lip under the key is what makes it read as a keycap. */
+  box-shadow: 0 3px 0 #3a3360;
+  color: #fff;
+  font-family: var(--gg-font-pixel);
+  font-size: 0.8125rem;
+}
+
+.side {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-inline-start: auto;
+}
+
+.best {
+  font-size: 0.9375rem;
+  color: var(--gg-yellow);
+}
+
+.mute {
+  min-height: 2.25rem;
+  /* Wide enough for both labels, so it does not resize on a click. */
+  min-width: 6.5rem;
+  padding: 0 0.75rem;
+  background: var(--gg-panel);
+  border: 2px solid var(--gg-line);
+  color: var(--gg-text);
+  font-family: var(--gg-font-pixel);
+  font-size: 0.8125rem;
+  transition: border-color 0.15s linear, color 0.15s linear;
+}
+
+.mute:hover {
+  border-color: var(--gg-cyan);
+  color: var(--gg-cyan);
+}
+
+.mute:focus-visible {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 3px;
+}
+
+/* A touch screen plays by dragging, not with keys. */
+@media (pointer: coarse) {
+  .legend {
+    display: none;
+  }
+}
+
+/* ---- Short windows (a laptop with the browser not maximized, a phone on
+   its side): every row of height goes to the screen. The keys are in the
+   How to play sheet, so the legend goes; the bar gets thinner. */
+@media (max-height: 640px) {
+  :host {
+    --game-bar-height: 3rem;
+    /* Padding 0.25 + 0.75, the 0.5 gap and the 2.25rem mute button. */
+    --room-y: 3.75rem;
+    --room-x: 2rem;
+  }
+
+  .play {
+    gap: 0.5rem;
+    padding: 0.25rem 1rem 0.75rem;
+  }
+
+  .legend {
+    display: none;
+  }
+
+  /* One line: the record, cut short if it must, and the mute button. */
+  .strip {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+  }
+
+  .side {
+    min-width: 0;
+  }
+
+  .best {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 0.8125rem;
+  }
+
+  .mute {
+    flex-shrink: 0;
+  }
+}
+
+/* Short and wide: the screen is held by the height, so the strip moves to
+   its side, where there is width to spare, and the screen takes the full
+   height. */
+@media (max-height: 640px) and (min-aspect-ratio: 3 / 2) {
+  :host {
+    --strip-width: 9.5rem;
+    --room-y: 1rem;
+    /* Padding 1 + 1, the 1rem gap and the strip. */
+    --room-x: calc(3rem + var(--strip-width));
+  }
+
+  .play {
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  .strip {
+    flex-direction: column;
+    align-items: stretch;
+    width: var(--strip-width);
+  }
+
+  .side {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    margin-inline-start: 0;
+  }
+
+  .best {
+    white-space: normal;
+  }
+}
+
+/* Narrow windows (a phone held upright): the screen takes the width. */
+@media (max-width: 600px) {
+  :host {
+    --frame: 16px;
+    --room-x: 1rem;
+  }
+
+  .play {
+    padding-inline: 0.5rem;
+  }
+
+  .screen {
+    border-width: 6px;
+    box-shadow: 5px 5px 0 2px var(--gg-orange, #ff9a3d);
+  }
+}

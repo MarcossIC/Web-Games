@@ -1,0 +1,256 @@
+import type { BrickKind, TimedEffectKind } from './types';
+
+/**
+ * Every tunable number of Nova Breaker in one place. The rest of the engine
+ * reads from here, so balancing the game never means hunting for constants.
+ * Pixels of the 960x720 world, milliseconds, px/s for speeds.
+ */
+
+export const WORLD = {
+  WIDTH: 960,
+  HEIGHT: 720,
+  /** The HUD band sits on top of the play field: the ceiling is its bottom edge. */
+  HUD_HEIGHT: 64,
+  CEILING_Y: 64,
+  LEFT_WALL_X: 0,
+  RIGHT_WALL_X: 960,
+  /** Past this y a ball or a capsule is gone (the bottom is open). */
+  LOST_Y: 720,
+} as const;
+
+export const GRID = {
+  COLS: 13,
+  MAX_ROWS: 14,
+  BRICK_W: 66,
+  BRICK_H: 26,
+  STRIDE_X: 70,
+  STRIDE_Y: 30,
+  /** 27 + 12 * 70 + 66 = 933: the same 27 px margin on both sides. */
+  LEFT: 27,
+  TOP: 104,
+} as const;
+
+export const PADDLE = {
+  Y: 664,
+  H: 18,
+  /** Keyboard steering: top speed and how fast it gets there (1/s). */
+  KEY_SPEED: 1100,
+  KEY_EASE: 22,
+  /** Pointer steering: how fast the center closes on the pointer (1/s), and its top speed. */
+  POINTER_EASE: 34,
+  POINTER_MAX_SPEED: 2600,
+  /** How fast the width eases to its target (1/s), so wide and shrink grow instead of popping. */
+  WIDTH_EASE: 10,
+  /** Bounce angle at the very edge of the paddle, from vertical. */
+  MAX_BOUNCE_DEG: 62,
+  /** "English": how much the paddle's own speed (at KEY_SPEED) tilts the bounce. */
+  ENGLISH_RAD: 0.14,
+  /** A hit closer to the center than this share of the half width is perfect. */
+  PERFECT_SHARE: 0.12,
+  PERFECT_POINTS: 100,
+} as const;
+
+export const BALL = {
+  R: 8,
+  CAP: 12,
+  /** After every bounce |vy| is kept at least this share of the speed, so it never loops sideways. */
+  MIN_VY_SHARE: 0.34,
+  /** Speed grows a little with each paddle hit of the sector, up to a cap. */
+  SPEEDUP_PER_PADDLE_HIT: 0.004,
+  MAX_SPEEDUP: 0.15,
+  /** Continuous collision resolves at most this many bounces per fixed step. */
+  MAX_BOUNCES_PER_STEP: 4,
+  /** Bounces plus bricks pierced: a hard stop for one ball in one step. */
+  MAX_CONTACTS_PER_STEP: 12,
+  /** A serve straight up is dull: the launch tilts at least this much. */
+  MIN_LAUNCH_RAD: 0.16,
+  /** Multi splits each ball into three at these angles. */
+  MULTI_SPREAD_DEG: 20,
+  /** Prism splits along the mirror angle; a ball too vertical to mirror tilts by this. */
+  PRISM_TILT_DEG: 25,
+} as const;
+
+export const CAPSULE = {
+  W: 56,
+  H: 24,
+  FALL_SPEED: 150,
+  MAX_FALLING: 4,
+} as const;
+
+export const LASER = {
+  W: 4,
+  H: 18,
+  SPEED: 900,
+  FIRE_INTERVAL_MS: 220,
+  /** The two bolts start this far in from the paddle's edges. */
+  EDGE_INSET: 8,
+} as const;
+
+export const STEP = {
+  MS: 1000 / 120,
+  MAX_STEPS_PER_UPDATE: 8,
+  /** A longer frame (a tab that slept) is cut to this, so the ball does not jump. */
+  MAX_FRAME_MS: 100,
+} as const;
+
+export const BRICK_POINTS: Readonly<Record<BrickKind, number>> = {
+  normal: 50,
+  tough: 80,
+  armored: 120,
+  steel: 0,
+  explosive: 100,
+  capsule: 60,
+  prism: 150,
+};
+
+/**
+ * Steel never breaks; its hp stays at 1 so the view can still compute
+ * cracks as maxHp - hp without an Infinity. Tell it apart by its kind.
+ */
+export const BRICK_HP: Readonly<Record<BrickKind, number>> = {
+  normal: 1,
+  tough: 2,
+  armored: 3,
+  steel: 1,
+  explosive: 1,
+  capsule: 1,
+  prism: 1,
+};
+
+export const BRICK = {
+  FLASH_MS: 120,
+  /** The explosion reaches the 8 neighbors: the radius is for the view's ring. */
+  EXPLOSION_RADIUS: 105,
+} as const;
+
+/** Base duration of each timed effect, before the sector's duration scale. */
+export const EFFECT_MS: Readonly<Record<TimedEffectKind, number>> = {
+  wide: 15000,
+  laser: 10000,
+  magnet: 15000,
+  slow: 12000,
+  fire: 8000,
+  barrier: 25000,
+  shrink: 10000,
+  fast: 10000,
+};
+
+export const EFFECTS = {
+  WIDE_FACTOR_PER_STACK: 0.5,
+  WIDE_MAX_STACKS: 2,
+  SHRINK_FACTOR: 0.65,
+  SLOW_FACTOR: 0.65,
+  FAST_FACTOR: 1.25,
+  /** A ball caught by the magnet launches on its own after this long. */
+  MAGNET_HOLD_MS: 2500,
+  /** The barrier line: a falling ball that reaches it is sent back up. */
+  BARRIER_Y: 704,
+} as const;
+
+export const OVERDRIVE = {
+  PER_BRICK: 0.04,
+  PER_PERFECT: 0.08,
+  NOVA_MS: 6000,
+  NOVA_SPEED_FACTOR: 1.1,
+} as const;
+
+export const LIVES = {
+  START: 3,
+  MAX: 5,
+} as const;
+
+export const DROPS = {
+  /** The first bricks broken in sector 1 always drop: the player meets power-ups at once. */
+  GUARANTEED_FIRST_BRICKS: 3,
+  /** Losing this many lives within the window turns on the mercy boost. */
+  MERCY_LIVES: 2,
+  MERCY_WINDOW_MS: 30000,
+  MERCY_MS: 30000,
+  MERCY_FACTOR: 1.5,
+} as const;
+
+export const CLEARING = {
+  /** Real time of the slow-motion outro after the last brick. */
+  MS: 1600,
+  TIME_SCALE: 0.25,
+} as const;
+
+export const CEILING = {
+  /** A breakable brick whose bottom edge reaches this y costs a life... */
+  DANGER_Y: 600,
+  /** ...and pushes the whole formation back up by this much. */
+  PUSH_BACK: 90,
+} as const;
+
+/** Row motion keeps this far from the walls at the end of its swing. */
+export const ROW_MOTION_WALL_GAP = 4;
+
+/**
+ * THE CORE, the boss of every 5th sector (5, 10, 15, ...). Its numbers are
+ * per boss number n (1 at sector 5): hp = 24 + 12 (n - 1), bonus = 5000 n.
+ * Phase tuples are indexed by phase - 1 (1: full health, 2: < 60%, 3: < 30%).
+ */
+export const BOSS = {
+  W: 280,
+  H: 60,
+  /** Top of the core: 52 px under the ceiling, room for a ball to get behind it. */
+  Y: 116,
+  BASE_HP: 24,
+  HP_PER_BOSS: 12,
+  /** Phase 2 under this share of max hp, phase 3 under the next. */
+  PHASE_2_SHARE: 0.6,
+  PHASE_3_SHARE: 0.3,
+  /** The eye: this wide, centered on the bottom face. A hit there deals +1. */
+  WEAK_W: 64,
+  BALL_DAMAGE: 1,
+  /** Fire or nova balls hit harder (they still bounce off the core). */
+  PIERCE_DAMAGE: 2,
+  WEAK_BONUS: 1,
+  LASER_DAMAGE: 1,
+  /** An explosive shield brick going off next to the core. */
+  EXPLOSIVE_DAMAGE: 2,
+  /** No damage for this long after a hit: the core flashes. */
+  INVULN_MS: 120,
+  /** Lasers come in pairs every 220 ms: a longer guard keeps them from melting the core. */
+  LASER_INVULN_MS: 250,
+  POINTS_PER_DAMAGE: 50,
+  /** Glide between waypoints (eased), then hold a moment. */
+  GLIDE_MS: [2800, 2100, 1450],
+  HOLD_MS: [700, 450, 250],
+  MIN_TRAVEL: 140,
+  /** Range of the core's center x, so the side shields stay inside the walls. */
+  MIN_CENTER_X: 220,
+  MAX_CENTER_X: 740,
+  /** The first volley waits after every serve. */
+  FIRST_SHOT_MS: 3000,
+  SHOT_EVERY_MS: [2600, 2000, 1500],
+  PELLET_SPEED: [180, 205, 235],
+  PELLET_R: 7,
+  /** Angle between the pellets of one volley. */
+  PELLET_SPREAD_DEG: 18,
+  /** Phase 3 aims its middle pellet at the paddle, at most this far from straight down. */
+  MAX_AIM_DEG: 30,
+  MAX_PELLETS: 16,
+  /** A pellet on the paddle jams it this long (it cannot move). */
+  STUN_MS: 600,
+  /** After a jam wears off the paddle cannot be jammed again for this long: no stun-lock in phase 3. */
+  STUN_GUARD_MS: 500,
+  /** Shields grow back one by one when the core goes this long without damage... */
+  SHIELD_REGEN_IDLE_MS: 6000,
+  SHIELD_REGEN_EVERY_MS: 3500,
+  /** ...at most this many times in a fight. */
+  SHIELD_REGEN_CAP: 6,
+  BONUS_PER_BOSS: 5000,
+  /** The outro after the core falls is longer than a normal clear: the explosion plays. */
+  CLEARING_MS: 2600,
+} as const;
+
+/** Anti-stall help, for the last few bricks that take forever. */
+export const RESCUE = {
+  /** No brick (or core) damaged for this long while playing: a capsule falls. */
+  IDLE_MS: 12000,
+  /** After this many paddle hits in a row without damaging a brick, bounces bend towards one. */
+  DRY_PADDLE_HITS: 8,
+  /** How much each bent bounce may turn, at most. */
+  NUDGE_DEG: 6,
+} as const;
