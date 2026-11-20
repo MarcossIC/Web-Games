@@ -1,11 +1,9 @@
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { WINDOW } from '@app-services/Window.service';
-import {
-  DISMISSED_AT_KEY,
-  InstallPrompt,
-  SNOOZE_MS,
-} from './install-prompt.service';
+import { GAME_STORE, type KeyValueStore, memoryStore, webStore } from '@app-persistence';
+import { InstallPrompt, SNOOZE_MS } from './install-prompt.service';
+import { installPromptSaves } from './pwa-saves';
 
 const ANDROID =
   'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
@@ -25,22 +23,14 @@ interface FakeDevice {
   standalone?: boolean;
   /** The page runs in its own window, as an installed app. */
   displayStandalone?: boolean;
-  storage?: Storage;
 }
 
-function memoryStorage(): Storage {
-  const data = new Map<string, string>();
-  return {
-    getItem: (key: string) => data.get(key) ?? null,
-    setItem: (key: string, value: string) => void data.set(key, value),
-  } as Storage;
-}
-
-function blockedStorage(): Storage {
-  const refuse = () => {
+/** localStorage as a browser with blocked site data has it. */
+function blockedStore(): KeyValueStore {
+  const refuse = (): never => {
     throw new DOMException('Storage is blocked', 'SecurityError');
   };
-  return { getItem: refuse, setItem: refuse } as unknown as Storage;
+  return webStore({ getItem: refuse, setItem: refuse, removeItem: refuse });
 }
 
 function fakeWindow(device: FakeDevice): Window {
@@ -55,7 +45,6 @@ function fakeWindow(device: FakeDevice): Window {
       matches:
         !!device.displayStandalone && query === '(display-mode: standalone)',
     }),
-    localStorage: device.storage ?? memoryStorage(),
   }) as unknown as Window;
 }
 
@@ -70,13 +59,14 @@ function installable(outcome: 'accepted' | 'dismissed' = 'accepted') {
   );
 }
 
-/** Opens the site in `win`: every call is a new visit. */
-function visit(win: Window, platform = 'browser'): InstallPrompt {
+/** Opens the site in `win`, with what `store` kept: every call is a new visit. */
+function visit(win: Window, store: KeyValueStore = memoryStore()): InstallPrompt {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       { provide: WINDOW, useValue: win },
-      { provide: PLATFORM_ID, useValue: platform },
+      { provide: PLATFORM_ID, useValue: 'browser' },
+      { provide: GAME_STORE, useValue: store },
     ],
   });
   return TestBed.inject(InstallPrompt);
@@ -121,9 +111,9 @@ describe('InstallPrompt', () => {
     });
 
     it('takes a "no" in the browser dialog as a dismissal', async () => {
-      const storage = memoryStorage();
-      const win = fakeWindow({ userAgent: ANDROID, storage });
-      const install = visit(win);
+      const store = memoryStore();
+      const win = fakeWindow({ userAgent: ANDROID });
+      const install = visit(win, store);
       win.dispatchEvent(installable('dismissed'));
 
       await install.install();
@@ -131,7 +121,7 @@ describe('InstallPrompt', () => {
       win.dispatchEvent(installable());
 
       expect(install.offer()).toBeUndefined();
-      expect(storage.getItem(DISMISSED_AT_KEY)).not.toBeNull();
+      expect(installPromptSaves.read(store).dismissedAt).toBe(Date.now());
     });
 
     it('stops offering once the app is installed', () => {
@@ -209,29 +199,27 @@ describe('InstallPrompt', () => {
     });
 
     it('stays quiet on later visits while the snooze lasts', () => {
-      const storage = memoryStorage();
-      visit(fakeWindow({ userAgent: IPHONE, storage })).dismiss();
+      const store = memoryStore();
+      visit(fakeWindow({ userAgent: IPHONE }), store).dismiss();
 
       jasmine.clock().tick(SNOOZE_MS - 1);
-      const nextVisit = visit(fakeWindow({ userAgent: IPHONE, storage }));
+      const nextVisit = visit(fakeWindow({ userAgent: IPHONE }), store);
 
       expect(nextVisit.offer()).toBeUndefined();
     });
 
     it('offers again once the snooze is over', () => {
-      const storage = memoryStorage();
-      visit(fakeWindow({ userAgent: IPHONE, storage })).dismiss();
+      const store = memoryStore();
+      visit(fakeWindow({ userAgent: IPHONE }), store).dismiss();
 
       jasmine.clock().tick(SNOOZE_MS);
-      const nextVisit = visit(fakeWindow({ userAgent: IPHONE, storage }));
+      const nextVisit = visit(fakeWindow({ userAgent: IPHONE }), store);
 
       expect(nextVisit.offer()).toBe('ios-guide');
     });
 
     it('still hides the offer for this visit when storage is blocked', () => {
-      const install = visit(
-        fakeWindow({ userAgent: IPHONE, storage: blockedStorage() })
-      );
+      const install = visit(fakeWindow({ userAgent: IPHONE }), blockedStore());
       expect(install.offer()).toBe('ios-guide');
 
       install.dismiss();

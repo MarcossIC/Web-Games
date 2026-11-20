@@ -7,7 +7,9 @@ import {
   signal,
 } from '@angular/core';
 import { WINDOW } from '@app-services/Window.service';
+import { GAME_STORE } from '@app-persistence';
 import { installDevice, runsInstalled } from './install-device';
+import { installPromptSaves } from './pwa-saves';
 
 /**
  * What the site can offer a visitor who has not installed it:
@@ -23,8 +25,6 @@ interface BeforeInstallPromptEvent extends Event {
   readonly userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-export const DISMISSED_AT_KEY = 'gg-install-dismissed-at';
-
 /** How long a "no" is respected before the site offers again. */
 export const SNOOZE_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -39,6 +39,7 @@ export class InstallPrompt {
     ? inject(WINDOW)
     : undefined;
   private readonly device = installDevice(this.host);
+  private readonly store = inject(GAME_STORE);
 
   /** The browser's install event, kept until the visitor answers. */
   private readonly pending = signal<BeforeInstallPromptEvent | undefined>(
@@ -81,19 +82,12 @@ export class InstallPrompt {
 
   dismiss(): void {
     this.hidden.set(true);
-    try {
-      this.host?.localStorage.setItem(DISMISSED_AT_KEY, String(Date.now()));
-    } catch {
-      // Storage is blocked: the offer stays away for this visit only.
-    }
+    // Where the storage is blocked, the store keeps it for this visit only.
+    installPromptSaves.write(this.store, { dismissedAt: Date.now() });
   }
 
   private isSnoozed(): boolean {
-    try {
-      const at = Number(this.host?.localStorage.getItem(DISMISSED_AT_KEY));
-      return at > 0 && Date.now() - at < SNOOZE_MS;
-    } catch {
-      return false;
-    }
+    const at = installPromptSaves.read(this.store).dismissedAt;
+    return at > 0 && Date.now() - at < SNOOZE_MS;
   }
 }
