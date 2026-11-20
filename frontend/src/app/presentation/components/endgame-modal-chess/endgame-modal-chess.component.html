@@ -1,36 +1,31 @@
-<div class="modal modal-bg">
-  <h3 class="modal-title-with-bar">Round finished</h3>
+<div class="modal-scrim">
+  <div
+    class="modal modal-bg sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="chess-result-title"
+  >
+    <h2 id="chess-result-title" class="modal-title-with-bar">Round finished</h2>
 
-  <div>
-    <h4 class="text-winner">
-      {{ isWinner() ? "There is a winner" : "It's a tie" }}
-    </h4>
-    <p
-      class="message message-win"
-      [ngClass]="{ 'message-win': isWinner(), 'message-loose': !isWinner() }"
-    >
-      {{ getGameOverTypeMessage() }}
+    <p class="verdict" [ngClass]="verdictClass()">
+      {{ isWinner() ? getGameOverTypeMessage() : "It's a tie" }}
     </p>
-  </div>
+    @if (!isWinner()) {
+    <p class="reason">{{ getGameOverTypeMessage() }}</p>
+    }
 
-  <div class="w-full flex justify-center items-center mt-4 buttons">
-    <button
-      class="abstract-button exit-button"
-      role="button"
-      (click)="close()"
-      tabindex="1"
-      role="button"
-    >
-      Exit Game
-    </button>
-    <button
-      class="abstract-button play-button"
-      role="button"
-      (click)="playAgain()"
-      tabindex="2"
-      role="button"
-    >
-      Play Game
-    </button>
+    <div class="sheet-actions">
+      <button class="abstract-button exit-button" type="button" (click)="close()">
+        Exit Game
+      </button>
+      <button
+        #play
+        class="abstract-button play-button"
+        type="button"
+        (click)="playAgain()"
+      >
+        Play Game
+      </button>
+    </div>
   </div>
 </div>

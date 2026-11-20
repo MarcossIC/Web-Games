@@ -1,27 +1,15 @@
-import { isPlatformBrowser } from '@angular/common';
-import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
+import { keepBest, persisted } from '@app-persistence';
+import { snakelingRecords } from './snakeling-saves';
 
 @Injectable()
 export class ScoreService {
   private _score = signal(0);
-  private _maxScore = signal(0);
-  private PLATFORM = inject(PLATFORM_ID);
-
-  constructor() {
-    if (isPlatformBrowser(this.PLATFORM)) {
-      let max = localStorage.getItem('snakeling-maxScore');
-      this._maxScore.set(max ? parseInt(max) : 0);
-    }
-  }
+  private readonly records = persisted(snakelingRecords);
 
   public updateMaxScore(): void {
-    if (this._score() > this._maxScore()) {
-      this._maxScore.set(this._score());
-      localStorage.setItem(
-        'snakeling-maxScore',
-        JSON.stringify(this._maxScore)
-      );
-    }
+    const best = keepBest(this.maxScore, this._score(), 'higher');
+    if (best.improved) this.records.set({ bestScore: best.value });
   }
 
   public updateScore(): void {
@@ -36,7 +24,7 @@ export class ScoreService {
     return this._score();
   }
   public get maxScore() {
-    return this._maxScore();
+    return this.records.value().bestScore;
   }
   public set score(updated: number) {
     this._score.set(updated);

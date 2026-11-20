@@ -1,3 +1,14 @@
 <div class="site-container">
+  @if (travel.view(); as view) {
+  <app-galaxy-background [view]="view" />
+  }
   <router-outlet />
+  <!-- Site pages only: over a game it would cover the touch controls. -->
+  @if (travel.view()) { @if (install.offer(); as offer) {
+  <app-install-banner
+    [offer]="offer"
+    (accept)="install.install()"
+    (dismiss)="install.dismiss()"
+  />
+  } }
 </div>

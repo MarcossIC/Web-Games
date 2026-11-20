@@ -1,5 +1,7 @@
 .chess-square {
   --chess-square-color: var(--chess-board-white-color);
+  /* Ink for the coordinates: the color of the other kind of square. */
+  --chess-coord-color: var(--chess-board-black-color);
   width: var(--chess-square-size);
   height: var(--chess-square-size);
   background: var(--chess-square-color);
@@ -13,43 +15,97 @@
 
   --piece-border-color: var(--chess-piece-white-color);
   --piece-bg-color: var(--chess-piece-black-color);
+
+  /* The board assembles along its diagonals, from the top left corner. */
+  animation: square-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(0.1s + var(--wave) * 28ms);
+}
+
+@keyframes square-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
 }
 
 .square-black {
   --chess-square-color: var(--chess-board-black-color);
-  --piece-yellow-high: rgb(255 250 139 / 70%);
+  --chess-coord-color: var(--chess-board-white-color);
 }
 .square-white {
   --chess-square-color: var(--chess-board-white-color);
-  --piece-yellow-high: rgb(253 247 119 / 60%);
 }
 
+.coord {
+  position: absolute;
+  z-index: 1;
+  font-family: var(--gg-font-pixel);
+  font-size: clamp(0.5rem, calc(var(--chess-square-size) * 0.18), 0.8125rem);
+  line-height: 1;
+  color: var(--chess-coord-color);
+}
+
+.coord-rank {
+  top: 6%;
+  left: 7%;
+}
+
+.coord-file {
+  right: 7%;
+  bottom: 6%;
+}
+
+/* A square the selected piece can move to: a small block in its center. */
 .chess-square > .safe-square {
   position: absolute;
-  height: calc(var(--chess-square-size) / 2);
-  width: calc(var(--chess-square-size) / 2);
-  background-color: #4a596c70;
-  border-radius: 50%;
+  height: calc(var(--chess-square-size) / 3.4);
+  width: calc(var(--chess-square-size) / 3.4);
+  background-color: rgba(7, 6, 13, 0.4);
   z-index: 100;
   left: 50%;
   top: 50%;
   translate: -50% -50%;
+  animation: dot-in 0.18s ease-out backwards;
 }
+
+/* On a piece that can be captured the block would cover it, so the
+   whole square gets a dark ring instead. */
+.chess-square.white-piece > .safe-square,
+.chess-square.black-piece > .safe-square {
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  box-shadow: inset 0 0 0 5px rgba(7, 6, 13, 0.55);
+}
+
+@keyframes dot-in {
+  from {
+    opacity: 0;
+    scale: 0.4;
+  }
+}
+
+/* Every state is a wash over the square, so the square keeps its own
+   color underneath and light and dark squares stay distinct. */
 .square-selected {
-  box-shadow: inset var(--chess-square-size) var(--chess-square-size) 4px 20px
-    var(--piece-yellow-high);
+  box-shadow: inset 0 0 0 4px var(--gg-yellow),
+    inset 0 0 0 100px rgba(255, 225, 74, 0.32);
 }
 .piece-last-move {
-  box-shadow: inset var(--chess-square-size) var(--chess-square-size) 4px 20px
-    rgb(0 255 220 / 15%);
+  box-shadow: inset 0 0 0 100px rgba(94, 230, 255, 0.34);
 }
 .promotion-square {
-  box-shadow: inset rgb(0, 98, 150) 0px 0px var(--chess-square-size) 0px,
-    inset rgb(0, 98, 150) 0px 0px var(--chess-square-size) 0px,
-    inset rgba(0, 0, 0, 1) 0px 0px 36px -24px;
+  box-shadow: inset 0 0 0 4px var(--gg-cyan),
+    inset 0 0 0 100px rgba(94, 230, 255, 0.45);
 }
 .king-in-check {
-  box-shadow: inset rgb(179, 21, 0) 0px 0px var(--chess-square-size) 0px,
-    inset rgb(163, 11, 0) 0px 0px var(--chess-square-size) 0px,
-    inset rgba(0, 0, 0, 1) 0px 0px 36px -24px;
+  box-shadow: inset 0 0 0 4px #ff5c5c, inset 0 0 0 100px rgba(255, 60, 60, 0.5);
+}
+
+/* A piece that can be moved lifts under the pointer. */
+.piece ::ng-deep svg {
+  transition: transform 0.12s ease-out;
+}
+.chess-square[draggable="true"] .piece:hover ::ng-deep svg {
+  transform: translateY(-5%) scale(1.07);
 }

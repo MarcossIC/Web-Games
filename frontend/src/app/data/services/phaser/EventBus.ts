@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { Events } from 'phaser';
 
 // Used to emit events between Vue components and Phaser scenes

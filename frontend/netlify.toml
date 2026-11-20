@@ -3,6 +3,9 @@
   command = "pnpm run build"
   publish = "dist/frontend/browser"
 
+[build.environment]
+  NODE_VERSION = "22.23.2"
+
 [images]
   remote_images = ["https://res.cloudinary.com/dd8ep4kjo/.*"]
 

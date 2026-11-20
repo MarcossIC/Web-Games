@@ -7,20 +7,27 @@ import { ChessCapturedPieces } from '@app/presentation/components/chess-captured
   standalone: true,
   imports: [ChessCapturedPieces],
   selector: 'chess-card-player',
-  template: `<div class="player-card">
-    <img [src]="getProfile()" />
-    <div>
-      <p>{{ player() === 1 ? 'White' : 'Black' }} Player</p>
+  template: `<div
+    class="player-card"
+    [class.is-active]="active()"
+    [class.is-white]="player() === 1"
+  >
+    <img [src]="getProfile()" alt="" />
+    <div class="player-info">
+      <p class="player-name">{{ player() === 1 ? 'White' : 'Black' }} Player</p>
       <div class="captured-piece-container">
         <chess-captured-pieces [player]="player()"></chess-captured-pieces>
       </div>
     </div>
+    <span class="turn-tag" aria-hidden="true">Turn</span>
   </div>`,
   styleUrl: './chess-card-player.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChessCardPlayer {
   public player = input<ChessPlayers>(ChessPlayers.BLACK);
+  /** True while it is this player's turn: the card lights up. */
+  public active = input(false);
 
   getProfile() {
     return `../../../../assets/images/chess/${

@@ -1,138 +1,239 @@
-
-
-.board {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(3, 1fr);
-    grid-auto-columns: 286px; /* Tamaño de celda en columnas */
-    grid-auto-rows: 286px;    /* Tamaño de celda en filas */
-  
-    row-gap: .5rem;
-
-    width: 286px;
-    height: 286px;
+/* The page is exactly one screen: the board is sized from the window, so
+   it never needs scrolling. */
+:host {
+  display: block;
+  height: 100dvh;
+  overflow: hidden;
 }
 
-.board .line{
+/* Fighter, board, fighter. Equal side columns keep the board in the
+   exact center of the screen, where the dialogs open. */
+.arena {
+  /* What is left under the game bar. */
+  --room: calc(100dvh - 4rem);
+
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: 1fr;
-  grid-auto-rows: 90px;    /* Tamaño de celda en filas */
-  grid-auto-columns: 90px; /* Tamaño de celda en columnas */
-  column-gap: .5rem;
-  
-  width: 270px;
-  height: 90px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1rem, 3vw, 3rem);
+  width: 100%;
+  height: var(--room);
+  padding: 0.5rem 1.5rem 2rem;
+  font-family: var(--gg-font-mono);
 }
 
-.board #line-1 { 
-  grid-area: 1 / 1 / 2 / 2;
+/* ---- Board ---- */
+.board {
+  /* The largest square that fits: limited by the height left, by the
+     width left between the two fighters, and by a sane maximum. */
+  --size: min(calc(var(--room) - 3rem), calc(100vw - 30rem), 44rem);
+
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.5rem, 1.2vw, 1rem);
+  width: var(--size);
+  height: var(--size);
 }
-
-.board #line-2 { 
-  grid-area: 2 / 1 / 3 / 2; 
-}
-.board #line-3 { 
-  grid-area: 3 / 1 / 4 / 2; 
-}
-
-
-.board #cell-1-1 { grid-area: 1 / 1 / 2 / 2; }
-.board #cell-1-2 { grid-area: 1 / 2 / 2 / 3; }
-.board #cell-1-3{  grid-area: 1 / 3 / 2 / 4; }
-
-.board #cell-2-1 { grid-area: 1 / 1 / 2 / 2; }
-.board #cell-2-2 { grid-area: 1 / 2 / 2 / 3; }
-.board #cell-2-3 { grid-area: 1 / 3 / 2 / 4; }
-
-.board #cell-3-1{ grid-area: 1 / 1 / 2 / 2; }
-.board #cell-3-2 { grid-area: 1 / 2 / 2 / 3; }
-.board #cell-3-3 { grid-area: 1 / 3 / 2 / 4; }
-
 
 .cell {
-    border: 2px solid var(--ttt-cell);
-    border-radius: 5px;
-    display: grid;
-    place-items: center;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 3.5rem;
-    text-transform: uppercase;
+  --mark: var(--ttt-select-x-200);
+
+  display: grid;
+  place-items: center;
+  background: rgba(16, 14, 28, 0.85);
+  border: 2px solid var(--gg-line);
+  cursor: default;
+  transition: border-color 0.15s linear, transform 0.15s linear;
+  animation: gg-emerge 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(0.1s + var(--i) * 0.04s);
 }
 
-.cell-X {
-  color: var(--ttt-select-x-200);
+.cell app-ttt-mark {
+  width: 62%;
 }
+
+.cell-X,
 .cell-O {
-  color: var(--ttt-select-o-200);
+  border-color: #3a3360;
 }
 
-  .tictactoe-wrapper {
-    width: 100%;
-    display: flex;
-    align-items: center;
+/* A free cell previews the mark of whoever is in turn. */
+.turn-o .cell.is-free {
+  --mark: var(--ttt-select-o-200);
+}
+
+.cell.is-free {
+  cursor: pointer;
+}
+
+.cell.is-free::before {
+  font-family: var(--gg-font-display);
+  font-size: clamp(2rem, 9vmin, 6rem);
+  line-height: 1;
+  color: var(--mark);
+  opacity: 0;
+  transition: opacity 0.15s linear;
+}
+
+.turn-x .cell.is-free::before {
+  content: "X";
+}
+
+.turn-o .cell.is-free::before {
+  content: "O";
+}
+
+.cell.is-free:hover {
+  border-color: var(--mark);
+  transform: translate(-2px, -2px);
+}
+
+.cell.is-free:hover::before {
+  opacity: 0.28;
+}
+
+.cell:focus-visible {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 3px;
+}
+
+/* ---- Fighters ---- */
+.fighter {
+  --mark: var(--ttt-select-x-200);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 11rem;
+  padding: 1.25rem 1rem;
+  background: var(--gg-panel);
+  border: 2px solid var(--gg-line);
+  /* Waiting: dimmed. The transition is what makes the turn change read
+     as the light passing from one side to the other. */
+  opacity: 0.5;
+  transition: opacity 0.25s linear, transform 0.25s ease,
+    border-color 0.25s linear, box-shadow 0.25s linear;
+}
+
+.fighter-o {
+  --mark: var(--ttt-select-o-200);
+}
+
+.fighter-x {
+  justify-self: end;
+  animation: enter-left 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.fighter-o {
+  justify-self: start;
+  animation: enter-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.fighter.is-active {
+  opacity: 1;
+  border-color: var(--mark);
+  box-shadow: 6px 6px 0 var(--mark);
+  transform: translate(-3px, -3px);
+}
+
+.who,
+.turn-tag {
+  font-family: var(--gg-font-pixel);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.who {
+  color: var(--gg-muted);
+}
+
+.fighter-mark {
+  width: 4.5rem;
+}
+
+.name {
+  font-size: 0.9375rem;
+  color: var(--gg-soft);
+}
+
+.score {
+  font-family: var(--gg-font-pixel);
+  font-size: 2.75rem;
+  line-height: 1;
+  color: #fff;
+}
+
+.turn-tag {
+  padding: 0.25rem 0.625rem;
+  background: var(--mark);
+  color: var(--gg-ink);
+  visibility: hidden;
+}
+
+.is-active .turn-tag {
+  visibility: visible;
+}
+
+@keyframes enter-left {
+  from {
+    opacity: 0;
+    transform: translateX(-36px);
+  }
+}
+
+@keyframes enter-right {
+  from {
+    opacity: 0;
+    transform: translateX(36px);
+  }
+}
+
+/* Narrow or tall screens: the fighters go above the board, side by side. */
+@media screen and (max-width: 860px) {
+  .arena {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: center;
+    gap: 1rem;
+    padding: 0.5rem 1rem 1.25rem;
+  }
+
+  .fighter {
+    flex-direction: row;
+    flex-wrap: wrap;
     justify-content: center;
-    column-gap: 15px;
-    flex-direction: column;
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    gap: 0.25rem 0.75rem;
+  }
+
+  .fighter-x {
+    order: 1;
+  }
+
+  .fighter-o {
+    order: 2;
+  }
+
+  .who,
+  .name {
+    display: none;
+  }
+
+  .fighter-mark {
+    width: 2.5rem;
+  }
+
+  .score {
+    font-size: 2rem;
+  }
+
+  .board {
+    --size: min(calc(100vw - 2rem), calc(var(--room) - 9rem));
+
+    order: 3;
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
 }
-
-.tictactoe-title { 
-    font-size: 2.5rem;
-    font-weight: bold;
-    text-align: center;
-    margin-block-end: 1.5rem;
-}   
-
-  @media screen and (min-width: 600px) {
-    .tictactoe-title { 
-      font-size: 4.5rem;
-      margin-block-end: 0px;
-    }
-
-    .board {
-      grid-auto-columns: 391px; /* Tamaño de celda en columnas */
-      grid-auto-rows: 391px;    /* Tamaño de celda en filas */
-      width: 391px;
-      height: 391px;
-    }
-
-    .board .line{
-      grid-auto-rows: 125px;    /* Tamaño de celda en filas */
-      grid-auto-columns: 125px; /* Tamaño de celda en columnas */
-      
-      width: 375px;
-      height: 125px;
-    }
-
-    .cell{
-      font-size: 4.5rem;
-    }
-  }
-
-  @media screen and (min-width: 1500px) {
-    .tictactoe-title { 
-      font-size: 6rem;
-    }
-
-    .board {
-      grid-auto-columns: 752px; /* Tamaño de celda en columnas */
-      grid-auto-rows: 752px;    /* Tamaño de celda en filas */
-      width: 752px;
-      height: 752px;
-      row-gap: 1rem;
-    }
-
-    .board .line{
-      grid-auto-rows: 240px;    /* Tamaño de celda en filas */
-      grid-auto-columns: 240px; /* Tamaño de celda en columnas */
-      width: 720px;
-      height: 240px;
-
-      column-gap: 1rem;
-    }
-
-    .cell{
-      font-size: 9rem;
-    }
-  }

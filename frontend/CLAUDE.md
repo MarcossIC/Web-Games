@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Game Galaxy** — an Angular 18 web arcade with 6 games: Tetris, Snake (Snakeling), Tic-Tac-Toe, Memorama, Chess, and Retro Runner. Uses standalone components (no NgModules), SSR via Express, and deploys to Netlify.
+**Game Galaxy** — an Angular 22 web arcade with 7 games: Tetris, Snake (Snakeling), Tic-Tac-Toe, Memorama, Chess, Retro Runner, and Nova Breaker. Uses standalone components (no NgModules), SSR via Express, and deploys to Netlify.
 
 ## Commands
 
@@ -43,7 +43,19 @@ Constants and static assets live under `src/assets/constants/` and `src/assets/i
 @app-components/*   → src/app/presentation/components/*
 @app-services/*     → src/app/data/services/*
 @app-models/*       → src/app/data/models/*
+@app-persistence    → src/app/data/persistence/index.ts
 ```
+
+### Persistence
+
+Everything kept between visits (records, settings, the install prompt's snooze) goes through `data/persistence/` (`@app-persistence`). Only `browser-store.ts` touches `localStorage`:
+
+- Each game declares what it saves in `data/services/<game>/<game>-saves.ts` with `defineEntry`: key `gg:<game>:<name>`, a version, a fallback and a check per field (`count`, `number`, `flag`, `text`, `nullable`, `object`, `recordOf`). A missing, broken or other-version value reads as the fallback, field by field. What belongs to the site, not a game, uses `game: 'app'` (`pwa/pwa-saves.ts`).
+- One owner per entry: Nova Breaker's settings live in `BreakerControllerService`, and `BreakerAudio` only hears the mute flag through `SET_MUTED`.
+- Bump an entry's `version` when its shape or meaning changes (a new scoring): old values then read as the fallback.
+- Angular services hold an entry with `persisted(entry)`: a signal that saves on `set`, backed by `GAME_STORE` (localStorage in the browser, memory on the server). Phaser code lives outside the injector and passes `browserStore()`.
+- Record arithmetic shared by every game: `keepBest` and `bestPerKey`. What counts as a record (Breaker's practice runs do not) stays in the game.
+- Tests use `memoryStore()`, through `{ provide: GAME_STORE, useValue: store }` or passed directly.
 
 ### Key Patterns
 
@@ -61,6 +73,7 @@ Constants and static assets live under `src/assets/constants/` and `src/assets/i
 |------|-----------|
 | Tetris | Canvas 2D |
 | Retro Runner | Phaser 3 engine |
+| Nova Breaker | Phaser 4 rendering a pure TS engine (`data/services/breaker/engine/`) |
 | Chess | Angular templates + SVG piece components |
 | Snake, Memorama, Tic-Tac-Toe | DOM-based with CSS |
 

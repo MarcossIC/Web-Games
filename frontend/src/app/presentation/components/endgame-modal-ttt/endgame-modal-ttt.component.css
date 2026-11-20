@@ -1,63 +1,83 @@
-.modal-bg{
-    background-color: var(--ttt-bg);
+/* The dialog frame comes from the shared sheet in modal.css. */
+
+/* `.modal .winner` and not just `.winner`: the shared `.modal p` rule
+   sets the text face and would win otherwise. */
+.modal .winner {
+  font-family: var(--gg-font-display);
+  font-size: 1.5rem;
+  letter-spacing: 1px;
+  animation: slam 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) 0.15s backwards;
 }
 
-.modal-title{
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--ttt-text);
-    border-bottom: 2px solid var(--ttt-text-200);
-    padding-block-end: .5rem;
-    text-align: center;
+/* Higher specificity than the shared `.modal p` color. */
+.modal .winner.x-winner {
+  color: var(--ttt-select-x-200);
 }
 
-.text-winner{
-    font-size: 1.5rem;
-    font-weight: 500;
-    text-align: center;
+.modal .winner.o-winner {
+  color: var(--ttt-select-o-200);
 }
 
-.x-winner{
-    color: var(--ttt-select-x-200);
-}
-.o-winner{
-    color: var(--ttt-select-o-200);
+.modal .winner.draw {
+  color: #fff;
 }
 
-.draw {
-    color: var(--ttt-text-200);
+.scoreline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--gg-ink);
+  border: 2px solid var(--gg-line);
 }
 
-.modal-subtitle {
-    text-align: center;
-    color: var(--ttt-text);
-    font-weight: 700;
-    font-size: 2rem;
+.side {
+  --mark: var(--ttt-select-x-200);
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  /* The loser of the round steps back. */
+  opacity: 0.55;
 }
 
-.winners-scores{
-    display: flex;
-    width: 7rem;
-    column-gap: 5.4rem;
-    margin-inline: auto;
-    font-size: 1.875rem/* 30px */;
-    line-height: 2.25rem/* 36px */;
+.side-o {
+  --mark: var(--ttt-select-o-200);
+
+  justify-content: flex-start;
 }
 
-@media screen and (min-width: 1500px) {
-    .modal-title{
-        font-size: 3.5rem;
-    }
-    .text-winner{
-        margin-block-start: 1rem;
-        font-size: 2rem;
-    }
+.side.is-winner {
+  opacity: 1;
+}
 
-    .modal-subtitle{
-        font-size: 3rem;
-    }
-    .winners-scores{
-        column-gap: 9rem;
-        width: 10rem;
-    }
+.side app-ttt-mark {
+  width: 2.75rem;
+}
+
+.side strong {
+  font-family: var(--gg-font-pixel);
+  font-size: 2.5rem;
+  font-weight: 400;
+  line-height: 1;
+  color: #fff;
+}
+
+.vs {
+  font-family: var(--gg-font-display);
+  font-size: 1.25rem;
+  text-shadow: var(--gg-slab);
+}
+
+.modal .vs {
+  color: #fff;
+}
+
+@keyframes slam {
+  from {
+    opacity: 0;
+    transform: scale(2.2);
+  }
 }

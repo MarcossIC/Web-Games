@@ -16,18 +16,29 @@ import { Piece } from '@app/data/services/chess/Piece';
   imports: [CommonModule],
   selector: 'chess-promotion-dialog',
   template: `
-    <div class="promotion-dialog">
-      <div class="close-promotion-dialog" (click)="close()">&times;</div>
-      @for(PIECE_SYMBOL of getPromotionPieces(); track "pp-"+$index){
-      @if(getPiece(PIECE_SYMBOL); as piece){
-      <div
-        class="piece w-full h-[22%] piece-promotion-style cursor-pointer"
-        [ngClass]="[getPiecePlayer(PIECE_SYMBOL)]"
-        (click)="promotePiece(PIECE_SYMBOL)"
-      >
-        <ng-container *ngComponentOutlet="piece"></ng-container>
+    <div class="promotion-dialog" role="dialog" aria-label="Promote the pawn">
+      <p class="promotion-title">Promote</p>
+      <div class="promotion-pieces">
+        @for(PIECE_SYMBOL of getPromotionPieces(); track "pp-"+$index){
+        @if(getPiece(PIECE_SYMBOL); as piece){
+        <button
+          type="button"
+          class="piece piece-promotion-style promotion-piece"
+          [ngClass]="[getPiecePlayer(PIECE_SYMBOL)]"
+          (click)="promotePiece(PIECE_SYMBOL)"
+        >
+          <ng-container *ngComponentOutlet="piece"></ng-container>
+        </button>
+        } }
       </div>
-      } }
+      <button
+        type="button"
+        class="close-promotion-dialog"
+        aria-label="Cancel"
+        (click)="close()"
+      >
+        &times;
+      </button>
     </div>
   `,
   styleUrls: [

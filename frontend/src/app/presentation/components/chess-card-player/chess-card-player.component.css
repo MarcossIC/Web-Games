@@ -1,23 +1,68 @@
+/* One of the two players of the duel. Waiting, the card is dimmed; in
+   turn, it lights up in the color of its side. The transition is what
+   makes a move read as the light passing across the board. */
 .player-card {
-  @apply flex justify-start items-start gap-x-2;
+  --accent: var(--chess-black-accent);
 
-  img {
-    width: calc(var(--chess-square-size) + 15px);
-    max-width: var(--chess-player-img-max-w);
-    aspect-ratio: 1/1;
-    object-fit: cover;
-    object-position: center;
-  }
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: var(--chess-player-h, 4rem);
+  padding: 0.375rem 0.75rem 0.375rem 0.375rem;
+  background: var(--gg-panel);
+  border: 2px solid var(--gg-line);
+  opacity: 0.55;
+  transition: opacity 0.25s linear, border-color 0.25s linear,
+    box-shadow 0.25s linear, transform 0.25s ease;
+}
 
-  p {
-    font-weight: 500;
-    font-size: var(--chess-player-name-size);
-    color: #ffffffcf;
-    text-shadow: 0.1rem 0.1rem #2e2b2b96;
-  }
+.player-card.is-white {
+  --accent: var(--chess-white-accent);
+}
+
+.player-card.is-active {
+  opacity: 1;
+  border-color: var(--accent);
+  box-shadow: 5px 5px 0 var(--accent);
+  transform: translate(-2px, -2px);
+}
+
+.player-card img {
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center;
+  border: 2px solid var(--accent);
+}
+
+.player-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.player-name {
+  font-family: var(--gg-font-mono);
+  font-weight: 700;
+  font-size: var(--chess-player-name-size);
+  color: #fff;
 }
 
 .captured-piece-container {
   width: 100%;
+  height: 1.5rem;
   position: relative;
+}
+
+.turn-tag {
+  padding: 0.25rem 0.625rem;
+  background: var(--accent);
+  color: var(--gg-ink);
+  font-family: var(--gg-font-pixel);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  visibility: hidden;
+}
+
+.is-active .turn-tag {
+  visibility: visible;
 }

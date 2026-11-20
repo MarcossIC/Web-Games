@@ -1,88 +1,255 @@
-.games-container {
-  width: 100%;
-  height: 100%;
-  margin-block-start: 3rem;
-  margin-inline: 1rem;
-  row-gap: 3rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  justify-items: center;
-}
-
-.game {
-  width: 180px;
-  aspect-ratio: 1/1;
-
-  border-radius: 2rem;
-  border: 5px solid var(--ttt-accent);
-  padding: 0.3rem;
-  opacity: 0.9;
+.games {
   position: relative;
-}
-
-.game:hover {
-  transform: scale(1.05);
-  cursor: pointer;
-  opacity: 1;
-}
-
-.game img {
-  border-radius: 2rem;
-  padding: 0.4rem;
-}
-
-.game-caption {
-  color: var(--ttt-bg-300);
-  width: 180px;
-  text-align: center;
-  margin-block-start: 1rem;
-
-  font-weight: 600;
-  font-size: 1.8rem;
-  cursor: default;
-  user-select: none;
-}
-
-.logo-container {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  /* A light veil: we are inside the galaxy now, and it should show. */
+  background: linear-gradient(rgba(7, 6, 13, 0.7), rgba(7, 6, 13, 0.25) 45%);
+  color: var(--gg-text);
+  font-family: var(--gg-font-mono);
+}
+
+/* CRT scanlines over the whole page; never blocks clicks. */
+.games::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--gg-scanlines);
+  pointer-events: none;
+}
+
+.content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  /* Keeps six cartridges in two rows without them growing oversized. */
+  max-width: 1120px;
+  margin-inline: auto;
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.title {
+  font-family: var(--gg-font-display);
+  font-weight: 400;
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  line-height: 1;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: var(--gg-slab);
+}
+
+/* Rack + panel: the panel drops below the rack when there is no room. */
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.rack {
+  flex: 999 1 520px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.cartridge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 0.875rem 0.875rem 0;
+  background: var(--gg-panel);
+  border: 2px solid var(--gg-line);
+  /* The cut corner is what makes the card read as a cartridge. */
+  clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 0 100%);
+  transition: transform 0.15s linear;
+}
+
+.cartridge:hover,
+.cartridge.is-selected {
+  transform: translateY(-4px);
+  border-color: var(--game);
+}
+
+.cartridge:focus-visible {
+  /* clip-path would cut an outline, so focus is drawn inside the card. */
+  outline: none;
+  box-shadow: inset 0 0 0 3px var(--gg-yellow);
+}
+
+.cartridge-num,
+.panel-num {
+  font-family: var(--gg-font-pixel);
+  font-size: 0.75rem;
+  color: var(--game);
+}
+
+.cartridge-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cartridge-name {
+  font-family: var(--gg-font-display);
+  font-size: 1.25rem;
+}
+
+.cartridge-tag {
+  font-family: var(--gg-font-pixel);
+  font-size: 0.75rem;
+  color: var(--gg-muted);
+}
+
+.cartridge-grip {
+  height: 18px;
+  margin-inline: -0.875rem;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--gg-line) 0 6px,
+    var(--gg-panel) 6px 12px
+  );
+}
+
+.panel {
+  flex: 1 1 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  background: var(--gg-panel);
+  border: 2px solid var(--gg-line);
+  box-shadow: 8px 8px 0 var(--game);
+}
+
+.panel-title {
+  font-family: var(--gg-font-display);
+  font-weight: 400;
+  font-size: 2.5rem;
+  line-height: 1.05;
+  color: #fff;
+}
+
+.panel-desc {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--gg-soft);
+}
+
+.panel-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.625rem 1.25rem;
+  padding-block: 1rem;
+  border-block: 2px dashed var(--gg-line);
+  font-size: 0.875rem;
+}
+
+.panel-facts dt {
+  font-family: var(--gg-font-pixel);
+  font-size: 0.75rem;
+  color: var(--gg-muted);
+}
+
+.play {
+  display: inline-flex;
   align-items: center;
-  margin-block: 1rem;
+  justify-content: center;
+  gap: 0.875rem;
+  min-height: 60px;
+  padding: 0 1.75rem;
+  background: var(--gg-magenta);
+  color: var(--gg-ink);
+  font-family: var(--gg-font-display);
+  font-size: 1.25rem;
+  letter-spacing: 2px;
+  box-shadow: 6px 6px 0 var(--gg-cyan);
 }
 
-.text-menu {
-  font-size: 1.5rem;
+.play:hover {
+  background: var(--gg-yellow);
 }
 
-@media screen and (min-width: 600px) {
-  .games-container {
-    margin-block-start: 8rem;
-    margin-inline: 2rem;
-    row-gap: 2rem;
-  }
-  .logo-container {
-    justify-content: flex-start;
-    margin-inline-start: 3rem;
-    margin-inline-end: auto;
+.play:focus-visible {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 4px;
+}
+
+.caret {
+  animation: gg-blink 1s linear infinite;
+}
+
+
+@media screen and (max-width: 900px) {
+  .rack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media screen and (min-width: 1500px) {
-  .game {
-    width: 300px;
-    aspect-ratio: 1/1;
-    padding: 0.5rem;
+@media screen and (max-width: 420px) {
+  .rack {
+    grid-template-columns: minmax(0, 1fr);
   }
-  .game-caption {
-    width: 300px;
-    margin-block-start: 1rem;
-    font-size: 2.5rem;
-  }
-  .game img {
-    padding: 0.6rem;
-  }
+}
 
-  .text-menu {
-    font-size: 2.5rem;
+/* Entrance: the page mounts mid-dive, so the cartridges emerge from the
+   depth one after another as the camera arrives, then the panel docks. */
+.title {
+  animation: gg-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+}
+
+.cartridge {
+  animation: gg-emerge 0.75s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(0.2s + var(--i) * 0.07s);
+}
+
+.panel {
+  animation: gg-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.7s backwards;
+}
+
+/* Exit: the camera pulls out of the galaxy and the page falls away. */
+.games.is-leaving {
+  animation: gg-fall-away 0.42s cubic-bezier(0.5, 0, 0.9, 0.5) forwards;
+  pointer-events: none;
+}
+
+/* Launch: the chosen cartridge comes at us and everything else steps
+   back, while the camera plunges into the core. */
+.games.is-launching {
+  pointer-events: none;
+}
+
+.is-launching .title,
+.is-launching .panel,
+.is-launching app-site-header,
+.is-launching .cartridge:not(.is-launched) {
+  animation: gg-step-back 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.is-launching .cartridge.is-launched {
+  /* Above its neighbours while it grows over them. */
+  z-index: 2;
+  animation: gg-launch 0.42s cubic-bezier(0.5, 0, 0.9, 0.5) forwards;
+}
+
+@keyframes gg-step-back {
+  to {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+@keyframes gg-launch {
+  35% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.4);
   }
 }

@@ -19,6 +19,7 @@ import { WelcomeTetrisModalComponent } from '@app/presentation/components/welcom
 import { ChronometerComponent } from '@app/presentation/components/chronometer/chronometer.component';
 import { EndgameModalTetrisComponent } from '@app/presentation/components/endgame-modal-tetris/endgame-modal-tetris.component';
 import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { GameBarComponent } from '@app-components/game-bar/game-bar.component';
 import { fromEvent } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -32,6 +33,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     ChronometerComponent,
     WelcomeTetrisModalComponent,
     EndgameModalTetrisComponent,
+    GameBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,271 +1,268 @@
-.modal-bg {
-  background-color: var(--ttt-bg);
+/* The dialog frame comes from the shared sheet in modal.css.
+   This dialog is a versus screen: you on the left, the rival on the
+   right. Every part of it is a control, not decoration. */
+
+.modal.sheet.versus {
+  width: min(100%, 34rem);
 }
 
-.option-text{
-    color: #171818;
-    font-size: 1.5rem;
-    font-weight: 500;
-    text-align: center;
+/* ---- The stage: two fighters and the VS between them ---- */
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.toggle-container{
-    position: relative;
-    margin-block-start: 2rem;
+.fighter {
+  --mark: var(--ttt-select-x-200);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
 }
 
-.toggle-wrapper {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    overflow: hidden;
-    padding: 0 200px;
-    transform: translate3d(-50%, -50%, 0);
-}
-  
-  .toggle-wrapper input {
-    position: absolute;
-    left: -99em;
-  }
-  
-  .toggle {
-    cursor: pointer;
-    display: inline-block;
-    position: relative;
-    width: 96px;
-    height: 41px;
-    border-radius: 84px;
-    transition: background-color 200ms cubic-bezier(0.445, 0.05, 0.55, 0.95);
-  }
-  
-  .toggle-handler {
-    display: inline-block;
-    position: relative;
-    z-index: 1;
-    top: 3px;
-    left: 3px;
-    width: 34px;
-    height: 34px;
-    border-radius: 50px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, .3);
-    transition: all 400ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    transform: rotate(-45deg);
-  }
-
-  .radio-inputs {
-    position: relative;
-    display: flex;
-    flex-wrap: wrap;
-    border-radius: 0.5rem;
-    background-color: var(--ttt-bg-200);
-    box-sizing: border-box;
-    box-shadow: 0 0 0px 1px rgba(0, 0, 0, 0.06);
-    padding: 0.25rem;
-    width: 240px;
-    column-gap: .1rem;
-  }
-  
-  .radio-inputs .radio {
-    flex: 1 1 auto;
-    text-align: center;
-  }
-  
-  .radio-inputs .radio input {
-    display: none;
-  }
-  
-  .radio-inputs .radio .name {
-    display: flex;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.5rem;
-    border: none;
-    padding: .5rem 0;
-    color: var(--ttt-text);
-    transition: background-color .15s ease-in-out;
-  }
-  
-  .radio-inputs .radio input:not(:disabled):checked + .name {
-    background-color: var(--ttt-primary);
-    font-weight: 600;
-  }
-
-  .select-player {
-    background-color: var(--ttt-select-x);
-  }
-
-  .select-player:before {
-    content: 'Player (X)';
-    position: absolute;
-    left: -75px;
-    top: 5px;
-    font-size: 1rem;
-    color: var(--ttt-select-x-200);
-    font-weight: 500;
-    opacity: 1;
-    transition-property: opacity, background-color;
-    transition-duration: 500ms;
-    transition-timing-function: ease;
-  }
-  
-  .select-player:after {
-    content: 'Player (O)';
-    position: absolute;
-    right: -75px;
-    top: 5px;
-    font-size: 1rem;
-    color: var(--ttt-text);
-    opacity: .85;
-    font-weight: 500;
-    transition-property: opacity, background-color;
-    transition-duration: 500ms;
-    transition-timing-function: ease;
-  }
-
-  .select-player-handler {
-    background-color: var(--ttt-select-x-200);
-  }
-
-  input:checked + .select-player {
-    background-color: var(--ttt-select-o);
-  }
-  
-  input:checked + .select-player:before {
-    color: var(--ttt-text);
-    opacity: .85;
-  }
-  
-  input:checked + .select-player:after {
-    color: var(--ttt-select-o-200);
-    opacity: 1;
-  }
-  
-  input:checked + .select-player .select-player-handler {
-    background-color: var(--ttt-select-o-200);
-    transform: translate3d(55px, 0, 0) rotate(0);
-  }
-
-  .second-player {
-    background-color: var(--ttt-primary);
+.fighter.plays-o {
+  --mark: var(--ttt-select-o-200);
 }
 
- .second-player:before {
-    content: 'Not';
-    position: absolute;
-    left: -45px;
-    top: 5px;
-    font-size: 1.1rem;
-    color: var(--ttt-accent-200);
-    font-weight: 500;
-    opacity: 1;
-    transition-property: opacity, background-color;
-    transition-duration: 500ms;
-    transition-timing-function: ease;
-  }
-  
-  .second-player:after {
-    content: 'Yes';
-    position: absolute;
-    right: -45px;
-    top: 5px;
-    font-size: 1.1rem;
-    color: var(--ttt-text);
-    opacity: .85;
-    font-weight: 500;
-    transition-property: opacity, background-color;
-    transition-duration: 500ms;
-    transition-timing-function: ease;
-  }
+/* The two sides come in from their own edge, then VS lands. */
+.you {
+  animation: enter-left 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+}
 
-  .second-player-handler {
-    background-color: var(--ttt-accent-200);
-  }
+.rival {
+  animation: enter-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+}
 
-  input:checked + .second-player:before {
-    color: var(--ttt-text);
-    opacity: .85;
-  }
-  
-  input:checked + .second-player:after {
-    color: var(--ttt-accent-200);
-    opacity: 1;
-  }
-  
-  input:checked + .second-player .second-player-handler {
-    transform: translate3d(55px, 0, 0) rotate(0);
-  }
+.role {
+  font-family: var(--gg-font-pixel);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  color: var(--mark);
+  transition: color 0.2s linear;
+}
 
-  @media screen and (min-width: 600px){
-      .radio-inputs {
-        padding: 0.25rem;
-        width: 300px;
-      }
-    .select-player:before {
-      left: -85px;
-      top: 5px;
-      font-size: 1.1rem;
-    }
-    
-    .select-player:after {
-      right: -85px;
-      top: 5px;
-      font-size: 1.1rem;
-    }
+.portrait {
+  display: grid;
+  place-items: center;
+  width: clamp(5rem, 24vw, 7.5rem);
+  aspect-ratio: 1 / 1;
+  background: var(--gg-ink);
+  border: 2px solid var(--mark);
+  box-shadow: 5px 5px 0 var(--mark);
+  transition: border-color 0.2s linear, box-shadow 0.2s linear;
+}
+
+.portrait app-ttt-mark {
+  width: 78%;
+}
+
+/* The pixel face fills the portrait and drops its own frame. */
+.face {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  animation: face-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.vs {
+  font-family: var(--gg-font-display);
+  font-size: clamp(1.5rem, 6vw, 2.25rem);
+  color: #fff;
+  text-shadow: var(--gg-slab);
+  animation: slam 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) 0.4s backwards;
+}
+
+/* ---- Controls ---- */
+.group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
+.group legend:not(.sr-only) {
+  margin-block-end: 0.625rem;
+  font-family: var(--gg-font-pixel);
+  font-size: 0.8125rem;
+  letter-spacing: 1px;
+  color: var(--gg-muted);
+}
+
+/* Every option is a real radio button, hidden but still focusable, with
+   the visible part drawn by the element right after it. */
+.group input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.group label {
+  cursor: pointer;
+}
+
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 4px;
+  background: var(--gg-ink);
+  border: 2px solid var(--gg-line);
+}
+
+.segmented label > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  font-family: var(--gg-font-mono);
+  font-size: 0.9375rem;
+  color: var(--gg-soft);
+  transition: background-color 0.15s linear, color 0.15s linear;
+}
+
+.segmented label:hover > span {
+  color: #fff;
+}
+
+/* The chosen option takes the color of that fighter's mark. */
+.segmented input:checked + span {
+  background: var(--mark);
+  color: var(--gg-ink);
+  font-weight: 700;
+}
+
+.group input:focus-visible + span {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 2px;
+}
+
+.hint {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+/* ---- Bot level: a power meter that opens only when there is a bot ----
+   Animating a grid row from 0fr to 1fr is how a box grows to the height
+   of its content without a hard-coded size. */
+.level {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  /* Takes back the gap the sheet would leave around an empty row. */
+  margin-block-start: -1.25rem;
+  transition: grid-template-rows 0.25s ease, opacity 0.2s linear,
+    margin-block-start 0.25s ease;
+}
+
+.level.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-block-start: 0;
+}
+
+.level-options {
+  overflow: hidden;
+}
+
+/* Three bars of growing height, like a signal meter. The color of the
+   meter matches the eyes of the bot: calm, alert, dangerous. */
+.meter {
+  --power: #5dfc9a;
+
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--gg-ink);
+  border: 2px solid var(--gg-line);
+}
+
+.meter[data-level="2"] {
+  --power: var(--gg-yellow);
+}
+
+.meter[data-level="3"] {
+  --power: #ff5c5c;
+}
+
+.meter label {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-height: 44px;
+}
+
+.bar {
+  height: 0.75rem;
+  background: var(--gg-line);
+  transition: background-color 0.2s linear;
+}
+
+.meter label:nth-child(2) .bar {
+  height: 1.375rem;
+}
+
+.meter label:nth-child(3) .bar {
+  height: 2rem;
+}
+
+.bar.is-lit {
+  background: var(--power);
+}
+
+.meter label:hover .bar:not(.is-lit) {
+  background: #3a3360;
+}
+
+.bar-name {
+  font-family: var(--gg-font-mono);
+  font-size: 0.875rem;
+  text-align: center;
+  color: var(--gg-soft);
+}
+
+.meter input:checked ~ .bar-name {
+  color: var(--power);
+  font-weight: 700;
+}
+
+.meter input:focus-visible ~ .bar {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 2px;
+}
+
+@keyframes enter-left {
+  from {
+    opacity: 0;
+    transform: translateX(-36px);
   }
+}
 
-  @media screen  and (min-width: 1500px){
-    .option-text{
-      font-size: 2rem;
-    }
-    .toggle{
-      width: 150px;
-      height: 55px;
-    }
-    .toggle-handler{
-      top: 5px;
-      left: 6px;
-      width: 43px;
-      height: 43px;
-    }
-
-    .select-player:before{
-      top: -1px;
-      left: -155px;
-      font-size: 2rem;
-    }
-
-    .select-player:after{
-      top: -1px;
-      right: -155px;
-      font-size: 2rem;
-    }
-    .toggle-container{
-      margin-block-start: 2rem;
-    }
-    .second-player:before {
-      left: -80px;
-      top: 5px;
-      font-size: 2rem;
-    }
-    
-    .second-player:after {
-      right: -80px;
-      top: 5px;
-      font-size: 2rem;
-    }
-    .radio-inputs .radio {
-      padding: .1rem;
-    }
-    .radio-inputs{
-      width: 450px;
-      
-    }
-    .radio-inputs .radio .name{
-      font-weight: 500;
-      font-size: 1.6rem;
-    }
-    input:checked + .second-player .second-player-handler {
-      transform: translate3d(92px, 0, 0) rotate(0);
-    }
+@keyframes enter-right {
+  from {
+    opacity: 0;
+    transform: translateX(36px);
   }
+}
+
+@keyframes slam {
+  from {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+@keyframes face-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}

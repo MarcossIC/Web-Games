@@ -1,14 +1,32 @@
-.modal-bg {
-  background-color: var(--ttt-bg);
+/* The dialog frame comes from the shared sheet in modal.css. */
+
+/* `.modal .verdict` and not just `.verdict`: the shared `.modal p` rule
+   sets the face and the color, and would win otherwise. */
+.modal .verdict {
+  font-family: var(--gg-font-display);
+  font-size: 1.75rem;
+  letter-spacing: 1px;
+  color: #fff;
+  animation: slam 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) 0.15s backwards;
 }
-.message {
-  font-size: 2.5rem;
-  font-weight: 500;
-  text-align: center;
+
+/* The winner is named in the color of their side of the board. */
+.modal .verdict.white-won {
+  color: var(--gg-cyan);
 }
-.modal p.message-win {
-  color: rgb(48, 131, 48);
+
+.modal .verdict.black-won {
+  color: var(--gg-magenta);
 }
-.modal p.message-loose {
-  color: var(--ttt-select-x-200);
+
+.reason {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+@keyframes slam {
+  from {
+    opacity: 0;
+    transform: scale(2.2);
+  }
 }

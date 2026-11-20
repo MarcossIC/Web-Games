@@ -2,9 +2,12 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   OnInit,
   Renderer2,
+  afterNextRender,
   inject,
+  viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { MemoramaControllerService } from '@app/data/services/memorama/memoramaController.service';
@@ -17,8 +20,8 @@ import { TOTAL_CARDS } from 'assets/constants/memorama';
   selector: 'endgame-modal-memorama',
   templateUrl: './endgame-modal-memorama.component.html',
   styleUrls: [
-    './endgame-modal-memorama.component.css',
     '../../../shared/styles/modal.css',
+    './endgame-modal-memorama.component.css',
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -28,6 +31,13 @@ export class EndgameModalMemoramaComponent {
   );
   protected renderer: Renderer2 = inject(Renderer2);
   private router: Router = inject(Router);
+  private playButton = viewChild.required<ElementRef<HTMLButtonElement>>('play');
+  protected readonly pairs = TOTAL_CARDS / 2;
+
+  constructor() {
+    // Enter starts the next round without reaching for the mouse.
+    afterNextRender(() => this.playButton().nativeElement.focus());
+  }
 
   protected close(): void {
     this.controller.resetGame(this.renderer);

@@ -1,49 +1,89 @@
-.modal{
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 270px;
-    aspect-ratio: 2/1;
-    z-index: 20;
-    padding: 12px;
-    padding-block-start: 8px;
-    border-radius: 1rem;
-    border: solid 3px #000;
-    box-shadow: inset -10px -10px 25px 0px rgba(0,0,0,0.1), 0 8px 6px -6px black;
+/* Dialog shared by every game (welcome, pause, end of game).
+   Each dialog's own stylesheet still reads the old `--ttt-*` tokens, so
+   they are redefined here for everything inside a dialog: that restyles
+   all of them from one place. */
+.modal {
+  --ttt-bg: var(--gg-panel);
+  --ttt-bg-200: #171430;
+  --ttt-text: var(--gg-text);
+  --ttt-text-200: var(--gg-soft);
+  --ttt-primary-300: #fff;
+  --ttt-primary-100: #fff;
+  --ttt-accent-200: var(--gg-cyan);
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 270px;
+  aspect-ratio: 2/1;
+  z-index: 20;
+  padding: 12px;
+  padding-block-start: 8px;
+  background-color: var(--gg-panel);
+  border: 2px solid #3a3360;
+  box-shadow: 8px 8px 0 var(--gg-magenta);
+  color: var(--gg-text);
+  animation: modal-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* The centering translate is part of the keyframe, because an animated
+   transform replaces the one in the rule above. */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.94);
+  }
+}
+
+.modal strong {
+  color: var(--gg-cyan);
+  font-weight: 700;
 }
 
 .exit-button {
-    background-color: var(--ttt-accent);
-    color: var(--ttt-text-200);
-  }
-
-  .play-button {
-    background-color: var(--ttt-primary);
-    color: var(--ttt-text-200);
-  }
-
-  .exit-button:hover {
-    background-color: var(--ttt-select-o-200);
-    color: var(--ttt-text);
-  }
-
-  .play-button:hover{
-    background-color: var(--ttt-primary-100);
-    color: var(--ttt-text);
-  }
-
-  .modal-title-with-bar {
-    text-align: center;
-    color: var(--ttt-primary-300);
-    font-size: 2rem;
-    font-weight: 700;
-    border-bottom: 2px solid var(--ttt-text-200);
+  background-color: transparent;
+  border: 2px solid var(--gg-line);
+  color: var(--gg-text);
 }
 
-.modal p{
-    color: var(--ttt-text-200);
-    text-align: center;
+.play-button {
+  background-color: var(--gg-magenta);
+  color: var(--gg-ink);
+  box-shadow: 4px 4px 0 var(--gg-cyan);
+}
+
+.exit-button:hover {
+  border-color: var(--gg-cyan);
+  color: var(--gg-cyan);
+}
+
+.play-button:hover {
+  background-color: var(--gg-yellow);
+}
+
+.modal-title-with-bar {
+  text-align: center;
+  color: #fff;
+  font-family: var(--gg-font-display);
+  font-size: 1.75rem;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-shadow: var(--gg-slab);
+  padding-block-end: 0.35rem;
+  border-bottom: 2px dashed var(--gg-line);
+}
+
+.modal p {
+  color: var(--gg-soft);
+  text-align: center;
+}
+
+/* Only running text takes the mono face: some dialogs position labels
+   with fixed offsets that were measured with the interface font. */
+.modal p,
+.modal h4 {
+  font-family: var(--gg-font-mono);
 }
 
 .buttons{
@@ -70,7 +110,7 @@
     }
 
     .modal-title-with-bar{
-      font-size: 3rem;
+      font-size: 2.5rem;
   }
 }
 
@@ -80,11 +120,158 @@
     padding: 15px;
   }
   .modal-title-with-bar{
-    font-size: 4.2rem;
+    font-size: 3.5rem;
   }
 
   .text-intro {
     font-size: 2.3rem;
     line-height: 4rem;
   }
+}
+
+/* ---- Sheet: a dialog sized by its content, over a scrim -------------
+   Wrap the dialog in `.modal-scrim` and add `.sheet` to the `.modal`.
+   The scrim dims the page (the game behind is stopped, and the dimming
+   says so), keeps clicks off the board and does the centering. */
+.modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  overflow-y: auto;
+  background: rgba(7, 6, 13, 0.66);
+  animation: scrim-in 0.2s linear backwards;
+}
+
+/* Switches off what the base dialog does for itself: absolute centering
+   and the fixed 2:1 shape. */
+.modal.sheet {
+  position: static;
+  transform: none;
+  aspect-ratio: auto;
+  width: min(100%, 30rem);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: sheet-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.sheet .modal-title-with-bar {
+  font-size: 1.75rem;
+  padding-block-end: 0.875rem;
+}
+
+.sheet-actions {
+  display: flex;
+  gap: 1rem;
+  padding-block-start: 0.25rem;
+}
+
+.sheet .abstract-button {
+  flex: 1 1 0;
+  width: auto;
+  aspect-ratio: auto;
+  min-height: 48px;
+  margin: 0;
+  padding: 0 0.75rem;
+  font-size: 1rem;
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+}
+
+/* ---- Key legend: one action per row, its keys drawn as keycaps ---- */
+.keys {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.key-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.key-row dt {
+  font-family: var(--gg-font-mono);
+  font-size: 1.0625rem;
+  color: var(--gg-soft);
+}
+
+.key-row dd {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.keys kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.375rem;
+  height: 2.375rem;
+  padding: 0 0.5rem;
+  background: var(--gg-ink);
+  border: 2px solid #3a3360;
+  /* The lip under the key is what makes it read as a keycap. */
+  box-shadow: 0 3px 0 #3a3360;
+  color: #fff;
+  font-family: var(--gg-font-pixel);
+  font-size: 0.9375rem;
+}
+
+.keys .or {
+  padding-inline: 0.25rem;
+  font-family: var(--gg-font-mono);
+  font-size: 0.75rem;
+  color: var(--gg-muted);
+}
+
+/* ---- Result lines: a label and its number, in end-of-game dialogs ---- */
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--gg-ink);
+  border: 2px solid var(--gg-line);
+}
+
+.result-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.result-row dt {
+  font-family: var(--gg-font-mono);
+  font-size: 1rem;
+  color: var(--gg-soft);
+}
+
+.result-row dd {
+  font-family: var(--gg-font-pixel);
+  font-size: 1.75rem;
+  line-height: 1;
+  color: #fff;
+}
+
+.result-row.is-best dd {
+  color: var(--gg-yellow);
 }

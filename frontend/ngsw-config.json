@@ -1,0 +1,50 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "resources": {
+        "files": [
+          "/favicon.ico",
+          "/index.html",
+          "/manifest.webmanifest",
+          "/*.css",
+          "/*.js"
+        ]
+      }
+    },
+    {
+      "name": "game-assets",
+      "installMode": "prefetch",
+      "resources": {
+        "files": [
+          "/assets/**",
+          "!/assets/images/retro-runner/sound/music/overworld/**",
+          "!/assets/images/retro-runner/sound/music/underground/**"
+        ]
+      }
+    },
+    {
+      "name": "runner-music-not-played-yet",
+      "installMode": "lazy",
+      "resources": {
+        "files": [
+          "/assets/images/retro-runner/sound/music/overworld/**",
+          "/assets/images/retro-runner/sound/music/underground/**"
+        ]
+      }
+    },
+    {
+      "name": "fonts",
+      "installMode": "lazy",
+      "resources": {
+        "urls": [
+          "https://fonts.googleapis.com/**",
+          "https://fonts.gstatic.com/**"
+        ]
+      }
+    }
+  ]
+}

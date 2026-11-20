@@ -22,6 +22,8 @@ export class TetrisControllerService {
   private _isPaused = signal(true);
   private _isGameOver = signal(false);
   private _level = signal(0);
+  /** False until the first Play: tells the opening dialog from a pause. */
+  private _hasStarted = signal(false);
 
   public nextPiece: Subject<Piece>;
 
@@ -185,8 +187,10 @@ export class TetrisControllerService {
       }
     }
 
-    if (action === ACTION.PAUSE) {
-      this.isPaused = true;
+    // The pause key toggles: it pauses a running game and resumes a paused
+    // one. A finished game stays stopped until it is restarted.
+    if (action === ACTION.PAUSE && !this._isGameOver()) {
+      this.isPaused = !this._isPaused();
     }
   }
 
@@ -249,7 +253,12 @@ export class TetrisControllerService {
   }
   public set isPaused(updated: boolean) {
     this._isPaused.set(updated);
+    if (!updated) this._hasStarted.set(true);
     this.chronometerService.isPaused = updated;
+  }
+
+  public get hasStarted() {
+    return this._hasStarted();
   }
 
   public get gameOver() {

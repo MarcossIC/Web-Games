@@ -1,0 +1,10 @@
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+
+# vite takes yaml as an optional peer, and pnpm keeps resolving it to 2.8.2,
+# which overflows the stack on deeply nested documents (GHSA-48c2-rrv3-qjmp).
+overrides:
+  'yaml@<2.8.3': ^2.8.3

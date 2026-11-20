@@ -1,18 +1,35 @@
-<div class="modal modal-bg">
-  <h3 class="modal-title-with-bar">Game Over</h3>
+<div class="modal-scrim">
+  <div
+    class="modal modal-bg sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="snakeling-result-title"
+  >
+    <h2 id="snakeling-result-title" class="modal-title-with-bar">Game Over</h2>
 
-  <div class="flex justify-center items-center gap-x-9 mt-7">
-      <div class="flex gap-x-2 text-score" tabindex="2">
-          <h3 class="uppercase">Score: </h3>
-          <span>{{ this.controller.scoreService.score }}</span>
+    <dl class="results">
+      <div class="result-row">
+        <dt>Score</dt>
+        <dd>{{ controller.scoreService.score }}</dd>
       </div>
-      <div class="flex gap-x-2 text-score" tabindex="3">
-          <h3 class="uppercase">High Score: </h3>
-          <span>{{ this.controller.scoreService.maxScore  }}</span>
+      <div class="result-row is-best">
+        <dt>High Score</dt>
+        <dd>{{ controller.scoreService.maxScore }}</dd>
       </div>
-  </div>
-  <div class="w-full flex justify-center items-center mt-4 buttons">
-      <button class="abstract-button exit-button" (click)="close()" role="button">Exit Game</button>
-      <button class="abstract-button play-button" (click)="playAgain()">Play Again</button>
+    </dl>
+
+    <div class="sheet-actions">
+      <button class="abstract-button exit-button" type="button" (click)="close()">
+        Exit Game
+      </button>
+      <button
+        #play
+        class="abstract-button play-button"
+        type="button"
+        (click)="playAgain()"
+      >
+        Play Again
+      </button>
+    </div>
   </div>
 </div>

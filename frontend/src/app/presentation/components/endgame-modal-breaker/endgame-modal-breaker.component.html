@@ -1,0 +1,70 @@
+<div class="modal-scrim">
+  <div
+    class="modal modal-bg sheet"
+    trapFocus
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="breaker-result-title"
+  >
+    <h2 id="breaker-result-title" class="modal-title-with-bar">Game Over</h2>
+
+    @if (controller.summary(); as run) {
+    <dl class="results">
+      <div class="result-row">
+        <dt>Score</dt>
+        <dd>{{ run.score | number }}</dd>
+      </div>
+      <div class="result-row is-best">
+        <dt>Best</dt>
+        <dd>
+          @if (run.practice) {
+          {{ controller.records().best ? (controller.records().best!.score | number) : '—' }}
+          } @else {
+          {{ (controller.records().best?.score ?? run.score) | number }}
+          }
+          @if (!run.practice && controller.result()?.newBestScore) {
+          <span class="new-record">New record</span>
+          }
+        </dd>
+      </div>
+      <div class="result-row">
+        <dt>Sector reached</dt>
+        <dd>{{ run.sector }}</dd>
+      </div>
+      <div class="result-row">
+        <dt>Time</dt>
+        <dd>{{ time() }}</dd>
+      </div>
+      <div class="result-row">
+        <dt>Best combo</dt>
+        <dd>{{ run.maxCombo }}</dd>
+      </div>
+      <div class="result-row">
+        <dt>Bricks broken</dt>
+        <dd>{{ run.bricksBroken | number }}</dd>
+      </div>
+    </dl>
+    @if (run.practice) {
+    <p class="practice">Practice run — not recorded</p>
+    }
+    }
+
+    @if (sectorBests()) {
+    <p class="sector-bests">New best time in sector {{ sectorBests() }}</p>
+    }
+
+    <div class="sheet-actions">
+      <button class="abstract-button exit-button" type="button" (click)="close()">
+        Exit Game
+      </button>
+      <button
+        #play
+        class="abstract-button play-button"
+        type="button"
+        (click)="playAgain()"
+      >
+        Play Again
+      </button>
+    </div>
+  </div>
+</div>

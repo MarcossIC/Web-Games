@@ -80,10 +80,17 @@ class SeededRandom {
     return (t >>> 0) / 0x100000000;
   }
 
-  /** Integer in [0, max] when includeZero=true, or [1, max] when false */
-  integer(includeZero: boolean, max: number): number {
-    const base = includeZero ? 0 : 1;
-    return Math.floor(this.next() * max) + base;
+  /**
+   * Integer in [min, max], both ends included. Bounds that are not whole
+   * numbers are rounded inward; when no integer fits, returns `min` rounded.
+   * Always draws exactly once, so the sequence never depends on the range.
+   */
+  intBetween(min: number, max: number): number {
+    const low = Math.ceil(min);
+    const high = Math.floor(max);
+    const roll = this.next();
+    if (high <= low) return low;
+    return low + Math.floor(roll * (high - low + 1));
   }
 
   /** Float in [min, max) */

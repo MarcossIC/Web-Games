@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400" role="img" aria-label="Nova Breaker: bricks, a glowing ball with a trail and a paddle">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ff9a3d" stop-opacity=".45"/>
+      <stop offset="1" stop-color="#ff9a3d" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="trail" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff9a3d" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffe14a" stop-opacity=".85"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+  <rect width="640" height="400" fill="#07060d"/>
+  <circle cx="400" cy="250" r="190" fill="url(#glow)"/>
+  <g fill="none" stroke="#2a2540" stroke-width="2">
+    <path d="M20 20H620M20 20V400M620 20V400"/>
+  </g>
+  <!-- bricks -->
+  <g>
+    <g fill="#ff2e88"><rect x="44" y="52" width="76" height="26"/><rect x="128" y="52" width="76" height="26"/><rect x="212" y="52" width="76" height="26"/><rect x="296" y="52" width="76" height="26"/><rect x="380" y="52" width="76" height="26"/><rect x="464" y="52" width="76" height="26"/><rect x="548" y="52" width="48" height="26"/></g>
+    <g fill="#ff9a3d"><rect x="44" y="86" width="76" height="26"/><rect x="128" y="86" width="76" height="26"/><rect x="296" y="86" width="76" height="26"/><rect x="380" y="86" width="76" height="26"/><rect x="464" y="86" width="76" height="26"/><rect x="548" y="86" width="48" height="26"/></g>
+    <g fill="#ffe14a"><rect x="44" y="120" width="76" height="26"/><rect x="212" y="120" width="76" height="26"/><rect x="296" y="120" width="76" height="26"/><rect x="464" y="120" width="76" height="26"/><rect x="548" y="120" width="48" height="26"/></g>
+    <g fill="#5dfc9a"><rect x="44" y="154" width="76" height="26"/><rect x="128" y="154" width="76" height="26"/><rect x="212" y="154" width="76" height="26"/><rect x="380" y="154" width="76" height="26"/><rect x="548" y="154" width="48" height="26"/></g>
+    <g fill="#5ee6ff"><rect x="128" y="188" width="76" height="26"/><rect x="212" y="188" width="76" height="26"/><rect x="296" y="188" width="76" height="26"/><rect x="464" y="188" width="76" height="26"/></g>
+    <g fill="#ffffff" fill-opacity=".18"><rect x="44" y="52" width="76" height="6"/><rect x="128" y="52" width="76" height="6"/><rect x="212" y="52" width="76" height="6"/><rect x="296" y="52" width="76" height="6"/><rect x="380" y="52" width="76" height="6"/><rect x="464" y="52" width="76" height="6"/></g>
+    <!-- a capsule falling from the gap -->
+    <rect x="337" y="124" width="46" height="22" rx="11" fill="#5ee6ff" fill-opacity=".2" stroke="#5ee6ff" stroke-width="2"/>
+    <text x="360" y="140" text-anchor="middle" font-family="monospace" font-size="13" font-weight="700" fill="#5ee6ff">M</text>
+  </g>
+  <!-- ball trail and ball -->
+  <path d="M170 330L400 262" stroke="url(#trail)" stroke-width="14" stroke-linecap="round" filter="url(#soft)"/>
+  <path d="M170 330L400 262" stroke="url(#trail)" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="404" cy="261" r="22" fill="#ffe14a" fill-opacity=".35" filter="url(#soft)"/>
+  <circle cx="404" cy="261" r="10" fill="#fff6c8"/>
+  <!-- paddle -->
+  <rect x="200" y="352" width="150" height="16" rx="8" fill="#ff9a3d"/>
+  <rect x="200" y="352" width="150" height="5" rx="2.5" fill="#fff" fill-opacity=".35"/>
+  <rect x="200" y="362" width="150" height="14" rx="7" fill="#ff9a3d" fill-opacity=".25" filter="url(#soft)"/>
+  <!-- title -->
+  <text x="320" y="318" text-anchor="middle" font-family="Audiowide, system-ui, sans-serif" font-size="0" fill="#fff"></text>
+</svg>

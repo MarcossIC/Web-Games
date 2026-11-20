@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  input,
+  viewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { SnakelingControllerService } from '@app/data/services/snakeling/SnakelingController.service';
 
@@ -19,6 +27,15 @@ export class WelcomeSnakelingModalComponent {
     SnakelingControllerService
   );
   private router = inject(Router);
+  private playButton = viewChild.required<ElementRef<HTMLButtonElement>>('play');
+
+  /** True when the dialog is a pause in a game that is already going. */
+  readonly resuming = input(false);
+
+  constructor() {
+    // Enter starts or resumes the game without reaching for the mouse.
+    afterNextRender(() => this.playButton().nativeElement.focus());
+  }
 
   protected close(): void {
     this.controller.reset();

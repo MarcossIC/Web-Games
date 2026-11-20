@@ -1,17 +1,61 @@
-<div class="modal modal-bg">
-  <h3 class="modal-title-with-bar">Welcome</h3>
+<div class="modal-scrim">
+  <div
+    class="modal modal-bg sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="snakeling-dialog-title"
+  >
+    <h2 id="snakeling-dialog-title" class="modal-title-with-bar">
+      {{ resuming() ? "Paused" : "How to play" }}
+    </h2>
 
-  <h4 class="text-format message-modal-sub">How to play</h4>
-  <div class="flex flex-col gap-y-1">
-    <p class="text-intro ">Left: <strong>a</strong> y <strong>&larr;</strong></p>
-    <p class="text-intro ">Right: <strong>d</strong> y <strong>&rarr;</strong></p>
-    <p class="text-intro ">Down: <strong>s</strong> y <strong>&darr;</strong></p>
-    <p class="text-intro ">Up: <strong>w</strong> y <strong>&uarr;</strong></p>
-    <p class="text-intro ">Pause/Resume: <strong>p</strong> y <strong>escape</strong></p>
-  </div>
+    <dl class="keys">
+      <div class="key-row">
+        <dt>Up</dt>
+        <dd>
+          <kbd>W</kbd>
+          <span class="or">or</span>
+          <kbd>&uarr;</kbd>
+        </dd>
+      </div>
+      <div class="key-row">
+        <dt>Down</dt>
+        <dd>
+          <kbd>S</kbd>
+          <span class="or">or</span>
+          <kbd>&darr;</kbd>
+        </dd>
+      </div>
+      <div class="key-row">
+        <dt>Left / Right</dt>
+        <dd>
+          <kbd>A</kbd><kbd>D</kbd>
+          <span class="or">or</span>
+          <kbd>&larr;</kbd><kbd>&rarr;</kbd>
+        </dd>
+      </div>
+      <div class="key-row">
+        <dt>Pause/Resume</dt>
+        <dd>
+          <kbd>P</kbd>
+          <span class="or">or</span>
+          <kbd>Esc</kbd>
+        </dd>
+      </div>
+    </dl>
 
-  <div class="w-full flex justify-center items-center mt-4 buttons">
-      <button class="abstract-button exit-button" (click)="close()" tabindex="1" role="button">Exit Game</button>
-      <button class="abstract-button play-button" (click)="playGame()" tabindex="2" role="button">Play Game</button>
+    <div class="sheet-actions">
+      <button class="abstract-button exit-button" type="button" (click)="close()">
+        Exit Game
+      </button>
+      <button
+        #play
+        class="abstract-button play-button"
+        type="button"
+        (click)="playGame()"
+      >
+        {{ resuming() ? "Resume Game" : "Play Game" }}
+      </button>
+    </div>
   </div>
 </div>

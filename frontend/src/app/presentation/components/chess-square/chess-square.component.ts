@@ -42,12 +42,21 @@ function verifyLastmove(is: boolean): string {
         isSquareSelected(),
         isSquareLastMove()
       ]"
+      [style.--wave]="row() + column()"
       [draggable]="isDraggable()"
       (click)="move()"
       (dragstart)="moveDragPiece()"
       (dragover)="moveDragOver($event)"
       (drop)="moveDragPiece()"
     >
+      <!-- Board coordinates, on the left and bottom edges only. -->
+      @if (column() === 0) {
+      <span class="coord coord-rank" aria-hidden="true">{{ 8 - row() }}</span>
+      } @if (row() === 7) {
+      <span class="coord coord-file" aria-hidden="true">{{
+        FILES[column()]
+      }}</span>
+      }
       <div [ngClass]="{ 'safe-square': isSquareSafeForSelectedPiece() }"></div>
       <div class="piece">
         @if(getPiece(); as piece){
@@ -63,6 +72,9 @@ function verifyLastmove(is: boolean): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChessSquare {
+  /** Names of the columns, left to right, with white at the bottom. */
+  protected readonly FILES = 'abcdefgh';
+
   public row = input.required<number>();
   public column = input.required<number>();
   public piece = input.required<PieceSymbol>();

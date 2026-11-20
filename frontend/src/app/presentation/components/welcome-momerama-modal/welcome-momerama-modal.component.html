@@ -1,12 +1,41 @@
-<div class="modal modal-bg">
-  <h3 class="modal-title-with-bar">Welcome</h3>
+<div class="modal-scrim">
+  <div
+    class="modal modal-bg sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="memorama-dialog-title"
+  >
+    <h2 id="memorama-dialog-title" class="modal-title-with-bar">
+      {{ resuming() ? "Paused" : "How to play" }}
+    </h2>
 
-  <h4 class="text-format message-modal-sub">How to play</h4>
-  <p class="text-intro">There are a total of 12 cards, you must find all the pairs of cards in less than 1 minute.</p>
-  <p class="text-intro">Good luck.</p>
+    <!-- The rule, shown: two cards that match, one still face down. -->
+    <div class="demo" aria-hidden="true">
+      <span class="demo-card is-found">
+        <app-pixel-emblem [map]="SAMPLE.emblem" />
+      </span>
+      <span class="demo-card is-found">
+        <app-pixel-emblem [map]="SAMPLE.emblem" />
+      </span>
+      <span class="demo-card">?</span>
+    </div>
 
-  <div class="w-full flex justify-center items-center mt-4 buttons">
-    <button class="abstract-button exit-button" (click)="close()" tabindex="1" role="button">Exit Game</button>
-    <button class="abstract-button play-button" (click)="playGame()" tabindex="2" role="button">Play Game</button>
+    <p class="rule">
+      Flip two cards at a time. Find all 6 pairs before the minute runs out.
+    </p>
+
+    <div class="sheet-actions">
+      <button class="abstract-button exit-button" type="button" (click)="close()">
+        Exit Game
+      </button>
+      <button
+        #play
+        class="abstract-button play-button"
+        type="button"
+        (click)="playGame()"
+      >
+        {{ resuming() ? "Resume Game" : "Play Game" }}
+      </button>
+    </div>
   </div>
 </div>

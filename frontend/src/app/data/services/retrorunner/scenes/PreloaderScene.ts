@@ -3,14 +3,25 @@ import {
   RetroRunnerMedia,
 } from '@app/data/models/retro-runner/RetroRunnerKeys';
 import { SceneKeys } from '@app/data/services/retrorunner/main';
+import { fontsReady } from '@app/data/services/retrorunner/utils/fonts-ready';
 import { Scene } from 'phaser';
 
+/** The typefaces the HUD and the screens are written with. */
+const GAME_FONTS = ['16px Silkscreen', '36px Audiowide'];
+/** A typeface that takes longer than this is not waited for. */
+const FONT_WAIT_MS = 2500;
+
 export class PreloaderScene extends Scene {
+  private fonts: Promise<void> = Promise.resolve();
+
   constructor() {
     super(SceneKeys.PRELOADER);
   }
 
   init() {
+    // Asked for now, so they arrive while the pictures load.
+    this.fonts = fontsReady(typeof document === 'undefined' ? undefined : document.fonts, GAME_FONTS, FONT_WAIT_MS);
+
     const cx = this.scale.width / 2;
     const cy = this.scale.height / 2;
     const barWidth = Math.min(this.scale.width * 0.7, 300);
@@ -24,9 +35,20 @@ export class PreloaderScene extends Scene {
   }
 
   create() {
-    this.scene.start(SceneKeys.GAME);
+    // The run starts once its typefaces are in: text drawn on a canvas
+    // before that stays in another face until it is drawn again.
+    this.fonts.then(() => {
+      // The page may have been left in the meantime.
+      if (this.sys.isActive()) this.scene.start(SceneKeys.GAME);
+    });
   }
 
+  /**
+   * Only what the game draws or plays today. The star, chest, flag, key,
+   * fish, the second boat, the other sky layers and floors are in
+   * RetroRunnerKeys but nothing uses them yet: each is loaded again with
+   * the code that uses it.
+   */
   preload() {
     this.load.setPath('assets/images/retro-runner');
 
@@ -41,39 +63,21 @@ export class PreloaderScene extends Scene {
     this.load.spritesheet(RetroRunnerMedia.COIN_SPRITE, 'entities/Animated objects/Coin.png', {
       frameWidth: 10, frameHeight: 10,
     });
-    this.load.spritesheet(RetroRunnerMedia.STAR_SPRITE, 'entities/Animated objects/Star.png', {
-      frameWidth: 16, frameHeight: 16,
-    });
-    this.load.spritesheet(RetroRunnerMedia.CHEST_SPRITE, 'entities/Animated objects/Chest.png', {
-      frameWidth: 32, frameHeight: 32,
-    });
-    this.load.spritesheet(RetroRunnerMedia.FLAG_SPRITE, 'entities/Animated objects/Flag.png', {
-      frameWidth: 48, frameHeight: 48,
-    });
-    this.load.image(RetroRunnerMedia.FLAGPOLE_SPRITE, 'entities/Animated objects/Flagpole.png');
-    this.load.spritesheet(RetroRunnerMedia.KEY_SPRITE, 'entities/Animated objects/Key.png', {
-      frameWidth: 8, frameHeight: 8,
-    });
 
     // --- Floor tiles ---
     this.load.image(RetroRunnerMedia.FLOORGRASS_START, 'scenery/overworld/floorgrassStart.png');
     this.load.image(RetroRunnerMedia.FLOORGRASS_CENTER, 'scenery/overworld/floorgrassCenter.png');
     this.load.image(RetroRunnerMedia.FLOORGRASS_END, 'scenery/overworld/floorgrassEnd.png');
-    this.load.image(RetroRunnerMedia.FLOORGRASS_SMALL, 'scenery/overworld/floorgrass.png');
     this.load.image(RetroRunnerMedia.GRASS_BLOCK, 'scenery/overworld/grassBlock.png');
 
-    // --- Backgrounds ---
-    this.load.image(RetroRunnerMedia.NATURA_BACKGROUND, 'scenery/background.png');
+    // --- Background ---
     this.load.image(RetroRunnerMedia.BG_ALT, 'scenery/background-2.png');
 
     // --- Parallax layers ---
-    this.load.image(RetroRunnerMedia.LAYER_SKY, 'scenery/Layers/1.png');
-    this.load.image(RetroRunnerMedia.LAYER_2, 'scenery/Layers/2.png');
     this.load.image(RetroRunnerMedia.LAYER_CLOUDS, 'scenery/Layers/3.png');
     this.load.image(RetroRunnerMedia.LAYER_MOUNTAINS, 'scenery/Layers/4.png');
     this.load.image(RetroRunnerMedia.LAYER_GRASS_FAR, 'scenery/Layers/5.png');
     this.load.image(RetroRunnerMedia.LAYER_GRASS_NEAR, 'scenery/Layers/6.png');
-    this.load.image(RetroRunnerMedia.LAYER_7, 'scenery/Layers/7.png');
 
     // --- Decorative grass (1-21) ---
     for (let i = 1; i <= 21; i++) {
@@ -122,18 +126,11 @@ export class PreloaderScene extends Scene {
 
     // --- Ladders ---
     this.load.image(RetroRunnerMedia.LADDER_1, 'entities/natural/Ladder/1.png');
-    this.load.image(RetroRunnerMedia.LADDER_1B, 'entities/natural/Ladder/1_1.png');
     this.load.image(RetroRunnerMedia.LADDER_2, 'entities/natural/Ladder/2.png');
-    this.load.image(RetroRunnerMedia.LADDER_2B, 'entities/natural/Ladder/2_1.png');
     this.load.image(RetroRunnerMedia.LADDER_3, 'entities/natural/Ladder/3.png');
-    this.load.image(RetroRunnerMedia.LADDER_3B, 'entities/natural/Ladder/3_1.png');
 
     // --- Fishing / water theme ---
     this.load.image(RetroRunnerMedia.BOAT_1, 'entities/natural/Boat/1.png');
-    this.load.image(RetroRunnerMedia.BOAT_2, 'entities/natural/Boat/2.png');
-    for (let i = 1; i <= 8; i++) {
-      this.load.image(`fish${i}` as RetroRunnerMedia, `entities/natural/Fish/${i}.png`);
-    }
     for (let i = 1; i <= 4; i++) {
       this.load.image(`fishbarrel${i}` as RetroRunnerMedia, `entities/natural/Fishbarrel/${i}.png`);
     }
