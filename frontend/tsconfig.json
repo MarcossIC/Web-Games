@@ -26,6 +26,8 @@
       "@app-components/*": ["./src/app/presentation/components/*"],
       "@app-services/*": ["./src/app/data/services/*"],
       "@app-models/*": ["./src/app/data/models/*"],
+      "@app-persistence": ["./src/app/data/persistence/index.ts"],
+      "@app-persistence/*": ["./src/app/data/persistence/*"],
       "assets/*": ["./src/assets/*"]
     }
   },
