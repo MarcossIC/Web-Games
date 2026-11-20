@@ -1,0 +1,33 @@
+<aside class="banner" aria-label="Install Game Galaxy">
+  <img
+    class="icon"
+    src="assets/icons/icon-192.png"
+    alt=""
+    width="48"
+    height="48"
+  />
+  <div class="copy">
+    <p class="title">Install Game Galaxy</p>
+    @if (offer() === 'prompt') {
+    <p class="hint">Play full screen, straight from your home screen.</p>
+    } @else {
+    <p class="hint">
+      Tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.
+    </p>
+    }
+  </div>
+  <div class="actions">
+    @if (offer() === 'prompt') {
+    <button type="button" class="install" (click)="accept.emit()">
+      Install
+    </button>
+    <button type="button" class="later" (click)="dismiss.emit()">
+      Not now
+    </button>
+    } @else {
+    <button type="button" class="later" (click)="dismiss.emit()">
+      Got it
+    </button>
+    }
+  </div>
+</aside>

@@ -1,0 +1,88 @@
+.banner {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  width: min(100% - 1.5rem, 34rem);
+  margin: 0 auto max(0.75rem, env(safe-area-inset-bottom));
+  padding: 0.875rem 1rem;
+  border: 2px solid var(--gg-line);
+  background: var(--gg-panel);
+  box-shadow: 6px 6px 0 var(--gg-magenta);
+  color: var(--gg-text);
+  font-family: var(--gg-font-mono);
+  animation: gg-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.8s backwards;
+}
+
+.icon {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--gg-line);
+}
+
+.copy {
+  flex: 1 1 12rem;
+}
+
+.title {
+  font-family: var(--gg-font-pixel);
+  font-size: 0.9375rem;
+  color: var(--gg-cyan);
+}
+
+.hint {
+  margin-block-start: 0.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--gg-soft);
+}
+
+.hint strong {
+  color: var(--gg-yellow);
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  gap: 0.625rem;
+}
+
+.install,
+.later {
+  min-height: 44px;
+  padding: 0 1rem;
+  font-family: var(--gg-font-pixel);
+  font-size: 0.875rem;
+}
+
+.install {
+  background: var(--gg-magenta);
+  color: var(--gg-ink);
+}
+
+.install:hover {
+  background: var(--gg-yellow);
+}
+
+.later {
+  border: 2px solid var(--gg-line);
+  color: var(--gg-muted);
+}
+
+.later:hover {
+  border-color: var(--gg-cyan);
+  color: var(--gg-cyan);
+}
+
+.install:focus-visible,
+.later:focus-visible {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 3px;
+}
