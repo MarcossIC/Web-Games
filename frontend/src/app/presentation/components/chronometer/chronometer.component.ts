@@ -73,6 +73,8 @@ export class ChronometerComponent implements OnInit {
       this.seconds()
     )}`;
     this.point?.updateTime(currentTime);
+    // The service compares it with the best time saved, not just this visit's.
+    this.point?.recordTime(this.minutes() * 60 + this.seconds());
 
     if (
       this.maxMinute() < this.minutes() ||
@@ -80,7 +82,6 @@ export class ChronometerComponent implements OnInit {
     ) {
       this.maxMinute.set(this.minutes());
       this.maxSecond.set(this.seconds());
-      if (this.point) this.point.maxTime = currentTime;
     }
   }
 

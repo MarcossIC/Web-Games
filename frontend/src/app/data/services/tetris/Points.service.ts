@@ -1,28 +1,13 @@
-import { isPlatformBrowser } from '@angular/common';
-import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
+import { keepBest, persisted } from '@app-persistence';
+import { tetrisRecords } from './tetris-saves';
 
 @Injectable()
 export class PointsService {
   private _score = signal(0);
-  private _maxScore = signal(0);
-
   private _level = signal(0);
-  private _maxLevel = signal(1);
-
   private _time = signal('00:00');
-  private _maxTime = signal('00:00');
-  private PLATFORM = inject(PLATFORM_ID);
-
-  constructor() {
-    if (isPlatformBrowser(this.PLATFORM)) {
-      const maxScoreS = localStorage.getItem('tetris-maxScore');
-      const maxLevelS = localStorage.getItem('tetris-maxLevel');
-      const maxTimeS = localStorage.getItem('tetris-maxTime');
-      this._maxScore.set(maxScoreS ? parseInt(maxScoreS, 10) : 0);
-      this._maxLevel.set(maxLevelS ? parseInt(maxLevelS, 10) : 1);
-      this._maxTime.set(maxTimeS ? maxTimeS : '00:00');
-    }
-  }
+  private readonly records = persisted(tetrisRecords);
 
   updateMaxPoints() {
     this.updateMaxLevel();
@@ -37,22 +22,20 @@ export class PointsService {
     this.time = updateTime;
   }
 
-  updateMaxTime(updateMaxTime: string) {
-    this.maxTime = updateMaxTime;
+  /** Keeps `seconds` as the best time when the game lasted longer than any before. */
+  recordTime(seconds: number) {
+    const best = keepBest(this.records.value().bestTimeSeconds, seconds, 'higher');
+    if (best.improved) this.records.update((records) => ({ ...records, bestTimeSeconds: best.value }));
   }
 
   updateMaxScore() {
-    if (this.score > this.maxScore) {
-      this.maxScore = this.score;
-      localStorage.setItem('tetris-maxScore', JSON.stringify(this.maxScore));
-    }
+    const best = keepBest(this.maxScore, this.score, 'higher');
+    if (best.improved) this.records.update((records) => ({ ...records, bestScore: best.value }));
   }
 
   updateMaxLevel() {
-    if (this.level > this.maxLevel) {
-      this.maxLevel = this.level;
-      localStorage.setItem('tetris-maxLevel', JSON.stringify(this.maxLevel));
-    }
+    const best = keepBest(this.maxLevel, this.level, 'higher');
+    if (best.improved) this.records.update((records) => ({ ...records, bestLevel: best.value }));
   }
 
   updateLevel(level: number) {
@@ -86,12 +69,7 @@ export class PointsService {
   }
 
   get maxScore(): number {
-    return this._maxScore();
-  }
-
-  set maxScore(value: number) {
-    this._maxScore.set(value);
-    localStorage.setItem('tetris-maxScore', JSON.stringify(value));
+    return this.records.value().bestScore;
   }
 
   get level(): number {
@@ -103,12 +81,7 @@ export class PointsService {
   }
 
   get maxLevel(): number {
-    return this._maxLevel();
-  }
-
-  set maxLevel(value: number) {
-    this._maxLevel.set(value);
-    localStorage.setItem('tetris-maxLevel', JSON.stringify(value));
+    return this.records.value().bestLevel;
   }
 
   get time(): string {
@@ -119,12 +92,10 @@ export class PointsService {
     this._time.set(value);
   }
 
+  /** The best time as mm:ss, the way the chronometer shows a game. */
   get maxTime(): string {
-    return this._maxTime();
-  }
-
-  set maxTime(value: string) {
-    this._maxTime.set(value);
-    localStorage.setItem('tetris-maxTime', value);
+    const seconds = this.records.value().bestTimeSeconds;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(Math.floor(seconds / 60))}:${pad(seconds % 60)}`;
   }
 }
