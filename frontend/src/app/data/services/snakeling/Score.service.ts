@@ -1,6 +1,8 @@
 import { isPlatformBrowser } from '@angular/common';
 import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 
+const MAX_SCORE_KEY = 'snakeling-maxScore';
+
 @Injectable()
 export class ScoreService {
   private _score = signal(0);
@@ -9,18 +11,18 @@ export class ScoreService {
 
   constructor() {
     if (isPlatformBrowser(this.PLATFORM)) {
-      let max = localStorage.getItem('snakeling-maxScore');
-      this._maxScore.set(max ? parseInt(max) : 0);
+      const stored = Number.parseInt(
+        localStorage.getItem(MAX_SCORE_KEY) ?? '',
+        10
+      );
+      this._maxScore.set(Number.isNaN(stored) ? 0 : stored);
     }
   }
 
   public updateMaxScore(): void {
     if (this._score() > this._maxScore()) {
       this._maxScore.set(this._score());
-      localStorage.setItem(
-        'snakeling-maxScore',
-        JSON.stringify(this._maxScore)
-      );
+      localStorage.setItem(MAX_SCORE_KEY, String(this._maxScore()));
     }
   }
 
