@@ -1,7 +1,8 @@
 import * as Phaser from 'phaser';
 import { BASE_WALK_SPEED } from '../generation/jump-model';
 import { startTestScene, TestScene } from '../testing/phaser-test-scene';
-import { BEST_SCORE_KEY } from './run-score';
+import { memoryStore } from '@app-persistence';
+import { runnerRecords } from '../runner-saves';
 import { hudLayout, runnerLayout } from './runner-layout';
 import ScoreManager from './ScoreManager';
 
@@ -18,14 +19,14 @@ describe('ScoreManager', () => {
   afterAll(() => harness?.destroy());
 
   beforeEach(() => {
-    savedBest = localStorage.getItem(BEST_SCORE_KEY);
-    localStorage.removeItem(BEST_SCORE_KEY);
+    savedBest = localStorage.getItem(runnerRecords.key);
+    localStorage.removeItem(runnerRecords.key);
   });
 
   afterEach(() => {
     for (const text of texts()) text.destroy();
-    if (savedBest === null) localStorage.removeItem(BEST_SCORE_KEY);
-    else localStorage.setItem(BEST_SCORE_KEY, savedBest);
+    if (savedBest === null) localStorage.removeItem(runnerRecords.key);
+    else localStorage.setItem(runnerRecords.key, savedBest);
   });
 
   const texts = () =>
@@ -74,9 +75,10 @@ describe('ScoreManager', () => {
     expect(clock()).toBe('1:05');
   });
 
-  it('shows the best score of this scoring, not the one kept before it', () => {
-    localStorage.setItem(BEST_SCORE_KEY, '777');
-    const manager = new ScoreManager(harness.scene, 0);
+  it('shows the saved best score', () => {
+    const store = memoryStore();
+    runnerRecords.write(store, { bestScore: 777 });
+    const manager = new ScoreManager(harness.scene, 0, store);
 
     manager.createHUD();
 

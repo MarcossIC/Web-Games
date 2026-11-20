@@ -6,7 +6,9 @@ import { EventBus } from '@app/data/services/phaser/EventBus';
 import { PhaserSound } from '@app/data/services/phaser/types';
 import { RunnerEvents, SceneKeys } from '@app/data/services/retrorunner/main';
 import PixelKey, { KEY_LOOKS } from '@app/data/services/retrorunner/utils/PixelKey';
-import { BEST_SCORE_KEY, formatRunTime, RunSummary } from '@app/data/services/retrorunner/utils/run-score';
+import { formatRunTime, RunSummary } from '@app/data/services/retrorunner/utils/run-score';
+import { runnerRecords } from '@app/data/services/retrorunner/runner-saves';
+import { browserStore, keepBest, type KeyValueStore } from '@app-persistence';
 import { contains, LAYOUT_CHANGED, layoutOf, Rect } from '@app/data/services/retrorunner/utils/runner-layout';
 import { TapTracker } from '@app/data/services/retrorunner/utils/touch-pad';
 import { GameObjects, Scene } from 'phaser';
@@ -89,11 +91,10 @@ export function retryChoice(
 }
 
 /** Keeps `score` if it beats the best one, and returns the best. */
-export function recordBest(score: number, storage: Pick<Storage, 'getItem' | 'setItem'>): number {
-  const best = parseInt(storage.getItem(BEST_SCORE_KEY) ?? '0', 10);
-  if (score <= best) return best;
-  storage.setItem(BEST_SCORE_KEY, String(score));
-  return score;
+export function recordBest(score: number, store: KeyValueStore): number {
+  const best = keepBest(runnerRecords.read(store).bestScore, score, 'higher');
+  if (best.improved) runnerRecords.write(store, { bestScore: best.value });
+  return best.value;
 }
 
 class GameOverScene extends Scene {
@@ -140,7 +141,7 @@ class GameOverScene extends Scene {
       volume: 0.2,
     });
 
-    this.best = recordBest(this.run.score, localStorage);
+    this.best = recordBest(this.run.score, browserStore());
   }
 
   create() {

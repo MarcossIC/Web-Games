@@ -23,9 +23,6 @@ export const SCORING = {
   RHYTHM_BONUS: 0.5,
 } as const;
 
-/** Where the best score is kept. Scores from before this scoring do not compare. */
-export const BEST_SCORE_KEY = 'retroRunnerBestScore';
-
 /** A finished run, for the game over screen. */
 export interface RunSummary {
   /** How long the run was played: pauses do not count. */

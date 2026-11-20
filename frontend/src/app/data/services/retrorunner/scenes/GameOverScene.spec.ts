@@ -1,7 +1,9 @@
 // main goes first, as the app loads it: it imports the scenes, and the
 // scenes import its SceneKeys back.
 import '../main';
-import { BEST_SCORE_KEY, RunSummary } from '../utils/run-score';
+import { memoryStore } from '@app-persistence';
+import { runnerRecords } from '../runner-saves';
+import { RunSummary } from '../utils/run-score';
 import { NARROW_WIDTH } from '../utils/runner-layout';
 import { describeRun, gameOverButtons, isRetryArmed, recordBest, retryChoice } from './GameOverScene';
 
@@ -15,16 +17,6 @@ const RUN: RunSummary = {
   points: 816,
   score: 3228,
 };
-
-/** A storage that only lives in the test. */
-function memoryStorage(initial: Record<string, string> = {}) {
-  const items = new Map(Object.entries(initial));
-  return {
-    getItem: (key: string) => items.get(key) ?? null,
-    setItem: (key: string, value: string) => void items.set(key, value),
-    items,
-  };
-}
 
 describe('GameOverScene', () => {
   describe('describeRun', () => {
@@ -92,23 +84,25 @@ describe('GameOverScene', () => {
 
   describe('recordBest', () => {
     it('keeps a better score as the best one', () => {
-      const storage = memoryStorage({ [BEST_SCORE_KEY]: '3000' });
+      const store = memoryStore();
+      runnerRecords.write(store, { bestScore: 3000 });
 
-      expect(recordBest(3228, storage)).toBe(3228);
-      expect(storage.items.get(BEST_SCORE_KEY)).toBe('3228');
+      expect(recordBest(3228, store)).toBe(3228);
+      expect(runnerRecords.read(store).bestScore).toBe(3228);
     });
 
     it('leaves the best one when the run did worse', () => {
-      const storage = memoryStorage({ [BEST_SCORE_KEY]: '5000' });
+      const store = memoryStore();
+      runnerRecords.write(store, { bestScore: 5000 });
 
-      expect(recordBest(3228, storage)).toBe(5000);
-      expect(storage.items.get(BEST_SCORE_KEY)).toBe('5000');
+      expect(recordBest(3228, store)).toBe(5000);
+      expect(runnerRecords.read(store).bestScore).toBe(5000);
     });
 
-    it('starts over from the scores of this scoring, not the old ones', () => {
-      const storage = memoryStorage({ retroRunnerHighScore: '6635' });
+    it('ignores the bests kept under the old keys', () => {
+      const store = memoryStore({ retroRunnerHighScore: '6635', retroRunnerBestScore: '7000' });
 
-      expect(recordBest(3228, storage)).toBe(3228);
+      expect(recordBest(3228, store)).toBe(3228);
     });
   });
 });

@@ -1,5 +1,7 @@
 import { GameObjects, Scene } from 'phaser';
-import { BEST_SCORE_KEY, formatRunTime, RunScore, RunSummary, SCORING } from './run-score';
+import { browserStore, type KeyValueStore } from '@app-persistence';
+import { runnerRecords } from '../runner-saves';
+import { formatRunTime, RunScore, RunSummary, SCORING } from './run-score';
 import { DESKTOP_LAYOUT, HudAnchor, HudLayout, hudLayout } from './runner-layout';
 
 /**
@@ -22,7 +24,7 @@ class ScoreManager {
   private shownRhythm = false;
   private shownSecond = -1;
 
-  constructor(scene: Scene, startX: number) {
+  constructor(scene: Scene, startX: number, private readonly store: KeyValueStore = browserStore()) {
     this.scene = scene;
     this.run = new RunScore(startX);
   }
@@ -52,7 +54,7 @@ class ScoreManager {
       .setScrollFactor(0)
       .setDepth(100);
 
-    const best = parseInt(localStorage.getItem(BEST_SCORE_KEY) ?? '0', 10);
+    const best = runnerRecords.read(this.store).bestScore;
     this.highScoreText = this.scene.add
       .text(0, 0, `Best: ${best}`, {
         fontSize: '16px',
