@@ -2,8 +2,10 @@ import { provideHttpClient, withFetch } from '@angular/common/http';
 import {
   ApplicationConfig,
   ErrorHandler,
+  isDevMode,
   provideZoneChangeDetection,
 } from '@angular/core';
+import { provideServiceWorker } from '@angular/service-worker';
 import { GlobalErrorHandler } from '@app/data/services/global-error-handler.service';
 import {
   PreloadAllModules,
@@ -49,6 +51,14 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(withFetch()),
     provideClientHydration(withNoIncrementalHydration()),
+    // Makes the site installable and playable offline. Production only: the
+    // dev server does not build the worker, and a cached copy of the app
+    // would hide the changes being worked on. It waits for the page to
+    // settle (30 s at most) so the first paint does not compete with it.
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],
 };
