@@ -3,7 +3,9 @@ import { TestBed } from '@angular/core/testing';
 import { BreakerBridgeEvents } from '@app/data/models/breaker/BreakerBridge';
 import type { RunSummary } from '@app/data/services/breaker/engine/types';
 import { EventBus } from '@app/data/services/phaser/EventBus';
+import { browserStore, GAME_STORE, memoryStore } from '@app-persistence';
 import { BreakerControllerService } from './BreakerController.service';
+import { breakerRecords, type BreakerSettings, breakerSettings } from './breaker-saves';
 
 const summary = (over: Partial<RunSummary> = {}): RunSummary => ({
   score: 4200,
@@ -67,7 +69,9 @@ describe('BreakerControllerService', () => {
   const key = (k: string, repeat = false, mods: Partial<Pick<KeyboardEvent, 'ctrlKey' | 'metaKey' | 'altKey'>> = {}) =>
     ({ key: k, repeat, ctrlKey: false, metaKey: false, altKey: false, ...mods, preventDefault: () => {} }) as unknown as KeyboardEvent;
 
-  const recordWrites = () => (localStorage.setItem as jasmine.Spy).calls.allArgs().filter(([k]) => k === 'breaker-records-v1').length;
+  const settings = () => breakerSettings.read(browserStore());
+
+  const recordWrites = () => (localStorage.setItem as jasmine.Spy).calls.allArgs().filter(([k]) => k === breakerRecords.key).length;
 
   const sent = (event: BreakerBridgeEvents) => emitted.filter((e) => e.event === event);
 
@@ -197,7 +201,7 @@ describe('BreakerControllerService', () => {
   it('a mute toggled before any scene exists is kept: stored, and sent when the scene announces READY', () => {
     expect(controller.phase()).toBe('loading');
     controller.toggleMute();
-    expect(store['breaker-muted']).toBe('1');
+    expect(settings().muted).toBeTrue();
     emitted.length = 0;
     fromScene(BreakerBridgeEvents.READY);
     expect(sent(BreakerBridgeEvents.SET_MUTED).map((e) => e.args)).toEqual([[true]]);
@@ -209,7 +213,7 @@ describe('BreakerControllerService', () => {
     emitted.length = 0;
     fromScene(BreakerBridgeEvents.READY);
     expect(sent(BreakerBridgeEvents.SET_MUTED).map((e) => e.args)).toEqual([[false]]);
-    expect(store['breaker-muted']).toBe('0');
+    expect(settings().muted).toBeFalse();
   });
 
   it('handleKey: P and Escape pause while playing and resume while paused', () => {
@@ -230,9 +234,9 @@ describe('BreakerControllerService', () => {
       expect(controller.captureMouse()).toBeTrue();
       controller.toggleCaptureMouse();
       expect(controller.captureMouse()).toBeFalse();
-      expect(store['breaker-capture-mouse']).toBe('0');
+      expect(settings().captureMouse).toBeFalse();
       controller.toggleCaptureMouse();
-      expect(store['breaker-capture-mouse']).toBe('1');
+      expect(settings().captureMouse).toBeTrue();
     });
 
     it('L switches the capture on and off, also mid-run, once per press', () => {
@@ -331,8 +335,8 @@ describe('BreakerControllerService', () => {
       fromScene(BreakerBridgeEvents.GAME_OVER, summary());
       expect(controller.phase()).toBe('over');
       owner.destroy();
-      store['breaker-muted'] = '1';
-      store['breaker-records-v1'] = JSON.stringify({ version: 1, best: { score: 9999, sector: 7, timeMs: 1, date: '2026-01-01' }, bestSectorTimes: {}, bestCombo: 3 });
+      breakerSettings.write(browserStore(), { muted: true, captureMouse: true });
+      breakerRecords.write(browserStore(), { best: { score: 9999, sector: 7, timeMs: 1, date: '2026-01-01' }, bestSectorTimes: {}, bestCombo: 3 });
       owner = fakeOwner();
       controller.connect(owner);
       expect(controller.phase()).toBe('loading');
@@ -407,18 +411,19 @@ describe('BreakerControllerService', () => {
   });
 });
 
-describe('BreakerControllerService muted preference', () => {
-  it('reads the saved mute state on start', () => {
-    spyOn(localStorage, 'getItem').and.callFake((k: string) => (k === 'breaker-muted' ? '1' : null));
-    TestBed.configureTestingModule({ providers: [BreakerControllerService] });
-    expect(TestBed.inject(BreakerControllerService).muted()).toBeTrue();
-  });
-});
+describe('BreakerControllerService saved settings', () => {
+  const start = (saved: BreakerSettings) => {
+    const store = memoryStore();
+    breakerSettings.write(store, saved);
+    TestBed.configureTestingModule({ providers: [BreakerControllerService, { provide: GAME_STORE, useValue: store }] });
+    return TestBed.inject(BreakerControllerService);
+  };
 
-describe('BreakerControllerService mouse capture preference', () => {
-  it('reads a saved off on start', () => {
-    spyOn(localStorage, 'getItem').and.callFake((k: string) => (k === 'breaker-capture-mouse' ? '0' : null));
-    TestBed.configureTestingModule({ providers: [BreakerControllerService] });
-    expect(TestBed.inject(BreakerControllerService).captureMouse()).toBeFalse();
+  it('reads the saved mute state on start', () => {
+    expect(start({ muted: true, captureMouse: true }).muted()).toBeTrue();
+  });
+
+  it('reads a saved mouse capture off on start', () => {
+    expect(start({ muted: false, captureMouse: false }).captureMouse()).toBeFalse();
   });
 });

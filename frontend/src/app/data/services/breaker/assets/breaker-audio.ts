@@ -4,12 +4,9 @@ import {
   fillBrownNoise,
   fillImpulseResponse,
   hardHitFrequency,
-  MUTED_STORAGE_KEY,
   paddleFrequency,
   panForX,
-  parseMuted,
   pentatonicFrequency,
-  serializeMuted,
   SoundGate,
   spread,
 } from './audio-math';
@@ -86,11 +83,12 @@ interface Voice {
   ended: () => void;
 }
 
-type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
-
 export interface BreakerAudioOptions {
-  /** Where the mute flag lives; null keeps it in memory. Default: localStorage when there is one. */
-  storage?: StorageLike | null;
+  /**
+   * Starts muted. The audio never saves the flag: the page's controller owns
+   * it and sends it to the scene (SET_MUTED) when the scene is READY.
+   */
+  muted?: boolean;
   /** Builds the context on unlock; null (or a throw) means no audio. Default: window.AudioContext. */
   createContext?: () => AudioContext | null;
   /** 0..1 source for the per-hit variation and the noise buffers. Default: Math.random. */
@@ -152,14 +150,6 @@ function defaultContext(): AudioContext | null {
   return Ctor ? new Ctor() : null;
 }
 
-function defaultStorage(): StorageLike | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage;
-  } catch {
-    return null;
-  }
-}
-
 export class BreakerAudio {
   /** Sources allowed at once. */
   static readonly MAX_VOICES = 24;
@@ -185,7 +175,6 @@ export class BreakerAudio {
   private brownNoise: AudioBuffer | null = null;
   private slow = false;
   private _muted: boolean;
-  private readonly storage: StorageLike | null;
   private readonly createContext: () => AudioContext | null;
   private readonly random: () => number;
   private readonly gate = new SoundGate({
@@ -210,10 +199,9 @@ export class BreakerAudio {
   });
 
   constructor(options: BreakerAudioOptions = {}) {
-    this.storage = options.storage === undefined ? defaultStorage() : options.storage;
     this.createContext = options.createContext ?? defaultContext;
     this.random = options.random ?? Math.random;
-    this._muted = this.readMuted();
+    this._muted = options.muted ?? false;
   }
 
   get muted(): boolean {
@@ -227,11 +215,6 @@ export class BreakerAudio {
 
   setMuted(muted: boolean): void {
     this._muted = muted;
-    try {
-      this.storage?.setItem(MUTED_STORAGE_KEY, serializeMuted(muted));
-    } catch {
-      // Blocked storage: the flag lives for this session only.
-    }
     if (this.ctx && this.master) {
       this.master.gain.setTargetAtTime(muted ? 0 : MASTER_GAIN, this.ctx.currentTime, 0.02);
     }
@@ -632,14 +615,6 @@ export class BreakerAudio {
   }
 
   // ------------------------------------------------------------- engine
-
-  private readMuted(): boolean {
-    try {
-      return parseMuted(this.storage?.getItem(MUTED_STORAGE_KEY));
-    } catch {
-      return false;
-    }
-  }
 
   private buildGraph(ctx: AudioContext): void {
     const master = ctx.createGain();

@@ -1,25 +1,5 @@
 import { BREAKER_POWER_UPS } from '@app/data/models/breaker/BreakerKeys';
-import { MUTED_STORAGE_KEY } from './audio-math';
 import { BreakerAudio } from './breaker-audio';
-
-class MemoryStorage {
-  readonly values = new Map<string, string>();
-  getItem(key: string): string | null {
-    return this.values.get(key) ?? null;
-  }
-  setItem(key: string, value: string): void {
-    this.values.set(key, value);
-  }
-}
-
-const throwingStorage = {
-  getItem(): string | null {
-    throw new Error('blocked');
-  },
-  setItem(): void {
-    throw new Error('blocked');
-  },
-};
 
 /** Calls every sound once. */
 function playEverything(audio: BreakerAudio): void {
@@ -113,41 +93,35 @@ function runningContext(): AudioContext {
 
 describe('BreakerAudio', () => {
   describe('mute', () => {
-    it('starts unmuted with nothing stored', () => {
-      expect(new BreakerAudio({ storage: new MemoryStorage(), createContext: () => null }).muted).toBeFalse();
+    it('starts with sound on unless told otherwise', () => {
+      expect(new BreakerAudio({ createContext: () => null }).muted).toBeFalse();
+      expect(new BreakerAudio({ muted: true, createContext: () => null }).muted).toBeTrue();
     });
 
-    it('reads the stored flag', () => {
-      const storage = new MemoryStorage();
-      storage.setItem(MUTED_STORAGE_KEY, '1');
-
-      expect(new BreakerAudio({ storage, createContext: () => null }).muted).toBeTrue();
-    });
-
-    it('stores every change under breaker-muted', () => {
-      const storage = new MemoryStorage();
-      const audio = new BreakerAudio({ storage, createContext: () => null });
+    it('setMuted switches the flag', () => {
+      const audio = new BreakerAudio({ createContext: () => null });
 
       audio.setMuted(true);
       expect(audio.muted).toBeTrue();
-      expect(storage.getItem(MUTED_STORAGE_KEY)).toBe('1');
-
       audio.setMuted(false);
-      expect(storage.getItem(MUTED_STORAGE_KEY)).toBe('0');
+      expect(audio.muted).toBeFalse();
     });
 
-    it('keeps working when storage throws (private mode, blocked site data)', () => {
-      const audio = new BreakerAudio({ storage: throwingStorage, createContext: () => null });
+    it('never reads or writes the storage: the controller owns the flag and sends it on READY', () => {
+      const getItem = spyOn(localStorage, 'getItem').and.callThrough();
+      const setItem = spyOn(localStorage, 'setItem').and.callThrough();
 
-      expect(audio.muted).toBeFalse();
-      expect(() => audio.setMuted(true)).not.toThrow();
-      expect(audio.muted).toBeTrue();
+      const audio = new BreakerAudio({ createContext: () => null });
+      audio.setMuted(true);
+
+      expect(getItem).not.toHaveBeenCalled();
+      expect(setItem).not.toHaveBeenCalled();
     });
   });
 
   describe('without an AudioContext', () => {
     it('makes every method a no-op', () => {
-      const audio = new BreakerAudio({ storage: null, createContext: () => null });
+      const audio = new BreakerAudio({ createContext: () => null });
 
       expect(() => {
         audio.unlock();
@@ -160,7 +134,6 @@ describe('BreakerAudio', () => {
 
     it('survives a context constructor that throws', () => {
       const audio = new BreakerAudio({
-        storage: null,
         createContext: () => {
           throw new Error('no audio device');
         },
@@ -180,7 +153,7 @@ describe('BreakerAudio', () => {
 
     beforeEach(() => {
       ctx = runningContext();
-      audio = new BreakerAudio({ storage: new MemoryStorage(), createContext: () => ctx });
+      audio = new BreakerAudio({ createContext: () => ctx });
     });
 
     afterEach(async () => {
@@ -192,7 +165,7 @@ describe('BreakerAudio', () => {
 
     it('creates no context and plays nothing before unlock', () => {
       const factory = jasmine.createSpy('createContext').and.returnValue(null);
-      const locked = new BreakerAudio({ storage: null, createContext: factory });
+      const locked = new BreakerAudio({ createContext: factory });
 
       playEverything(locked);
 
@@ -201,7 +174,7 @@ describe('BreakerAudio', () => {
 
     it('creates its context once, however often it is unlocked', () => {
       const factory = jasmine.createSpy('createContext').and.callFake(() => ctx);
-      const once = new BreakerAudio({ storage: null, createContext: factory });
+      const once = new BreakerAudio({ createContext: factory });
 
       once.unlock();
       once.unlock();
@@ -279,7 +252,7 @@ describe('BreakerAudio', () => {
       ctx = runningContext();
       n = 0;
       // A random source that never repeats a value in a row.
-      audio = new BreakerAudio({ storage: null, createContext: () => ctx, random: () => (n++ * 0.37) % 1 });
+      audio = new BreakerAudio({ createContext: () => ctx, random: () => (n++ * 0.37) % 1 });
       fakeNow = 1000;
       spyOn(performance, 'now').and.callFake(() => fakeNow);
     });

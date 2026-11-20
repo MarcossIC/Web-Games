@@ -3,13 +3,10 @@ import {
   fillBrownNoise,
   fillImpulseResponse,
   hardHitFrequency,
-  MUTED_STORAGE_KEY,
   paddleFrequency,
   panForX,
   spread,
-  parseMuted,
   pentatonicFrequency,
-  serializeMuted,
   SoundGate,
 } from './audio-math';
 
@@ -126,29 +123,6 @@ describe('breaker audio math', () => {
 
       expect(gate.activeVoices(1)).toBe(0);
       expect(gate.tryPlay('a', 1, 2, 5000)).toBeTrue();
-    });
-  });
-
-  describe('mute persistence', () => {
-    it('stores under breaker-muted', () => {
-      expect(MUTED_STORAGE_KEY).toBe('breaker-muted');
-    });
-
-    it('round-trips both values', () => {
-      expect(parseMuted(serializeMuted(true))).toBeTrue();
-      expect(parseMuted(serializeMuted(false))).toBeFalse();
-    });
-
-    it('reads "1" and "true" as muted', () => {
-      expect(parseMuted('1')).toBeTrue();
-      expect(parseMuted('true')).toBeTrue();
-      expect(parseMuted(' TRUE ')).toBeTrue();
-    });
-
-    it('reads anything else, missing or garbage, as not muted', () => {
-      for (const raw of [null, undefined, '', '0', 'false', 'NaN', '{"muted":true}', 'yes']) {
-        expect(parseMuted(raw)).withContext(String(raw)).toBeFalse();
-      }
     });
   });
 

@@ -142,17 +142,3 @@ export class SoundGate {
   }
 }
 
-export const MUTED_STORAGE_KEY = 'breaker-muted';
-
-export function serializeMuted(muted: boolean): string {
-  return muted ? '1' : '0';
-}
-
-/** Only "1" and "true" mean muted; missing or garbage means sound on. */
-export function parseMuted(raw: string | null | undefined): boolean {
-  if (typeof raw !== 'string') {
-    return false;
-  }
-  const value = raw.trim().toLowerCase();
-  return value === '1' || value === 'true';
-}

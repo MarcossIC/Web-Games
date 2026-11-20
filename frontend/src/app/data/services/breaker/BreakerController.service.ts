@@ -1,16 +1,10 @@
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { computed, DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { BreakerBridgeEvents } from '@app/data/models/breaker/BreakerBridge';
 import type { RunSummary } from '@app/data/services/breaker/engine/types';
-import {
-  loadRecords,
-  recordRun,
-  type BreakerRecords,
-} from '@app/data/services/breaker/engine/records';
-import { MUTED_STORAGE_KEY, parseMuted, serializeMuted } from '@app/data/services/breaker/assets/audio-math';
+import { recordRun, type BreakerRecords } from '@app/data/services/breaker/engine/records';
+import { breakerRecords, breakerSettings } from '@app/data/services/breaker/breaker-saves';
 import { EventBus } from '@app/data/services/phaser/EventBus';
-
-/** '0' = the player turned the mouse capture off; anything else (or nothing) = on. */
-export const CAPTURE_MOUSE_STORAGE_KEY = 'breaker-capture-mouse';
+import { persisted } from '@app-persistence';
 
 /**
  * An Esc this close after the browser broke the lock is the same press: some
@@ -37,10 +31,13 @@ export class BreakerControllerService {
   readonly phase = signal<BreakerPhase>('loading');
   readonly summary = signal<RunSummary | null>(null);
   readonly result = signal<BreakerRunResult | null>(null);
-  readonly records = signal<BreakerRecords>(loadRecords(this.storage()));
-  readonly muted = signal<boolean>(this.readMuted());
+  private readonly savedRecords = persisted(breakerRecords);
+  readonly records = this.savedRecords.value;
+  /** The controller is the one owner of the settings: the scene hears them through SET_MUTED. */
+  private readonly savedSettings = persisted(breakerSettings);
+  readonly muted = computed(() => this.savedSettings.value().muted);
   /** Keep the mouse locked inside the canvas while playing (see CanvasPointerLock). */
-  readonly captureMouse = signal<boolean>(this.readCaptureMouse());
+  readonly captureMouse = computed(() => this.savedSettings.value().captureMouse);
 
   /** The scene said the last life is gone: GAME_OVER is on its way, no pausing now. */
   private ending = false;
@@ -67,8 +64,8 @@ export class BreakerControllerService {
     this.phase.set('loading');
     this.summary.set(null);
     this.result.set(null);
-    this.records.set(loadRecords(this.storage()));
-    this.muted.set(this.readMuted());
+    this.savedRecords.reload();
+    this.savedSettings.reload();
     this.ending = false;
 
     EventBus.on(BreakerBridgeEvents.READY, this.onReady, this);
@@ -126,25 +123,13 @@ export class BreakerControllerService {
   }
 
   toggleMute(): void {
-    const muted = !this.muted();
-    this.muted.set(muted);
-    // The controller owns the flag: persist it here, no scene may be listening yet.
-    try {
-      this.storage().setItem(MUTED_STORAGE_KEY, serializeMuted(muted));
-    } catch {
-      // Blocked storage: the flag lives for this visit only.
-    }
-    EventBus.emit(BreakerBridgeEvents.SET_MUTED, muted);
+    // Saved here, not in the scene: no scene may be listening yet.
+    this.savedSettings.update((settings) => ({ ...settings, muted: !settings.muted }));
+    EventBus.emit(BreakerBridgeEvents.SET_MUTED, this.muted());
   }
 
   toggleCaptureMouse(): void {
-    const on = !this.captureMouse();
-    this.captureMouse.set(on);
-    try {
-      this.storage().setItem(CAPTURE_MOUSE_STORAGE_KEY, on ? '1' : '0');
-    } catch {
-      // Blocked storage: the choice lives for this visit only.
-    }
+    this.savedSettings.update((settings) => ({ ...settings, captureMouse: !settings.captureMouse }));
   }
 
   /**
@@ -194,36 +179,10 @@ export class BreakerControllerService {
       // A run started past sector 1 proves nothing: it never touches the records.
       this.result.set(null);
     } else {
-      const outcome = recordRun(summary, this.storage(), new Date());
+      const outcome = recordRun(this.records(), summary, new Date());
       this.result.set(outcome);
-      this.records.set(outcome.records);
+      this.savedRecords.set(outcome.records);
     }
     this.phase.set('over');
   };
-
-  /** localStorage, or an empty stand-in where it is blocked or missing. */
-  private storage(): Pick<Storage, 'getItem' | 'setItem'> {
-    try {
-      if (typeof localStorage !== 'undefined') return localStorage;
-    } catch {
-      // Access denied (private mode, blocked site data).
-    }
-    return { getItem: () => null, setItem: () => undefined };
-  }
-
-  private readCaptureMouse(): boolean {
-    try {
-      return this.storage().getItem(CAPTURE_MOUSE_STORAGE_KEY) !== '0';
-    } catch {
-      return true;
-    }
-  }
-
-  private readMuted(): boolean {
-    try {
-      return parseMuted(this.storage().getItem(MUTED_STORAGE_KEY));
-    } catch {
-      return false;
-    }
-  }
 }

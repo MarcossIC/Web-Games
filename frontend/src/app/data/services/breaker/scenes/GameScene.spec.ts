@@ -6,7 +6,8 @@ import type { PowerUpKind, RunSummary } from '../engine/types';
 import { worldLayout } from '../engine/config';
 import { type Board, boardFor, canvasHeight, DESKTOP_BOARD, NOVA_BUTTON, PAUSE_BUTTON } from '../view/board-layout';
 import { BootScene } from './BootScene';
-import { emptyRecords, RECORDS_KEY } from '../engine/records';
+import { emptyRecords } from '../engine/records';
+import { breakerRecords } from '../breaker-saves';
 import {
   BREAKER_BOARD,
   BREAKER_ENGINE_FACTORY,
@@ -415,7 +416,7 @@ describe('GameScene (smoke, real Phaser on Canvas)', () => {
     booted.step(2);
     // A restart reads them again: the page may have just recorded the run that ended.
     expect(source).toHaveBeenCalledTimes(2);
-    expect(getItem).not.toHaveBeenCalledWith(RECORDS_KEY);
+    expect(getItem).not.toHaveBeenCalledWith(breakerRecords.key);
   });
 
   it('also runs on WebGL when the browser has it (NineSlice paddle, tinted particles)', async () => {

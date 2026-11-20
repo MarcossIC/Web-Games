@@ -1,14 +1,10 @@
+import { bestPerKey, type Check, count, keepBest, number, object, recordOf, text } from '@app-persistence';
 import type { RunSummary } from './types';
 
 /**
- * The records kept between visits, in localStorage under one versioned
- * JSON key. Everything read back is checked value by value: a missing key,
- * a hand-edited value or a record from another version falls back to empty
- * instead of showing NaN (the Snakeling bug this design avoids).
+ * The records of Nova Breaker and the rules that update them after a run.
+ * Saving them is not the engine's job: see breaker-saves.ts.
  */
-export const RECORDS_KEY = 'breaker-records-v1';
-export const RECORDS_VERSION = 1;
-
 export interface BestRun {
   score: number;
   sector: number;
@@ -18,7 +14,6 @@ export interface BestRun {
 }
 
 export interface BreakerRecords {
-  version: 1;
   best: BestRun | null;
   /** Fastest clear of each sector, ms, by sector number. */
   bestSectorTimes: Record<number, number>;
@@ -32,99 +27,35 @@ export interface RecordOutcome {
   newSectorBests: number[];
 }
 
+/** A best run as it can be trusted: no NaN, nothing negative, sectors from 1. */
+export const bestRun: Check<BestRun> = object({
+  score: number({ min: 0 }),
+  sector: number({ min: 1 }),
+  timeMs: number({ min: 0 }),
+  date: text(),
+});
+
+/** Sector times by sector: a time of 0 cannot be a real clear, so it is dropped with the rest of the noise. */
+export const sectorTimes: Check<Record<number, number>> = recordOf(count(1), number({ above: 0 }));
+
 export function emptyRecords(): BreakerRecords {
-  return { version: RECORDS_VERSION, best: null, bestSectorTimes: {}, bestCombo: 0 };
+  return { best: null, bestSectorTimes: {}, bestCombo: 0 };
 }
 
-function isCount(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
-}
+/** Folds a finished run into `previous` and says what the run beat. `previous` is not changed. */
+export function recordRun(previous: BreakerRecords, summary: RunSummary, now: Date): RecordOutcome {
+  const score = keepBest(previous.best?.score ?? 0, summary.score, 'higher');
+  const best: BestRun | null = score.improved
+    ? { score: summary.score, sector: summary.sector, timeMs: summary.timeMs, date: now.toISOString() }
+    : previous.best;
+  const times = bestPerKey(previous.bestSectorTimes, sectorTimes(summary.sectorTimes) ?? {}, 'lower');
+  const combo = keepBest(previous.bestCombo, summary.maxCombo, 'higher');
 
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function parseBest(value: unknown): BestRun | null {
-  if (!isObject(value)) return null;
-  const { score, sector, timeMs, date } = value as Record<string, unknown>;
-  if (!isCount(score) || !isCount(timeMs)) return null;
-  if (!isCount(sector) || sector < 1) return null;
-  return { score, sector, timeMs, date: typeof date === 'string' ? date : '' };
-}
-
-function parseSectorTimes(value: unknown): Record<number, number> {
-  const times: Record<number, number> = {};
-  if (!isObject(value)) return times;
-  for (const key of Object.keys(value)) {
-    const sector = Number(key);
-    const time = value[key];
-    // A time of 0 cannot be a real clear: drop it with the rest of the noise.
-    if (Number.isInteger(sector) && sector >= 1 && isCount(time) && time > 0) times[sector] = time;
-  }
-  return times;
-}
-
-export function loadRecords(storage: Pick<Storage, 'getItem'>): BreakerRecords {
-  try {
-    const raw = storage.getItem(RECORDS_KEY);
-    if (raw === null) return emptyRecords();
-    const data: unknown = JSON.parse(raw);
-    if (!isObject(data) || data['version'] !== RECORDS_VERSION) return emptyRecords();
-    return {
-      version: RECORDS_VERSION,
-      best: parseBest(data['best']),
-      bestSectorTimes: parseSectorTimes(data['bestSectorTimes']),
-      bestCombo: isCount(data['bestCombo']) ? data['bestCombo'] : 0,
-    };
-  } catch {
-    return emptyRecords();
-  }
-}
-
-/**
- * Folds a finished run into the saved records, saves them and says what the
- * run beat. A storage that cannot be written (private mode, quota) still
- * gets an answer: the records are only not kept.
- */
-export function recordRun(
-  summary: RunSummary,
-  storage: Pick<Storage, 'getItem' | 'setItem'>,
-  now: Date
-): RecordOutcome {
-  const previous = loadRecords(storage);
-  const records: BreakerRecords = {
-    version: RECORDS_VERSION,
-    best: previous.best,
-    bestSectorTimes: { ...previous.bestSectorTimes },
-    bestCombo: previous.bestCombo,
+  return {
+    records: { best, bestSectorTimes: times.values, bestCombo: combo.value },
+    newBestScore: score.improved,
+    newSectorBests: times.improved,
   };
-
-  const newBestScore = isCount(summary.score) && summary.score > 0 && summary.score > (previous.best?.score ?? 0);
-  if (newBestScore) {
-    records.best = { score: summary.score, sector: summary.sector, timeMs: summary.timeMs, date: now.toISOString() };
-  }
-
-  const newSectorBests: number[] = [];
-  const times = parseSectorTimes(summary.sectorTimes);
-  for (const key of Object.keys(times)) {
-    const sector = Number(key);
-    const time = times[sector];
-    const old = records.bestSectorTimes[sector];
-    if (old === undefined || time < old) {
-      records.bestSectorTimes[sector] = time;
-      newSectorBests.push(sector);
-    }
-  }
-  newSectorBests.sort((a, b) => a - b);
-
-  if (isCount(summary.maxCombo) && summary.maxCombo > records.bestCombo) records.bestCombo = summary.maxCombo;
-
-  try {
-    storage.setItem(RECORDS_KEY, JSON.stringify(records));
-  } catch {
-    // Nothing to do: the run is still reported, just not remembered.
-  }
-  return { records, newBestScore, newSectorBests };
 }
 
 /** A time as m:ss.cc, hundredths cut, not rounded: 62345 -> "1:02.34". */

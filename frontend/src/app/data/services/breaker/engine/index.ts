@@ -14,9 +14,7 @@ export { isBossSector, bossNumber, bossMaxHp, bossBonus } from './boss';
 export {
   emptyRecords,
   formatTime,
-  loadRecords,
   recordRun,
-  RECORDS_KEY,
   type BestRun,
   type BreakerRecords,
   type RecordOutcome,
