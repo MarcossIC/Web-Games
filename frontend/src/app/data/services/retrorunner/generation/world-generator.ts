@@ -13,14 +13,15 @@ import {
   REST_COIN_CHANCE,
   SAFE_START_END_X,
   START_WALLET,
+  TAKEOFF,
   TENSION,
 } from './balance';
 import { ChunkDraft, ChunkStreams } from './chunk-draft';
 import { BiomeType, ChunkContext, ChunkKind, ChunkPlan, Goal, PatternName } from './chunk-plan';
 import { biomeAt, budgetAt, difficultyAt, isUnlocked, speedMultiplierAt } from './difficulty-curve';
-import { planArcCoins } from './fill';
-import { FLOOR_SURFACE_ABOVE_Y, TILE } from './geometry';
-import { BASE_WALK_SPEED, jumpReach } from './jump-model';
+import { Exclusion, noStoneUnder, planArcCoins } from './fill';
+import { FLOOR_SURFACE_ABOVE_Y, STONE_HIT_HALF_WIDTH, TILE } from './geometry';
+import { BASE_WALK_SPEED, BODY_WIDTH, fallTime, jumpReach, PLANNED_HOLD } from './jump-model';
 import { availablePatterns, PATTERNS } from './patterns';
 import { checkChunk, entrySurfaceAfter } from './validate-chunk';
 
@@ -109,15 +110,17 @@ function planGround(draft: ChunkDraft, { arriving = false, stone = false } = {})
   const floor = draft.ground(centerTiles, y);
 
   // A block high over long floors, clear of the decoration.
+  const covered: Exclusion[] = [];
   if (centerTiles >= 6 && terrain.chance(0.25)) {
     const x = floor.startX + terrain.intBetween(1, Math.floor((floor.endX - floor.startX) * 0.4)) + 80;
     draft.block(x, y - terrain.intBetween(75, 95));
+    covered.push(noStoneUnder(x));
   }
 
   draft.decoration(floor.startX, floor.endX, y);
   if (!arriving) {
     draft.coins(floor.startX, floor.endX, y, d.coinChance);
-    if (stone) draft.stone(floor.startX, floor.endX, y, 1);
+    if (stone) draft.stone(floor.startX, floor.endX, y, 1, covered);
   }
   return { kind: 'ground', pattern: null, exitY: y, cost: stoneCost(draft) };
 }
@@ -134,14 +137,27 @@ function planRest(draft: ChunkDraft): Shape {
 }
 
 /**
- * A hole up to the next chunk, which starts with the landing. Its width is
- * a share of the jump at the speed of this X (D-03). An open hole brings
- * the floor down; one with a bridge keeps both edges level.
+ * A hole up to the next chunk, which starts with the landing. The air
+ * between its edges is a share of the planned jump at the speed of this X
+ * (D-03): the jump of a short press, not of the key held to the end. The
+ * hole is that and the player's width, which hangs over both edges. An open
+ * hole brings the floor down when it is wide enough to stay a hole; one
+ * with a bridge keeps both edges level.
  */
 function planGap(draft: ChunkDraft, goal: Extract<Goal, { kind: 'gap' }>): Shape {
-  const exitY = goal.bridged ? draft.entryY : draft.floorY + Math.min(0, draft.entryElevation + ELEVATION.RETURN);
-  const reach = jumpReach(exitY - draft.entryY, speedMultiplierAt(draft.startX));
-  const hole = Math.floor(goal.fraction * reach);
+  const speed = speedMultiplierAt(draft.startX);
+  const reachTo = (exitY: number) => jumpReach(exitY - draft.entryY, speed, PLANNED_HOLD);
+
+  // Down to a lower floor, the fall alone carries a player who runs off the
+  // edge some way across: a hole that asks for little more is not one.
+  let exitY = draft.entryY;
+  if (!goal.bridged) {
+    const lowered = draft.floorY + Math.min(0, draft.entryElevation + ELEVATION.RETURN);
+    const walkOff = BASE_WALK_SPEED * speed * fallTime(lowered - draft.entryY);
+    if (goal.fraction * reachTo(lowered) >= walkOff + GAP.PAST_WALK_OFF) exitY = lowered;
+  }
+  const reach = reachTo(exitY);
+  const hole = Math.floor(goal.fraction * reach + BODY_WIDTH);
   const takeoffX = draft.startX + TILE.END_WIDTH;
   const endX = takeoffX + hole;
 
@@ -149,11 +165,11 @@ function planGap(draft: ChunkDraft, goal: Extract<Goal, { kind: 'gap' }>): Shape
     draft.add({ type: 'bridge', startX: takeoffX, endX, floorY: draft.entryY });
   }
   draft.add(
-    ...planArcCoins(takeoffX, endX, draft.entryY - FLOOR_SURFACE_ABOVE_Y, exitY - FLOOR_SURFACE_ABOVE_Y)
+    ...planArcCoins(takeoffX, endX, draft.entryY - FLOOR_SURFACE_ABOVE_Y, exitY - FLOOR_SURFACE_ABOVE_Y, speed)
   );
   draft.x = endX;
 
-  return { kind: 'gap', pattern: null, exitY, cost: hole / reach + (goal.bridged ? COST.BRIDGE : 0) };
+  return { kind: 'gap', pattern: null, exitY, cost: (hole - BODY_WIDTH) / reach + (goal.bridged ? COST.BRIDGE : 0) };
 }
 
 function planPattern(draft: ChunkDraft, pattern: PatternName): Shape {
@@ -164,6 +180,16 @@ function planPattern(draft: ChunkDraft, pattern: PatternName): Shape {
     exitY: result.exitY,
     cost: result.cost ?? COST.PATTERN + stoneCost(draft),
   };
+}
+
+/**
+ * Whether the last stone is far enough behind for a hole to begin here: the
+ * floor it takes to come down from the hop over it and get set for the jump.
+ */
+function hasRunUp(draft: ChunkDraft): boolean {
+  const edge = draft.startX + TILE.END_WIDTH;
+  const runUp = TAKEOFF.CLEAR_TIME * BASE_WALK_SPEED * speedMultiplierAt(draft.startX);
+  return edge - (draft.carry.lastObstacleX + STONE_HIT_HALF_WIDTH) >= runUp;
 }
 
 /** What a goal takes to buy. */
@@ -200,7 +226,7 @@ function buyGoal(draft: ChunkDraft, context: ChunkContext, goal: Goal): { shape:
   switch (goal.kind) {
     case 'gap': {
       const afterHole = context.previousKind === 'gap' || context.previousPattern === 'fishing-hut';
-      if (context.index < FIRST_GAP_INDEX || afterHole) return null;
+      if (context.index < FIRST_GAP_INDEX || afterHole || !hasRunUp(draft)) return null;
       if (
         draft.biome === BiomeType.DUSK &&
         draft.entryElevation > HUT_MAX_ELEVATION &&

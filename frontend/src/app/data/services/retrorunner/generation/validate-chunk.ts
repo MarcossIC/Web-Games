@@ -2,7 +2,7 @@ import { JUMP_SAFETY } from './balance';
 import { ChunkPlan, Piece, Surface } from './chunk-plan';
 import { speedMultiplierAt } from './difficulty-curve';
 import { BLOCK_TOP_ABOVE_Y, FLOOR_SURFACE_ABOVE_Y, floorRunEnd, TILE } from './geometry';
-import { JUMP_APEX, jumpReach } from './jump-model';
+import { BODY_WIDTH, jumpApex, jumpReach, PLANNED_HOLD } from './jump-model';
 
 export type { Surface } from './chunk-plan';
 
@@ -68,14 +68,17 @@ export function entrySurfaceAfter(previous: ChunkPlan | null, startX: number, fl
 /**
  * Whether a player standing anywhere on `from` can get onto `to`: walking
  * or dropping when they touch, jumping otherwise. Measured with the reach
- * and the height of a jump at that speed, cut by the safety margin.
+ * and the height of the planned jump at that speed, the one of a short
+ * press, cut by the safety margin: what the whole jump adds is the player's.
+ * The jump only has to cover the air between the two: the body hangs over
+ * the edge it leaves and over the one it lands on.
  */
 export function canJump(from: Surface, to: Surface, speedMultiplier = 1): boolean {
   const dx = Math.max(0, to.left - from.right, from.left - to.right);
   const drop = to.top - from.top;
   if (dx === 0 && drop >= 0) return true;
-  if (-drop > JUMP_APEX * JUMP_SAFETY) return false;
-  return dx <= jumpReach(drop, speedMultiplier) * JUMP_SAFETY;
+  if (-drop > jumpApex(PLANNED_HOLD) * JUMP_SAFETY) return false;
+  return dx - BODY_WIDTH <= jumpReach(drop, speedMultiplier, PLANNED_HOLD) * JUMP_SAFETY;
 }
 
 function reaches(from: Surface, to: Surface, surfaces: Surface[], speedMultiplier: number): boolean {

@@ -13,8 +13,10 @@ export function lerpForDelta(lerpAt60: number, deltaMs: number): number {
 
 /**
  * Where the camera should be this frame to keep `targetX` inside a dead
- * zone centred on the screen. Inside the zone the camera rests; past an
- * edge it covers `lerp` of the distance the target is past it.
+ * zone on the screen. Inside the zone the camera rests; past an edge it
+ * covers `lerp` of the distance the target is past it.
+ * The zone is centred on `anchor` of the view: 0.5 is the middle; less
+ * rests the target further left, which shows more of what is coming.
  * The result is exact (it has decimals): keep it, and draw at its rounding.
  */
 export function followScroll(
@@ -22,9 +24,10 @@ export function followScroll(
   targetX: number,
   viewWidth: number,
   deadzoneWidth: number,
-  lerp: number
+  lerp: number,
+  anchor: number = 0.5
 ): number {
-  const left = scroll + (viewWidth - deadzoneWidth) / 2;
+  const left = scroll + viewWidth * anchor - deadzoneWidth / 2;
   const right = left + deadzoneWidth;
   let next = scroll;
   if (targetX > right) next += (targetX - right) * lerp;

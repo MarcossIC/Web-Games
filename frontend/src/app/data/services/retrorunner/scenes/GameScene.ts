@@ -9,7 +9,7 @@ import {
   PhaserPlayerWithBody,
   PhaserSound,
 } from '@app/data/services/phaser/types';
-import { RESTART_HOLD_MS, RunnerEvents, SceneKeys } from '@app/data/services/retrorunner/main';
+import { RESTART_HOLD_MS, RUNNER_SEED, RunnerEvents, SceneKeys } from '@app/data/services/retrorunner/main';
 import { BiomeType } from '@app/data/services/retrorunner/generation/chunk-plan';
 import { biomeAt, speedMultiplierAt } from '@app/data/services/retrorunner/generation/difficulty-curve';
 import { BASE_WALK_SPEED, PLAYER_GRAVITY } from '@app/data/services/retrorunner/generation/jump-model';
@@ -17,8 +17,6 @@ import { WorldGenerator } from '@app/data/services/retrorunner/generation/world-
 import CoinManager from '@app/data/services/retrorunner/utils/CoinManager';
 import CollapsingPlatformManager from '@app/data/services/retrorunner/utils/CollapsingPlatformManager';
 import DecorationManager from '@app/data/services/retrorunner/utils/DecorationManager';
-import GameBackgroundManager from '@app/data/services/retrorunner/utils/GameBackgroundManager';
-import Joystick from '@app/data/services/retrorunner/utils/JoyStick';
 import ObstacleManager from '@app/data/services/retrorunner/utils/ObstacleManager';
 import { PlayerActions } from '@app/data/services/retrorunner/utils/PlayerActions';
 import ScoreManager from '@app/data/services/retrorunner/utils/ScoreManager';
@@ -28,18 +26,77 @@ import PlayerView from '@app/data/services/retrorunner/utils/PlayerView';
 import WorldBuilder from '@app/data/services/retrorunner/utils/WorldBuilder';
 import HoldBar from '@app/data/services/retrorunner/utils/HoldBar';
 import { HoldToConfirm, isFreshPress } from '@app/data/services/retrorunner/utils/hold-to-confirm';
+import {
+  hudLayout,
+  LAYOUT_CHANGED,
+  layoutOf,
+  RunnerLayout,
+  wasTurned,
+  WORLD_HEIGHT,
+} from '@app/data/services/retrorunner/utils/runner-layout';
+import { idlePad, readPad } from '@app/data/services/retrorunner/utils/touch-pad';
 import { Scene, GameObjects } from 'phaser';
 
 // How fast the camera catches up with the player, tuned at 60 fps.
 const CAMERA_LERP = 0.1;
-// Width of the band in the middle of the screen where the player moves
-// without dragging the camera along.
-const CAMERA_DEADZONE = 80;
 // How much each parallax layer moves per pixel of camera scroll.
 const PARALLAX_SPEEDS = [0.08, 0.15, 0.25, 0.35];
 // Chunks left behind are released once per this many pixels of scroll,
 // not on every frame: nothing visible depends on when it happens.
 const RECYCLE_EVERY_PX = 64;
+// The sky above the picture of the background, on a view taller than it: a
+// texture of the colour of its top row, so it takes the tint of the biome.
+const SKY_TOP_TEXTURE = 'runnerSkyTop';
+const SKY_TOP_FALLBACK = 0x5880cc;
+
+type AmbientConfig = Phaser.Types.GameObjects.Particles.ParticleEmitterConfig;
+
+/** The specks that drift across each biome. */
+const AMBIENT: Record<BiomeType, AmbientConfig> = {
+  // Subtle: almost nothing, just faint sparkles
+  [BiomeType.PLAINS]: {
+    frequency: 800,
+    quantity: 1,
+    lifespan: { min: 2000, max: 4000 },
+    speedX: { min: -5, max: 5 },
+    speedY: { min: 3, max: 8 },
+    alpha: { start: 0.2, end: 0 },
+    tint: 0xffffee,
+    emitting: true,
+  },
+  // Falling leaves: more particles, drifting sideways
+  [BiomeType.FOREST]: {
+    frequency: 300,
+    quantity: 1,
+    lifespan: { min: 4000, max: 7000 },
+    speedX: { min: -25, max: -8 },
+    speedY: { min: 8, max: 20 },
+    alpha: { start: 0.5, end: 0 },
+    tint: 0x88cc55,
+    emitting: true,
+  },
+  // Ash and embers: warm tones, rising slowly
+  [BiomeType.DUSK]: {
+    frequency: 250,
+    quantity: 1,
+    lifespan: { min: 3000, max: 5000 },
+    speedX: { min: -10, max: 10 },
+    speedY: { min: -12, max: -3 },
+    alpha: { start: 0.45, end: 0 },
+    tint: 0xff8844,
+    emitting: true,
+  },
+};
+/** Before the first change of biome nothing drifts. */
+const AMBIENT_OFF: AmbientConfig = {
+  frequency: 400,
+  quantity: 1,
+  lifespan: { min: 3000, max: 6000 },
+  speedX: { min: -8, max: -20 },
+  speedY: { min: 5, max: 15 },
+  alpha: { start: 0.4, end: 0 },
+  emitting: false,
+};
 
 export class GameScene extends Scene {
   public player!: PhaserPlayerWithBody;
@@ -48,10 +105,8 @@ export class GameScene extends Scene {
   public jumpSound!: PhaserSound;
 
   public actions!: PlayerActions;
-  public backgroundManager!: GameBackgroundManager;
   /** The world: planned from the seed alone, built from the plans. */
   public world!: WorldBuilder;
-  public joystick!: Joystick;
   public scoreManager!: ScoreManager;
   public obstacleManager!: ObstacleManager;
   public coinManager!: CoinManager;
@@ -78,6 +133,14 @@ export class GameScene extends Scene {
   /** The R down now was pressed in this run, not held from the last one. */
   private restartPressFresh = false;
   public rng!: SeededRandom;
+  /** The shape of the picture: it follows the screen (see runner-layout). */
+  private layout!: RunnerLayout;
+  /** Plain sky over the background, on a view taller than its picture. */
+  private skyFill!: GameObjects.Image;
+  /** The biome whose specks drift now; none before the first change. */
+  private ambientBiome: BiomeType | null = null;
+  /** The keys on a touch screen, read again on every frame. */
+  private readonly pad = idlePad();
 
   constructor() {
     super(SceneKeys.GAME);
@@ -105,18 +168,16 @@ export class GameScene extends Scene {
 
     // Sync seed to Angular router → updates URL without reload
     EventBus.emit('seed-changed', this.rng.seedKey);
+    // And where the other scenes read it: the deck of a phone shows it.
+    this.registry.set(RUNNER_SEED, this.rng.seedKey);
 
     this.actions = new PlayerActions();
-    this.backgroundManager = new GameBackgroundManager();
+    this.layout = layoutOf(this.registry);
 
-    this.background = this.add.tileSprite(
-      0,
-      0,
-      this.scale.width,
-      this.scale.height,
-      RetroRunnerMedia.BG_ALT
-    );
-    this.background.setOrigin(0, 0).setScale(1).setDepth(-10);
+    // Sized and placed in applyLayout(), with everything that follows the
+    // shape of the screen.
+    this.background = this.add.tileSprite(0, 0, this.layout.width, WORLD_HEIGHT, RetroRunnerMedia.BG_ALT);
+    this.background.setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
 
     this.jumpSound = this.sound.add(RetroRunnerMedia.BIT_JUMP, {
       volume: 0.1,
@@ -124,20 +185,14 @@ export class GameScene extends Scene {
   }
 
   create() {
-    if (this.game.device.input.touch) {
-      this.joystick = new Joystick(this, 100, this.scale.height - 100, 50);
-    }
-
-    this.backgroundManager.scaleBackground(
-      this.background,
-      this.textures.get(RetroRunnerMedia.BG_ALT).getSourceImage(),
-      this.scale
-    );
+    this.skyFill = this.createSkyFill();
 
     // Multi-layer parallax
     this.createParallaxLayers();
 
-    this.physics.enableUpdate();
+    // Phaser steps the physics on every frame by itself. Asking for it here
+    // too (physics.enableUpdate) stepped the world twice a frame, and gravity
+    // pulled twice as hard as its numbers said.
     this.startPlayer();
 
     // Dust particle emitter
@@ -145,7 +200,7 @@ export class GameScene extends Scene {
 
     // Score
     this.scoreManager = new ScoreManager(this, this.player.x);
-    this.scoreManager.createHUD();
+    this.scoreManager.createHUD(hudLayout(this.layout));
 
     // What the world places and takes back
     this.decorationManager = new DecorationManager(this);
@@ -155,7 +210,7 @@ export class GameScene extends Scene {
 
     // The world. Everything in it comes from the seed: the generator plans
     // each chunk from it, the builder only draws the plans.
-    this.floorY = this.scale.height - 16;
+    this.floorY = WORLD_HEIGHT - 16;
     this.world = new WorldBuilder(
       this,
       new WorldGenerator({ key: this.rng.seedKey, floorY: this.floorY }),
@@ -173,7 +228,7 @@ export class GameScene extends Scene {
     this.createCoinAnimation();
 
     // Physics world
-    this.physics.world.setBounds(0, 0, Number.MAX_SAFE_INTEGER, this.scale.height);
+    this.physics.world.setBounds(0, 0, Number.MAX_SAFE_INTEGER, WORLD_HEIGHT);
 
     // Colliders
     this.physics.add.collider(this.player, this.world.floor);
@@ -208,9 +263,8 @@ export class GameScene extends Scene {
       this
     );
 
-    // Camera
-    this.cameras.main.setBounds(0, 0, Number.MAX_SAFE_INTEGER, this.scale.height);
-    // The camera is moved by hand in placeCamera(), on whole pixels.
+    // Camera. It is moved by hand in placeCamera(), on whole pixels; its
+    // frame comes from the layout, in applyLayout().
     this.cameraX = 0;
     this.frameDelta = 0;
     this.events.on(Phaser.Scenes.Events.PRE_RENDER, this.placeCamera, this);
@@ -241,7 +295,7 @@ export class GameScene extends Scene {
     this.input.keyboard?.on('keydown-ESC', onPauseKey);
     this.input.keyboard?.on('keydown-P', onPauseKey);
     this.restartHold = new HoldToConfirm(RESTART_HOLD_MS);
-    this.restartBar = new HoldBar(this, this.scale.width / 2, 30, 'Restart');
+    this.restartBar = new HoldBar(this, this.layout.width / 2, 30, 'Restart');
     this.restartPressFresh = false;
     this.keys['r'].on(Phaser.Input.Keyboard.Events.DOWN, (_key: unknown, event: KeyboardEvent) => {
       this.restartPressFresh = isFreshPress(event);
@@ -250,14 +304,25 @@ export class GameScene extends Scene {
     // The page's pause button and the pause screen ask through the EventBus.
     EventBus.on(RunnerEvents.TOGGLE_PAUSE, this.togglePause, this);
     EventBus.on(RunnerEvents.RESTART, this.restartWithNewSeed, this);
+    // The screen changed shape (a phone was turned), or the game went out of
+    // sight (another app, another tab): nobody is playing through either.
+    this.game.events.on(LAYOUT_CHANGED, this.onLayoutChanged, this);
+    this.game.events.on(Phaser.Core.Events.HIDDEN, this.pauseRun, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       EventBus.off(RunnerEvents.TOGGLE_PAUSE, this.togglePause, this);
       EventBus.off(RunnerEvents.RESTART, this.restartWithNewSeed, this);
+      this.game.events.off(LAYOUT_CHANGED, this.onLayoutChanged, this);
+      this.game.events.off(Phaser.Core.Events.HIDDEN, this.pauseRun, this);
     });
-
 
     this.prevOnFloor = false;
     this.lastRecycleX = 0;
+
+    this.applyLayout();
+
+    // The touch keys live in a scene of their own, beside this one: it keeps
+    // running through a pause and through every new run.
+    if (!this.scene.isActive(SceneKeys.TOUCH_UI)) this.scene.launch(SceneKeys.TOUCH_UI);
 
     EventBus.emit(SceneKeys.SCENE_READY, this);
   }
@@ -292,24 +357,67 @@ export class GameScene extends Scene {
       gfx.destroy();
     }
 
-    this.ambientEmitter = this.add.particles(0, 0, 'ambientPixel', {
-      x: { min: 0, max: this.scale.width },
-      y: { min: -10, max: this.scale.height * 0.7 },
-      speedX: { min: -8, max: -20 },
-      speedY: { min: 5, max: 15 },
-      scale: { start: 0.6, end: 0 },
-      lifespan: { min: 3000, max: 6000 },
-      alpha: { start: 0.4, end: 0 },
-      frequency: 400,
-      quantity: 1,
-      emitting: false,
-    });
+    this.ambientEmitter = this.add.particles(0, 0, 'ambientPixel', { emitting: false });
     this.ambientEmitter.setScrollFactor(0).setDepth(-5);
+    this.ambientBiome = null;
+    this.configureAmbientParticles();
+  }
+
+  /** The strip of plain sky drawn over the background on a tall view. */
+  private createSkyFill(): GameObjects.Image {
+    if (!this.textures.exists(SKY_TOP_TEXTURE)) {
+      const top = this.textures.getPixel(0, 0, RetroRunnerMedia.BG_ALT);
+      const gfx = this.add.graphics();
+      gfx.fillStyle(top ? top.color : SKY_TOP_FALLBACK);
+      gfx.fillRect(0, 0, 2, 2);
+      gfx.generateTexture(SKY_TOP_TEXTURE, 2, 2);
+      gfx.destroy();
+    }
+    return this.add.image(0, 0, SKY_TOP_TEXTURE).setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
+  }
+
+  /**
+   * Fits everything that depends on the shape of the picture: the frame of
+   * the camera, the sky, the HUD. The world itself never moves: its last row
+   * is always the last row of the view, and what the view has above the
+   * world is sky.
+   */
+  private applyLayout() {
+    const { width, viewHeight } = this.layout;
+    const skyRows = viewHeight - WORLD_HEIGHT;
+
+    const camera = this.cameras.main;
+    camera.setViewport(0, 0, width, viewHeight);
+    camera.setBounds(0, -skyRows, Number.MAX_SAFE_INTEGER, viewHeight);
+    camera.scrollY = -skyRows;
+
+    // The pictures of the sky are as tall as the world: they stay on it, and
+    // the rows above them take the colour of their top.
+    this.skyFill.setDisplaySize(width, Math.max(1, skyRows)).setVisible(skyRows > 0);
+    this.background.setPosition(0, skyRows).setSize(width, WORLD_HEIGHT);
+    for (const layer of this.parallaxLayers) {
+      layer.setPosition(0, skyRows).setSize(width, WORLD_HEIGHT);
+    }
+
+    this.scoreManager.place(hudLayout(this.layout));
+    this.restartBar.moveTo(width / 2, 30);
+    this.configureAmbientParticles();
+  }
+
+  /** The screen changed shape: redraw for it, with the player in sight. */
+  private onLayoutChanged(next: RunnerLayout, previous: RunnerLayout) {
+    this.layout = next;
+    this.applyLayout();
+    // The player rests elsewhere on the new view. The camera goes there at
+    // once: gliding to it would hide what is coming for a moment.
+    this.followPlayer(1);
+    // Turning the phone takes both hands off the keys.
+    if (wasTurned(previous, next)) this.pauseRun();
   }
 
   private createParallaxLayers() {
-    const w = this.scale.width;
-    const h = this.scale.height;
+    const w = this.layout.width;
+    const h = WORLD_HEIGHT;
     const layerConfigs: [RetroRunnerMedia, number][] = [
       [RetroRunnerMedia.LAYER_CLOUDS, -9],
       [RetroRunnerMedia.LAYER_MOUNTAINS, -8],
@@ -321,8 +429,6 @@ export class GameScene extends Scene {
     for (const [key, depth] of layerConfigs) {
       const layer = this.add.tileSprite(0, 0, w, h, key);
       layer.setOrigin(0, 0).setScrollFactor(0).setDepth(depth);
-      layer.displayWidth = w;
-      layer.displayHeight = h;
       this.parallaxLayers.push(layer);
     }
   }
@@ -380,13 +486,22 @@ export class GameScene extends Scene {
   private placeCamera() {
     // A paused scene is still drawn: the camera stays where the run stopped.
     if (this.sys.isPaused()) return;
+    this.followPlayer(lerpForDelta(CAMERA_LERP, this.frameDelta));
+  }
+
+  /**
+   * Moves the camera towards where the layout rests the player, covering
+   * `lerp` of the way (1 puts it there), and places what scrolls with it.
+   */
+  private followPlayer(lerp: number) {
     const camera = this.cameras.main;
     this.cameraX = followScroll(
       this.cameraX,
       this.player.x,
-      this.scale.width,
-      CAMERA_DEADZONE,
-      lerpForDelta(CAMERA_LERP, this.frameDelta)
+      this.layout.width,
+      this.layout.cameraDeadzone,
+      lerp,
+      this.layout.cameraAnchor
     );
     const scrollX = Math.round(this.cameraX);
     camera.scrollX = scrollX;
@@ -460,17 +575,14 @@ export class GameScene extends Scene {
     }
     this.restartBar.setProgress(this.restartHold.progress);
 
-    const isMovingLeft =
-      keys['left'].isDown || keys['a'].isDown || this.joystick?.isMovingLeft();
-    const isMovingRight =
-      keys['right'].isDown || keys['d'].isDown || this.joystick?.isMovingRight();
+    // The keys on a touch screen, from where the fingers are on this frame.
+    const pad = readPad(this.layout.controls, this.input.manager.pointers, this.pad);
+
+    const isMovingLeft = keys['left'].isDown || keys['a'].isDown || pad.left;
+    const isMovingRight = keys['right'].isDown || keys['d'].isDown || pad.right;
     const isJumpPressed =
-      keys['up'].isDown ||
-      keys['w'].isDown ||
-      keys['space'].isDown ||
-      this.joystick?.isJumping();
-    const isCrouching =
-      keys['down'].isDown || keys['s'].isDown || this.joystick?.isCrouching();
+      keys['up'].isDown || keys['w'].isDown || keys['space'].isDown || pad.jump;
+    const isCrouching = keys['down'].isDown || keys['s'].isDown || pad.crouch;
 
     const isOnFloor = this.player.body.onFloor() || this.player.body.touching.down;
 
@@ -550,8 +662,8 @@ export class GameScene extends Scene {
     this.scoreManager.update(this.player.x, delta, BASE_WALK_SPEED * speedMultiplier);
 
 
-    // Player fell off screen
-    if (this.player.y >= this.scale.height) {
+    // Player fell under the world
+    if (this.player.y >= WORLD_HEIGHT) {
       if (this.jumpSound.isPlaying) {
         this.jumpSound.stop();
       }
@@ -569,11 +681,12 @@ export class GameScene extends Scene {
     const tint = tints[biome];
 
     // Configure ambient particles per biome
-    this.configureAmbientParticles(biome);
+    this.ambientBiome = biome;
+    this.configureAmbientParticles();
 
     // Create a flash overlay for smooth transition
     const flash = this.add.rectangle(
-      0, 0, this.scale.width, this.scale.height, 0xffffff
+      0, 0, this.layout.width, this.layout.viewHeight, 0xffffff
     ).setOrigin(0, 0).setScrollFactor(0).setDepth(200).setAlpha(0);
 
     this.tweens.add({
@@ -583,6 +696,7 @@ export class GameScene extends Scene {
       yoyo: true,
       onYoyo: () => {
         this.background.setTint(tint);
+        this.skyFill.setTint(tint);
         for (const layer of this.parallaxLayers) {
           layer.setTint(tint);
         }
@@ -591,50 +705,19 @@ export class GameScene extends Scene {
     });
   }
 
-  private configureAmbientParticles(biome: BiomeType) {
-    switch (biome) {
-      case BiomeType.PLAINS:
-        // Subtle — almost nothing, just faint sparkles
-        this.ambientEmitter.setConfig({
-          frequency: 800,
-          quantity: 1,
-          lifespan: { min: 2000, max: 4000 },
-          speedX: { min: -5, max: 5 },
-          speedY: { min: 3, max: 8 },
-          alpha: { start: 0.2, end: 0 },
-          tint: 0xffffee,
-          emitting: true,
-        });
-        break;
-
-      case BiomeType.FOREST:
-        // Falling leaves — more particles, drifting sideways
-        this.ambientEmitter.setConfig({
-          frequency: 300,
-          quantity: 1,
-          lifespan: { min: 4000, max: 7000 },
-          speedX: { min: -25, max: -8 },
-          speedY: { min: 8, max: 20 },
-          alpha: { start: 0.5, end: 0 },
-          tint: 0x88cc55,
-          emitting: true,
-        });
-        break;
-
-      case BiomeType.DUSK:
-        // Ash / embers — warm tones, rising slowly
-        this.ambientEmitter.setConfig({
-          frequency: 250,
-          quantity: 1,
-          lifespan: { min: 3000, max: 5000 },
-          speedX: { min: -10, max: 10 },
-          speedY: { min: -12, max: -3 },
-          alpha: { start: 0.45, end: 0 },
-          tint: 0xff8844,
-          emitting: true,
-        });
-        break;
-    }
+  /**
+   * Sets the specks of the biome drifting across the whole view. The place
+   * they appear in is given every time, with the rest: an emitter takes a
+   * config as a whole, and what is left out goes back to its default.
+   */
+  private configureAmbientParticles() {
+    const { width, viewHeight } = this.layout;
+    this.ambientEmitter.setConfig({
+      x: { min: 0, max: width },
+      y: { min: -10, max: viewHeight * 0.7 },
+      scale: { start: 0.6, end: 0 },
+      ...(this.ambientBiome === null ? AMBIENT_OFF : AMBIENT[this.ambientBiome]),
+    });
   }
 
   /**
@@ -648,8 +731,13 @@ export class GameScene extends Scene {
       this.scene.resume();
     } else {
       this.scene.pause();
-      this.scene.launch(SceneKeys.PAUSE);
+      this.scene.launch(SceneKeys.PAUSE, { seed: this.rng.seedKey });
     }
+  }
+
+  /** Pauses the run if it is on; a paused or finished one is left alone. */
+  private pauseRun() {
+    if (!this.scene.isPaused()) this.togglePause();
   }
 
   /** Throws the run away and starts a new one, with a new seed. */

@@ -1,7 +1,7 @@
 import SeededRandom from '../utils/SeededRandom';
 import { BiomeType, Carry, Piece } from './chunk-plan';
 import { Difficulty } from './difficulty-curve';
-import { Exclusion, planCoins, planDecoration, planGrass, planStone } from './fill';
+import { Exclusion, planCoins, planDecoration, planGrass, planPlatformCoins, planStone } from './fill';
 import { floorRunEnd } from './geometry';
 
 /** The independent random streams of one chunk. */
@@ -77,8 +77,14 @@ export class ChunkDraft {
     this.pieces.push(...planCoins(this.rng.coins, startX, endX, floorY, chance));
   }
 
-  stone(startX: number, endX: number, floorY: number, chance: number) {
-    const stone = planStone(this.rng.obstacles, startX, endX, floorY, chance, this.carry, this.clearUntilX);
+  /** Maybe a coin over a platform, given by its left edge and its top. */
+  platformCoins(x: number, width: number, top: number, chance: number) {
+    this.pieces.push(...planPlatformCoins(this.rng.coins, x, width, top, chance));
+  }
+
+  /** @param covered - the floor under blocks, where a stone could not be jumped */
+  stone(startX: number, endX: number, floorY: number, chance: number, covered?: readonly Exclusion[]) {
+    const stone = planStone(this.rng.obstacles, startX, endX, floorY, chance, this.carry, this.clearUntilX, covered);
     if (stone) this.pieces.push(stone);
   }
 

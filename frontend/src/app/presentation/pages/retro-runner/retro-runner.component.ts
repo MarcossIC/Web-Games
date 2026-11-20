@@ -3,6 +3,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  NgZone,
   OnDestroy,
   inject,
   signal,
@@ -28,6 +29,7 @@ export class RetroRunnerComponent implements AfterViewInit, OnDestroy {
 
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private zone = inject(NgZone);
 
   /** Read seed from URL query param — passed to Phaser component as @Input */
   public urlSeed = inject(ActivatedRoute).snapshot.queryParamMap.get('seed') || undefined;
@@ -37,12 +39,12 @@ export class RetroRunnerComponent implements AfterViewInit, OnDestroy {
   /** What the copy button says: its name, or how the last copy went. */
   protected readonly copyLabel = signal('Copy Link');
 
+  // The game runs outside Angular's zone, and so does what it says through
+  // the EventBus: whatever touches the page or the router steps back in.
 
-  ngAfterViewInit() {
-    EventBus.on(SceneKeys.SCENE_READY, (_scene: Scene) => {});
-
-    // Phaser emits 'seed-changed' whenever a game starts → sync to URL
-    EventBus.on('seed-changed', (seed: string) => {
+  /** Phaser emits 'seed-changed' whenever a game starts → sync to URL */
+  private readonly onSeedChanged = (seed: string) =>
+    this.zone.run(() => {
       this.seed.set(seed);
       this.router.navigate([], {
         relativeTo: this.route,
@@ -51,6 +53,25 @@ export class RetroRunnerComponent implements AfterViewInit, OnDestroy {
         replaceUrl: true,
       });
     });
+
+  /**
+   * The game asks to leave. On a phone the game fills the screen and the
+   * bar with Exit Game is hidden: its pause menu and its game over ask here.
+   */
+  private readonly onExit = () => this.zone.run(() => this.router.navigate(['/games']));
+
+  /** The pause menu of a phone asks for the link, and is told how it went. */
+  private readonly onCopyLink = () =>
+    this.zone.run(async () => {
+      const copied = await this.copyLink();
+      EventBus.emit(RunnerEvents.LINK_COPIED, copied);
+    });
+
+  ngAfterViewInit() {
+    EventBus.on(SceneKeys.SCENE_READY, (_scene: Scene) => {});
+    EventBus.on('seed-changed', this.onSeedChanged);
+    EventBus.on(RunnerEvents.EXIT, this.onExit);
+    EventBus.on(RunnerEvents.COPY_LINK, this.onCopyLink);
   }
 
   /** The bar's pause button: the run pauses or resumes, as with Esc or P. */
@@ -58,27 +79,33 @@ export class RetroRunnerComponent implements AfterViewInit, OnDestroy {
     EventBus.emit(RunnerEvents.TOGGLE_PAUSE);
   }
 
-  /** Copies the address of this exact level, seed included. */
-  protected async copyLink(): Promise<void> {
+  /**
+   * Copies the address of this exact level, seed included.
+   * @returns whether the link reached the clipboard
+   */
+  protected async copyLink(): Promise<boolean> {
     const link = new URL(window.location.href);
     const seed = this.seed();
     if (seed) link.searchParams.set('seed', seed);
-    let outcome = 'Copied';
+    let copied = true;
     try {
       await navigator.clipboard.writeText(link.toString());
     } catch {
       // No clipboard access (an insecure page, or permission denied). The
       // button says so instead of looking as if nothing happened; the
       // address bar holds the same link.
-      outcome = 'Not Copied';
+      copied = false;
     }
-    this.copyLabel.set(outcome);
+    this.copyLabel.set(copied ? 'Copied' : 'Not Copied');
     setTimeout(() => this.copyLabel.set('Copy Link'), 1800);
+    return copied;
   }
 
   ngOnDestroy() {
     EventBus.off(SceneKeys.SCENE_READY);
-    EventBus.off('seed-changed');
+    EventBus.off('seed-changed', this.onSeedChanged);
+    EventBus.off(RunnerEvents.EXIT, this.onExit);
+    EventBus.off(RunnerEvents.COPY_LINK, this.onCopyLink);
   }
 }
 

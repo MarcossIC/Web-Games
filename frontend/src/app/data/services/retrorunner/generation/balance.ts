@@ -37,10 +37,21 @@ export const FLOOR_TILES = {
   HARD: { minCenterTiles: 2, maxCenterTiles: 6 },
 } as const;
 
-/** A gap's hole as a share of the jump at the speed of its X (D-03). */
+/**
+ * A gap as a share of the planned jump at the speed of its X (D-03): the
+ * jump of a short press (PLANNED_HOLD in jump-model), which carries three
+ * quarters as far as the whole one. The share is what the air between the
+ * two edges takes of it: the hole is that plus the player's width, since
+ * the body hangs over the edge it leaves and over the one it lands on.
+ */
 export const GAP = {
   MIN_FRACTION: 0.35,
-  /** The open decision "Hueco máximo": the hardest stretch asks for 85 %. */
+  /**
+   * The open decision "Hueco máximo": the hardest stretch asks for 85 % of
+   * the planned jump. A short press from the very edge still makes it, and
+   * with the key held to the end there is a fifth of a second of floor to
+   * press it in, besides the moment the game forgives past the edge.
+   */
   MAX_FRACTION: 0.85,
   /**
    * How much the widest gap grows per unit of budget: 0.85 at x = 11000.
@@ -49,6 +60,11 @@ export const GAP = {
   FRACTION_PER_BUDGET: 2,
   /** The narrowest gap stops growing here, so gaps never all look alike. */
   LATE_MIN_FRACTION: 0.7,
+  /**
+   * A hole down to a lower floor asks for this much more air than the fall
+   * alone gives a player who runs off the edge: with less, it stays level.
+   */
+  PAST_WALK_OFF: 40,
 } as const;
 
 export const COIN_CHANCE = 0.45;
@@ -147,7 +163,28 @@ export const LANDING = {
   REACTION_TIME: 0.35,
 } as const;
 
-/** The share of the jump the generator lets a crossing take. */
+/**
+ * Nor where it begins, for as long as it takes to come down from the hop
+ * over a stone and get set for the jump: a hole waits until the last stone
+ * is this far behind.
+ */
+export const TAKEOFF = {
+  CLEAR_TIME: 1,
+} as const;
+
+/**
+ * The jump the coins over a gap draw (D-08), by where the middle of the
+ * player is: this far before the edge when the key goes down, its whole
+ * body still on the floor, and this far past the far edge when it lands,
+ * its whole body on the floor again. Where the whole jump is not that
+ * long, it leaves and lands as much closer to both edges.
+ */
+export const ARC = {
+  BEFORE_EDGE: 14,
+  PAST_EDGE: 16,
+} as const;
+
+/** The share of the planned jump the generator lets a crossing take. */
 export const JUMP_SAFETY = 0.85;
 
 /** Times a chunk is planned again when validation rejects it. */

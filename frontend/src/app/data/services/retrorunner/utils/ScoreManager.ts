@@ -1,9 +1,10 @@
 import { GameObjects, Scene } from 'phaser';
 import { BEST_SCORE_KEY, formatRunTime, RunScore, RunSummary, SCORING } from './run-score';
+import { DESKTOP_LAYOUT, HudAnchor, HudLayout, hudLayout } from './runner-layout';
 
 /**
  * The pixel typeface of the site. It is drawn at 16px, its native grid,
- * so it stays sharp when the 550x330 picture is enlarged.
+ * so it stays sharp when the small picture is enlarged.
  */
 const HUD_FONT = 'Silkscreen, monospace';
 /** Shown after the score while the rhythm makes the distance worth more. */
@@ -26,9 +27,10 @@ class ScoreManager {
     this.run = new RunScore(startX);
   }
 
-  createHUD() {
+  /** Creates the three lines of the HUD where `hud` says: the desktop line, if nothing does. */
+  createHUD(hud: HudLayout = hudLayout(DESKTOP_LAYOUT)) {
     this.scoreText = this.scene.add
-      .text(10, 8, 'Score: 0', {
+      .text(0, 0, 'Score: 0', {
         fontSize: '16px',
         color: '#fff',
         stroke: '#07060d',
@@ -40,29 +42,38 @@ class ScoreManager {
 
     // How long the run has lasted; a pause stops it.
     this.clockText = this.scene.add
-      .text(this.scene.scale.width / 2, 8, formatRunTime(0), {
+      .text(0, 0, formatRunTime(0), {
         fontSize: '16px',
         color: '#fff',
         stroke: '#07060d',
         strokeThickness: 3,
         fontFamily: HUD_FONT,
       })
-      .setOrigin(0.5, 0)
       .setScrollFactor(0)
       .setDepth(100);
 
     const best = parseInt(localStorage.getItem(BEST_SCORE_KEY) ?? '0', 10);
     this.highScoreText = this.scene.add
-      .text(this.scene.scale.width - 10, 8, `Best: ${best}`, {
+      .text(0, 0, `Best: ${best}`, {
         fontSize: '16px',
         color: '#ffe14a',
         stroke: '#07060d',
         strokeThickness: 3,
         fontFamily: HUD_FONT,
       })
-      .setOrigin(1, 0)
       .setScrollFactor(0)
       .setDepth(100);
+
+    this.place(hud);
+  }
+
+  /** Moves the lines of the HUD: the screen changed shape. */
+  place(hud: HudLayout) {
+    const put = (text: GameObjects.Text | undefined, at: HudAnchor) =>
+      text?.setOrigin(at.originX, 0).setPosition(at.x, at.y);
+    put(this.scoreText, hud.score);
+    put(this.clockText, hud.clock);
+    put(this.highScoreText, hud.best);
   }
 
   /**

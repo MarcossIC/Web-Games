@@ -2,7 +2,8 @@
 // scenes import its SceneKeys back.
 import '../main';
 import { BEST_SCORE_KEY, RunSummary } from '../utils/run-score';
-import { describeRun, recordBest, retryChoice } from './GameOverScene';
+import { NARROW_WIDTH } from '../utils/runner-layout';
+import { describeRun, gameOverButtons, isRetryArmed, recordBest, retryChoice } from './GameOverScene';
 
 const RUN: RunSummary = {
   timeMs: 83_400,
@@ -58,6 +59,34 @@ describe('GameOverScene', () => {
 
     it('ignores a press as the screen appears, so a jump in the fall does not skip it', () => {
       expect(retryChoice(press(), 200)).toBeNull();
+    });
+  });
+
+  describe('isRetryArmed', () => {
+    it('ignores a finger that lands as the screen appears: it was still jumping', () => {
+      expect(isRetryArmed(200)).toBeFalse();
+    });
+
+    it('takes a tap once the screen has been up a moment', () => {
+      expect(isRetryArmed(700)).toBeTrue();
+    });
+  });
+
+  describe('gameOverButtons', () => {
+    const cx = NARROW_WIDTH / 2;
+    const buttons = gameOverButtons(cx, 400);
+
+    it('offers the same level again and the way out, as a keyboard and the page do', () => {
+      expect(buttons.map((button) => button.choice)).toEqual(['same-seed', 'exit']);
+    });
+
+    it('fits the narrowest screen side by side, without touching', () => {
+      const [same, exit] = buttons.map((button) => button.rect);
+
+      expect(same.x).toBeGreaterThanOrEqual(8);
+      expect(exit.x + exit.w).toBeLessThanOrEqual(NARROW_WIDTH - 8);
+      expect(same.x + same.w).toBeLessThan(exit.x);
+      expect((same.x + exit.x + exit.w) / 2).toBe(cx);
     });
   });
 

@@ -54,6 +54,30 @@ describe('followScroll', () => {
   it('never scrolls before the start of the world', () => {
     expect(followScroll(5, 0, VIEW, ZONE, 1)).toBe(0);
   });
+
+  describe('with the dead zone off centre (a narrow view looks ahead)', () => {
+    const NARROW = 360;
+    const ANCHOR = 0.3;
+    /** The zone is centred on 30% of the view: its edges, for a camera at 0. */
+    const NARROW_LEFT = NARROW * ANCHOR - ZONE / 2;
+    const NARROW_RIGHT = NARROW * ANCHOR + ZONE / 2;
+
+    it('rests while the target is inside the zone around the anchor', () => {
+      expect(followScroll(100, 100 + NARROW_LEFT + 1, NARROW, ZONE, 0.5, ANCHOR)).toBe(100);
+      expect(followScroll(100, 100 + NARROW_RIGHT - 1, NARROW, ZONE, 0.5, ANCHOR)).toBe(100);
+    });
+
+    it('follows as soon as the target passes the zone, long before the middle of the view', () => {
+      expect(followScroll(0, NARROW_RIGHT + 20, NARROW, ZONE, 0.5, ANCHOR)).toBeCloseTo(10, 6);
+      expect(NARROW_RIGHT + 20).toBeLessThan(NARROW / 2);
+    });
+
+    it('puts the target on the edge of the zone at once with a full step', () => {
+      const scroll = followScroll(0, 900, NARROW, ZONE, 1, ANCHOR);
+
+      expect(900 - scroll).toBeCloseTo(NARROW_RIGHT, 6);
+    });
+  });
 });
 
 describe('snapToScroll', () => {

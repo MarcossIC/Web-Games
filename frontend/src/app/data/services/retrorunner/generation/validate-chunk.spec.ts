@@ -2,7 +2,7 @@ import { BiomeType, ChunkPlan, Piece } from './chunk-plan';
 import { GAP } from './balance';
 import { speedMultiplierAt } from './difficulty-curve';
 import { floorRunEnd, TILE } from './geometry';
-import { jumpReach } from './jump-model';
+import { BODY_WIDTH, jumpReach, PLANNED_HOLD } from './jump-model';
 import { validateChunk } from './validate-chunk';
 
 const FLOOR_Y = 314;
@@ -62,14 +62,17 @@ describe('validateChunk', () => {
     expect(validateChunk(ground(first, 4), first)).toEqual([]);
   });
 
-  // D-03: a gap takes a share of the jump at the speed of its own X, and the
-  // player runs at that speed from the first step: there is no run-up.
+  // D-03: the air over a gap takes a share of the planned jump at the speed
+  // of its own X, and the player runs at that speed from the first step:
+  // there is no run-up. The hole is that air and the player's width.
   describe('the widest gap the generator asks for', () => {
     const fast = ground(null, 6, FLOOR_Y, 15000);
-    const hole = Math.floor(GAP.MAX_FRACTION * jumpReach(0, speedMultiplierAt(fast.endX)));
+    const hole = Math.floor(
+      GAP.MAX_FRACTION * jumpReach(0, speedMultiplierAt(fast.endX), PLANNED_HOLD) + BODY_WIDTH
+    );
 
     it('is accepted where the player runs fast enough to cross it', () => {
-      expect(hole).toBeGreaterThan(300);
+      expect(hole).toBeGreaterThan(140);
       expect(validateChunk(gap(fast, hole + TILE.END_WIDTH), fast)).toEqual([]);
     });
 
@@ -97,14 +100,14 @@ describe('validateChunk', () => {
   });
 
   describe('a long hole with blocks over it', () => {
-    // Base floor, four blocks 35 to 70 px up and a landing: 318 px of hole,
+    // Base floor, four blocks 19 to 49 px up and a landing: 318 px of hole,
     // more than one jump, less than one jump between any two of them.
     const base = floorRunEnd(first.endX, 2);
     const blocks: Piece[] = [
-      { type: 'block', x: base + 40, y: FLOOR_Y - 50 },
-      { type: 'block', x: base + 108, y: FLOOR_Y - 70 },
-      { type: 'block', x: base + 178, y: FLOOR_Y - 40 },
-      { type: 'block', x: base + 248, y: FLOOR_Y - 60 },
+      { type: 'block', x: base + 40, y: FLOOR_Y - 40 },
+      { type: 'block', x: base + 108, y: FLOOR_Y - 50 },
+      { type: 'block', x: base + 178, y: FLOOR_Y - 20 },
+      { type: 'block', x: base + 248, y: FLOOR_Y - 40 },
     ];
     const landingX = base + 333;
     const chain = (withBlocks: boolean) =>
@@ -127,6 +130,15 @@ describe('validateChunk', () => {
     it('rejects it without the blocks', () => {
       expect(validateChunk(chain(false), first)).toContain(jasmine.stringMatching(/cannot be reached/));
     });
+  });
+
+  // The whole jump crosses it, but only with the key held to the end.
+  it('rejects a gap that only the whole jump crosses', () => {
+    const hole = Math.floor(0.95 * jumpReach(0, speedMultiplierAt(first.endX), PLANNED_HOLD) + BODY_WIDTH);
+    expect(hole - BODY_WIDTH).toBeLessThan(0.85 * jumpReach(0, speedMultiplierAt(first.endX)));
+    expect(validateChunk(gap(first, hole + TILE.END_WIDTH), first)).toContain(
+      jasmine.stringMatching(/cannot be reached/)
+    );
   });
 
   it('rejects a step higher than the jump', () => {

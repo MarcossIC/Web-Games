@@ -8,6 +8,7 @@ import {
   APEX_VELOCITY_THRESHOLD,
   BASE_WALK_SPEED,
   FALL_GRAVITY_MULT,
+  JUMP_CUT_SPEED,
   JUMP_SPEED,
 } from '@app/data/services/retrorunner/generation/jump-model';
 
@@ -22,7 +23,7 @@ const AIR_DECEL = 200;        // px/s^2 — keeps momentum in air
 
 // --- Jump ---
 const JUMP_VELOCITY = -JUMP_SPEED;
-const VARIABLE_JUMP_CUTOFF = -200;
+const VARIABLE_JUMP_CUTOFF = -JUMP_CUT_SPEED;
 const FAST_FALL_SPEED = 250;
 
 // --- Timers ---

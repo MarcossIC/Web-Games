@@ -1,7 +1,7 @@
 import { HUT_SHORE_CENTER_TILES } from '../balance';
 import { speedMultiplierAt } from '../difficulty-curve';
 import { FLOOR_SURFACE_ABOVE_Y, HUT, TILE } from '../geometry';
-import { jumpReach } from '../jump-model';
+import { BODY_WIDTH, jumpReach, PLANNED_HOLD } from '../jump-model';
 import { PatternPlanner } from './pattern';
 
 /**
@@ -52,5 +52,7 @@ export const fishingHut: PatternPlanner = (draft) => {
 
   const hole = draft.x - dockEndX;
   draft.ground(4, floorY);
-  return { exitY: floorY, cost: hole / jumpReach(surfaceY - deckY, speedMultiplierAt(draft.startX)) };
+  // As for a gap: the share of the planned jump the air between the edges takes.
+  const reach = jumpReach(surfaceY - deckY, speedMultiplierAt(draft.startX), PLANNED_HOLD);
+  return { exitY: floorY, cost: (hole - BODY_WIDTH) / reach };
 };

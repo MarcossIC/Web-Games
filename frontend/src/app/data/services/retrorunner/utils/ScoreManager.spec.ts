@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { BASE_WALK_SPEED } from '../generation/jump-model';
 import { startTestScene, TestScene } from '../testing/phaser-test-scene';
 import { BEST_SCORE_KEY } from './run-score';
+import { hudLayout, runnerLayout } from './runner-layout';
 import ScoreManager from './ScoreManager';
 
 const FRAME_MS = 1000 / 60;
@@ -80,6 +81,34 @@ describe('ScoreManager', () => {
     manager.createHUD();
 
     expect(hud('Best')).toBe('Best: 777');
+  });
+
+  it('draws the desktop line unless told where: score on the left, best at the right edge', () => {
+    const manager = new ScoreManager(harness.scene, 0);
+
+    manager.createHUD();
+
+    const score = texts().find((text) => text.text.startsWith('Score'))!;
+    const best = texts().find((text) => text.text.startsWith('Best'))!;
+    expect([score.x, score.y, score.originX]).toEqual([10, 8, 0]);
+    expect([best.x, best.y, best.originX]).toEqual([540, 8, 1]);
+  });
+
+  it('moves its lines when the screen changes shape, clear of the pause key', () => {
+    const manager = new ScoreManager(harness.scene, 0);
+    manager.createHUD();
+    const upright = runnerLayout(390, 763, true);
+
+    manager.place(hudLayout(upright));
+
+    const score = texts().find((text) => text.text.startsWith('Score'))!;
+    const best = texts().find((text) => text.text.startsWith('Best'))!;
+    const clock = texts().find((text) => /^\d+:\d\d$/.test(text.text))!;
+    // Stacked on the left, and the clock ends before the corner of pause.
+    expect(best.x).toBe(score.x);
+    expect(best.y).toBeGreaterThan(score.y);
+    expect(clock.originX).toBe(1);
+    expect(clock.x).toBeLessThan(upright.controls!.pause.zone.x);
   });
 
   it('scores the coins into the run', () => {

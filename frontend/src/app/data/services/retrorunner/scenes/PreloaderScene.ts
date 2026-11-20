@@ -3,14 +3,25 @@ import {
   RetroRunnerMedia,
 } from '@app/data/models/retro-runner/RetroRunnerKeys';
 import { SceneKeys } from '@app/data/services/retrorunner/main';
+import { fontsReady } from '@app/data/services/retrorunner/utils/fonts-ready';
 import { Scene } from 'phaser';
 
+/** The typefaces the HUD and the screens are written with. */
+const GAME_FONTS = ['16px Silkscreen', '36px Audiowide'];
+/** A typeface that takes longer than this is not waited for. */
+const FONT_WAIT_MS = 2500;
+
 export class PreloaderScene extends Scene {
+  private fonts: Promise<void> = Promise.resolve();
+
   constructor() {
     super(SceneKeys.PRELOADER);
   }
 
   init() {
+    // Asked for now, so they arrive while the pictures load.
+    this.fonts = fontsReady(typeof document === 'undefined' ? undefined : document.fonts, GAME_FONTS, FONT_WAIT_MS);
+
     const cx = this.scale.width / 2;
     const cy = this.scale.height / 2;
     const barWidth = Math.min(this.scale.width * 0.7, 300);
@@ -24,7 +35,12 @@ export class PreloaderScene extends Scene {
   }
 
   create() {
-    this.scene.start(SceneKeys.GAME);
+    // The run starts once its typefaces are in: text drawn on a canvas
+    // before that stays in another face until it is drawn again.
+    this.fonts.then(() => {
+      // The page may have been left in the meantime.
+      if (this.sys.isActive()) this.scene.start(SceneKeys.GAME);
+    });
   }
 
   /**

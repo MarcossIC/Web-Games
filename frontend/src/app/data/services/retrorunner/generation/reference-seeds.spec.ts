@@ -12,9 +12,9 @@ import { WorldGenerator } from './world-generator';
  * 2 dual path, F fishing hut.
  */
 const REFERENCE = [
-  { key: 'A1B2C3D4', shape: 'GGGG22GGG_GUGCGGG_G_2GGGGFG2C2U_R_G2G', digest: 'ed5e3625' },
-  { key: '00000001', shape: 'GGGGGG_2GG_H2GGCGGF2GGF2GU_R_G_G_UUC2', digest: 'd4a2a237' },
-  { key: 'CAFEBABE', shape: 'GGG_GGG_GGPGG_GG_2GGGPGG_GG2U_C2HCG2GGG_R', digest: '127c0e3b' },
+  { key: 'A1B2C3D4', shape: 'GGGG22GGG_HUGGGGG_G_2GGGG_G2C2PG_RG2GGGU', digest: '4575615d' },
+  { key: '00000001', shape: 'GGGGGG_GUGGG_2GGGGG_GGG_GUGG_G_G_UUG2G_R2GCH', digest: 'dc502d6e' },
+  { key: 'CAFEBABE', shape: 'GGG_GGG_GGPGG_GG_2GGGPGG_GG2U_C2DCG2GGG_RC', digest: '30e2a9e6' },
 ];
 
 const LETTER: Record<string, string> = {

@@ -37,6 +37,13 @@
   border: 10px solid var(--gg-panel);
   outline: 2px solid #3a3360;
   box-shadow: 8px 8px 0 2px var(--gg-magenta);
+  /* A finger on the game's keys must not scroll or zoom the page (the body
+     only asks for manipulation, which still pans and pinches), and holding
+     one down must not select anything or open the system's menu. */
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   /* A fade only. Phaser measures its parent once, as it starts: an
      entrance that scales it would be measured small, and the game would
      stay that size. */
@@ -164,9 +171,63 @@ kbd {
   outline-offset: 3px;
 }
 
-/* A touch screen plays with the on-screen stick, not with keys. */
+/* ---- A screen played with fingers (a phone, a tablet), upright or on its
+   side: the game is the whole screen, like an app. The canvas takes the
+   shape of the screen (see runner-layout.ts, which asks this same question)
+   and draws its own keys and its pause in the top corner, so the bar and
+   the strip are gone: leaving and the link of the level are on the game's
+   pause menu. */
 @media (pointer: coarse) {
-  .legend {
+  :host {
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+    overscroll-behavior: none;
+  }
+
+  .game-container {
+    min-height: 0;
+    height: 100dvh;
+    background: var(--gg-ink);
+  }
+
+  app-game-bar,
+  .strip {
     display: none;
+  }
+
+  .play {
+    display: block;
+    height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+  }
+
+  .screen {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+  }
+
+  /* Phaser fits the canvas to this box and watches it: turning the phone
+     changes it, and the game redraws for the new shape. */
+  .screen ::ng-deep #retro-runner-game {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+    /* What a very long screen leaves around the canvas. */
+    background: var(--gg-ink);
+  }
+}
+
+/* The page cannot scroll or bounce under a finger. Unscoped on purpose
+   (html and body are outside this component); :has keeps it to this page. */
+@media (pointer: coarse) {
+  ::ng-deep html:has(retro-runner),
+  ::ng-deep html:has(retro-runner) body {
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 }

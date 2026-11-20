@@ -8,6 +8,7 @@ import CollapsingPlatformManager from './CollapsingPlatformManager';
 import DecorationManager from './DecorationManager';
 import ObstacleManager from './ObstacleManager';
 import PicturePool from './PicturePool';
+import { WORLD_HEIGHT } from './runner-layout';
 
 /** The pools that hold what the world places and takes back. */
 export interface WorldPools {
@@ -169,7 +170,8 @@ class WorldBuilder {
         break;
       }
       case 'water': {
-        const height = this.scene.scale.height - piece.y + 20;
+        // Down to under the world, whatever the height of the canvas.
+        const height = WORLD_HEIGHT - piece.y + 20;
         const water = this.scene.add
           .rectangle(piece.x, piece.y, piece.width, height, WATER_COLOR, WATER_ALPHA)
           .setOrigin(0, 0)
