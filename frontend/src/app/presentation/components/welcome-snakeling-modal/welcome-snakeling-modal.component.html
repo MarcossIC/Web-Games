@@ -1,42 +1,93 @@
 <div class="modal-scrim">
   <div
-    class="modal modal-bg sheet"
+    class="modal modal-bg sheet snakeling-sheet"
+    trapFocus
     role="dialog"
     aria-modal="true"
     aria-labelledby="snakeling-dialog-title"
   >
+    @if (view() === "menu") {
     <h2 id="snakeling-dialog-title" class="modal-title-with-bar">
-      {{ resuming() ? "Paused" : "How to play" }}
+      {{ resuming() ? "Paused" : "Snakeling" }}
     </h2>
 
-    <!-- Shown instead of the keys on touch screens, which have none. -->
+    <p class="best">
+      @if (controller.scoreService.maxScore > 0) {
+      High score <strong>{{ controller.scoreService.maxScore }}</strong>
+      } @else { No high score yet }
+    </p>
+
+    <nav class="menu" aria-label="Game menu">
+      <button
+        #first
+        class="abstract-button menu-button menu-play"
+        type="button"
+        (click)="playGame()"
+      >
+        {{ resuming() ? "Resume" : "Play" }}
+      </button>
+      <button
+        class="abstract-button menu-button"
+        type="button"
+        (click)="showHelp()"
+      >
+        How to play
+      </button>
+      <button
+        class="abstract-button menu-button menu-exit"
+        type="button"
+        (click)="close()"
+      >
+        Exit
+      </button>
+    </nav>
+    } @else {
+    <h2 id="snakeling-dialog-title" class="modal-title-with-bar">
+      How to play
+    </h2>
+
+    <ul class="rules">
+      <li>
+        <span class="bullet bullet-food" aria-hidden="true"></span>
+        Eat the apples to grow. Each one is worth 8 points.
+      </li>
+      <li>
+        <span class="bullet bullet-wrap" aria-hidden="true"></span>
+        The edges wrap around: leave on one side, come back on the other.
+      </li>
+      <li>
+        <span class="bullet bullet-tail" aria-hidden="true"></span>
+        Don't bite your own tail, or the game is over.
+      </li>
+    </ul>
+
+    <!-- Touch screens have no keys: one legend for each, the CSS shows the
+         one that fits the device. -->
     <dl class="keys touch-legend">
       <div class="key-row">
         <dt>Steer</dt>
-        <dd><span class="word">Swipe</span><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd></dd>
-      </div>
-      <div class="key-row">
-        <dt>Pause/Resume</dt>
-        <dd><kbd>II</kbd></dd>
-      </div>
-    </dl>
-    <p class="touch-tip">Keep your finger down to chain turns in one stroke.</p>
-
-    <dl class="keys key-legend">
-      <div class="key-row">
-        <dt>Up</dt>
         <dd>
-          <kbd>W</kbd>
-          <span class="or">or</span>
-          <kbd>&uarr;</kbd>
+          <span class="word">Swipe</span>
+          <kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd>
         </dd>
       </div>
       <div class="key-row">
-        <dt>Down</dt>
+        <dt>Pause</dt>
+        <dd><kbd>II</kbd></dd>
+      </div>
+    </dl>
+    <p class="tip touch-tip">
+      Swipe anywhere on the screen, not only on the board. Keep your finger
+      down to chain turns in one stroke.
+    </p>
+
+    <dl class="keys key-legend">
+      <div class="key-row">
+        <dt>Up / Down</dt>
         <dd>
-          <kbd>S</kbd>
+          <kbd>W</kbd><kbd>S</kbd>
           <span class="or">or</span>
-          <kbd>&darr;</kbd>
+          <kbd>&uarr;</kbd><kbd>&darr;</kbd>
         </dd>
       </div>
       <div class="key-row">
@@ -48,7 +99,7 @@
         </dd>
       </div>
       <div class="key-row">
-        <dt>Pause/Resume</dt>
+        <dt>Pause</dt>
         <dd>
           <kbd>P</kbd>
           <span class="or">or</span>
@@ -58,17 +109,15 @@
     </dl>
 
     <div class="sheet-actions">
-      <button class="abstract-button exit-button" type="button" (click)="close()">
-        Exit Game
-      </button>
       <button
-        #play
+        #first
         class="abstract-button play-button"
         type="button"
-        (click)="playGame()"
+        (click)="showMenu()"
       >
-        {{ resuming() ? "Resume Game" : "Play Game" }}
+        &larr; Back
       </button>
     </div>
+    }
   </div>
 </div>
