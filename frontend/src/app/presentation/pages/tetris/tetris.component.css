@@ -136,7 +136,19 @@
 
     .next{
         grid-area: 2 / 1 / 3 / 2;
+        min-width: 0;
         margin-inline-start: 5px;
+    }
+
+    /* The preview is drawn 90px wide, wider than its column on a phone:
+       it shrinks to the column (square, as drawn) instead of running
+       under the score. */
+    .next canvas{
+        display: block;
+        width: 100%;
+        max-width: 90px;
+        height: auto;
+        aspect-ratio: 1 / 1;
     }
     .score{
         grid-area: 2 / 2 / 3 / 3;
