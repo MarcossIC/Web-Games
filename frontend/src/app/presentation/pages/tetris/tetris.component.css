@@ -88,11 +88,12 @@
     display: none;
 }
 
+/* On a phone too the page is one screen, so the bar with Exit and Pause
+   never scrolls away: the board takes the height the keys and the score
+   row leave under the bar (--tetris-phone-rest, measured from them). */
 @media screen and (max-width: 500px) {
     :host {
-        height: auto;
-        min-height: 100dvh;
-        overflow: visible;
+        --tetris-phone-rest: 17.5rem;
     }
 
     .shared-wrapper {
@@ -100,9 +101,7 @@
         flex-direction: column;
         justify-content: center;
         width: 100%;
-        height: auto;
-        min-height: 100dvh;
-        padding: 0.75rem;
+        padding: 0.5rem 0.75rem 0.75rem;
     }
 
     .game-container {
@@ -111,7 +110,7 @@
     }
 
     .game-container canvas {
-        max-height: 58dvh;
+        max-height: calc(100dvh - var(--game-bar-height) - var(--tetris-phone-rest));
     }
 
     .info-container {
@@ -127,7 +126,7 @@
     .info-container  ul{
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        grid-template-rows: 1fr 2fr;
+        grid-template-rows: auto auto;
         grid-column-gap: 10px;
         grid-row-gap: 5px;
         width: 100%;
