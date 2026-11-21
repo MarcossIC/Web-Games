@@ -28,13 +28,18 @@ const GLOW_TINT: Readonly<Record<PowerUpKind, number>> = Object.fromEntries(
 export class CapsuleLayer {
   private readonly slots: CapsuleSlot[] = [];
   private clockMs = 0;
+  private readonly w: number;
+  private readonly h: number;
 
-  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer) {
+  /** `scale`: the layout's capsuleScale, so the art matches the engine's catch box. */
+  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, scale = 1) {
+    this.w = CapsuleArt.WIDTH * scale;
+    this.h = CapsuleArt.HEIGHT * scale;
     for (let i = 0; i < SLOTS; i++) {
       const glow = scene.add.image(0, 0, BreakerTexture.FLARE).setDepth(DEPTH.CAPSULE_GLOW).setVisible(false);
       const pill = scene.add
         .image(0, 0, capsuleTextureKey('multi'))
-        .setDisplaySize(CapsuleArt.WIDTH, CapsuleArt.HEIGHT)
+        .setDisplaySize(this.w, this.h)
         .setDepth(DEPTH.CAPSULES)
         .setVisible(false);
       layer.add(glow);
@@ -68,11 +73,11 @@ export class CapsuleLayer {
       const breathe = 1 + Math.sin(phase * 1.3) * 0.04;
       slot.pill
         .setPosition(c.x, y)
-        .setDisplaySize(CapsuleArt.WIDTH * breathe, CapsuleArt.HEIGHT * breathe)
+        .setDisplaySize(this.w * breathe, this.h * breathe)
         .setRotation(Math.sin(phase * 0.6) * 0.07);
       slot.glow
         .setPosition(c.x, y)
-        .setDisplaySize(CapsuleArt.WIDTH * 1.9, CapsuleArt.HEIGHT * 2.6)
+        .setDisplaySize(this.w * 1.9, this.h * 2.6)
         .setAlpha(0.32 + 0.18 * Math.sin(phase * 1.3));
     }
   }

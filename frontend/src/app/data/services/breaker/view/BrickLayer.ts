@@ -47,9 +47,10 @@ export class BrickLayer {
   private introTotalMs = 0;
   private introPending = false;
 
-  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer) {
+  /** `brickH`: the world's brick height (taller on a phone held upright); the textures are painted at it. */
+  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, brickH: number = BrickArt.HEIGHT) {
     const make = (key: string, depth: number) => (): Image => {
-      const image = scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(BrickArt.WIDTH, BrickArt.HEIGHT);
+      const image = scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(BrickArt.WIDTH, brickH);
       image.setDepth(depth).setVisible(false);
       layer.add(image);
       return image;

@@ -277,17 +277,37 @@ export const WORLD_HEIGHT_RANGE = { MIN: 720, MAX: 2080 } as const;
 export const THUMB_ROOM = 160;
 
 /**
+ * A phone held upright shows the 960 px wide world on ~390 CSS px: at that
+ * 0.4x a desktop-sized ball is a 6 px dot, the bricks are thin slivers and the
+ * long empty field makes every trip feel slow. Tall worlds therefore draw the
+ * pieces bigger (the 13 columns still fill the width, so bricks only grow in
+ * height) and start the formation a little lower, closer to the paddle.
+ */
+export const TALL = {
+  /** Row stride at most (the brick is 4 px shorter); less when the formation would not fit. */
+  STRIDE_Y: 40,
+  BALL_R: 13,
+  PADDLE_H: 26,
+  PADDLE_WIDTH_SCALE: 1.25,
+  CAPSULE_SCALE: 1.35,
+  /** The formation and the core start this share of the extra height lower, up to GRID_PUSH_MAX px. */
+  GRID_PUSH_SHARE: 0.14,
+  GRID_PUSH_MAX: 170,
+} as const;
+
+/**
  * How much of the extra field depth makes the ball faster, as a power of
  * `fallScale`. 1 would cross the long field in the desktop time (frantic),
- * 0 would keep the desktop speed (a very slow trip). 0.5 is the compromise:
- * a bit faster, so a long field is not boring, but with more reaction time.
+ * 0 would keep the desktop speed (a very slow trip). 0.8 keeps a trip only
+ * a little longer than on desktop: at 0.5 phones felt sluggish.
  */
-export const BALL_SPEED_SCALE_EXPONENT = 0.5;
+export const BALL_SPEED_SCALE_EXPONENT = 0.8;
 
 /**
  * Everything that depends on the height of the world, computed once per
- * engine. The top of the world (HUD, ceiling, grid, boss) never moves; only
- * what hangs from the bottom does.
+ * engine. The HUD and the ceiling never move; the formation and the core
+ * start a little lower on a tall world, and what hangs from the bottom moves
+ * with the paddle.
  */
 export interface WorldLayout {
   height: number;
@@ -297,6 +317,19 @@ export interface WorldLayout {
   barrierY: number;
   /** A breakable brick whose bottom edge reaches this y costs a life. */
   dangerY: number;
+  /** Top of the first brick row. */
+  gridTop: number;
+  brickH: number;
+  /** Brick height plus the gap between rows. */
+  strideY: number;
+  /** Top of the core in boss sectors. */
+  bossY: number;
+  ballR: number;
+  paddleH: number;
+  /** Multiplies the sector's paddle width. */
+  paddleWidthScale: number;
+  /** Multiplies the capsule's size (catch box and art). */
+  capsuleScale: number;
   /**
    * Capsules and boss pellets fall this many times faster than on desktop, so
    * they take the same time to reach the paddle.
@@ -311,15 +344,32 @@ export function worldLayout(height: number = WORLD.HEIGHT): WorldLayout {
   const h = Number.isFinite(height)
     ? Math.round(Math.max(WORLD_HEIGHT_RANGE.MIN, Math.min(WORLD_HEIGHT_RANGE.MAX, height)))
     : WORLD.HEIGHT;
-  const thumb = h > WORLD.HEIGHT ? THUMB_ROOM : 0;
+  const tall = h > WORLD.HEIGHT;
+  const thumb = tall ? THUMB_ROOM : 0;
   const paddleY = h - 56 - thumb;
-  const fallScale = (paddleY - GRID.TOP) / (PADDLE.Y - GRID.TOP);
+  const push = tall ? Math.round(Math.min(TALL.GRID_PUSH_MAX, (h - WORLD.HEIGHT) * TALL.GRID_PUSH_SHARE)) : 0;
+  const gridTop = GRID.TOP + push;
+  const dangerY = paddleY - 64;
+  // Taller rows only while the tallest formation (MAX_ROWS) keeps the
+  // desktop's room above the danger line: a squarish portrait gets less.
+  const room = CEILING.DANGER_Y - (GRID.TOP + GRID.MAX_ROWS * GRID.STRIDE_Y);
+  const fit = Math.floor((dangerY - room - gridTop) / GRID.MAX_ROWS);
+  const strideY = tall ? Math.max(GRID.STRIDE_Y, Math.min(TALL.STRIDE_Y, fit)) : GRID.STRIDE_Y;
+  const fallScale = (paddleY - gridTop) / (PADDLE.Y - GRID.TOP);
   return {
     height: h,
     lostY: h,
     paddleY,
     barrierY: paddleY + 40,
-    dangerY: paddleY - 64,
+    dangerY,
+    gridTop,
+    brickH: strideY - (GRID.STRIDE_Y - GRID.BRICK_H),
+    strideY,
+    bossY: BOSS.Y + push,
+    ballR: tall ? TALL.BALL_R : BALL.R,
+    paddleH: tall ? TALL.PADDLE_H : PADDLE.H,
+    paddleWidthScale: tall ? TALL.PADDLE_WIDTH_SCALE : 1,
+    capsuleScale: tall ? TALL.CAPSULE_SCALE : 1,
     fallScale,
     ballSpeedScale: Math.pow(fallScale, BALL_SPEED_SCALE_EXPONENT),
   };

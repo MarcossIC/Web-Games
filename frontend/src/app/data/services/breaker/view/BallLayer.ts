@@ -30,8 +30,14 @@ interface BallSlot {
  */
 export class BallLayer {
   private readonly slots: BallSlot[] = [];
+  /** Art size: the texture is painted for a CORE_RADIUS ball, scaled to the engine's radius. */
+  private readonly size: number;
+  private readonly trailSize: number;
 
-  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer) {
+  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, radius: number = BallArt.CORE_RADIUS) {
+    const k = radius / BallArt.CORE_RADIUS;
+    this.size = BallArt.SIZE * k;
+    this.trailSize = BallArt.TRAIL_SIZE * k;
     for (let i = 0; i < BALL.CAP; i++) {
       const trail: Image[] = [];
       for (let t = 0; t < TRAIL_LENGTH; t++) {
@@ -41,7 +47,7 @@ export class BallLayer {
       }
       const ball = scene.add
         .image(0, 0, BreakerTexture.BALL)
-        .setDisplaySize(BallArt.SIZE, BallArt.SIZE)
+        .setDisplaySize(this.size, this.size)
         .setDepth(DEPTH.BALLS)
         .setVisible(false);
       layer.add(ball);
@@ -66,7 +72,7 @@ export class BallLayer {
       slot.ball.setPosition(x, y);
       if (slot.look !== look) {
         slot.look = look;
-        slot.ball.setTexture(BALL_TEXTURES[look]).setDisplaySize(BallArt.SIZE, BallArt.SIZE);
+        slot.ball.setTexture(BALL_TEXTURES[look]).setDisplaySize(this.size, this.size);
         for (const dot of slot.trail) dot.setTint(TRAIL_TINTS[look]);
       }
       this.drawTrail(slot, x, y, b.stuck);
@@ -97,7 +103,7 @@ export class BallLayer {
         continue;
       }
       const k = 1 - i / TRAIL_LENGTH;
-      const size = BallArt.TRAIL_SIZE * (0.45 + 0.75 * k);
+      const size = this.trailSize * (0.45 + 0.75 * k);
       dot
         .setVisible(true)
         .setPosition(ring.xAt(i), ring.yAt(i))

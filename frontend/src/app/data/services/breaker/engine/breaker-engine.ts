@@ -30,6 +30,7 @@ import {
   SHIELD_NEIGHBORS,
   SHIELD_REGEN_ORDER,
   SHIELD_SLOTS,
+  shieldOffsetY,
   shieldKinds,
   volleyAngle,
   volleyCount,
@@ -191,6 +192,9 @@ export class BreakerEngine {
     h: PADDLE.H,
     vx: 0,
   };
+  /** The capsule's catch box: CAPSULE scaled by the layout. */
+  private readonly capsuleW: number;
+  private readonly capsuleH: number;
   private readonly balls: SimBall[] = [];
   private readonly ballPool: SimBall[] = [];
   private bricks: SimBrick[] = [];
@@ -287,6 +291,9 @@ export class BreakerEngine {
     this.rng = new Rng(options.seed);
     this.layout = worldLayout(options.height);
     (this.paddle as { y: number }).y = this.layout.paddleY;
+    (this.paddle as { h: number }).h = this.layout.paddleH;
+    this.capsuleW = CAPSULE.W * this.layout.capsuleScale;
+    this.capsuleH = CAPSULE.H * this.layout.capsuleScale;
     this.view = {
       phase: 'serve',
       sector: 1,
@@ -446,7 +453,7 @@ export class BreakerEngine {
           this.ended.length = 0;
           this.effects.activate(kind, this.params.durationScale, this.ended);
           this.emitEnded();
-          this.paddle.targetW = this.params.paddleWidth * paddleWidthFactor(this.effects);
+          this.paddle.targetW = this.basePaddleWidth() * paddleWidthFactor(this.effects);
         }
     }
   }
@@ -577,10 +584,15 @@ export class BreakerEngine {
     const p = this.paddle;
     p.x = p.prevX = WORLD.WIDTH / 2;
     p.vx = 0;
-    p.targetW = p.w = this.params.paddleWidth;
+    p.targetW = p.w = this.basePaddleWidth();
     this.serveBall();
     this.phase = 'serve';
     this.emit({ type: 'sector-started', sector });
+  }
+
+  /** The sector's paddle width, before wide and shrink. */
+  private basePaddleWidth(): number {
+    return this.params.paddleWidth * this.layout.paddleWidthScale;
   }
 
   private buildBricks(level: Level): void {
@@ -589,7 +601,7 @@ export class BreakerEngine {
     let breakable = 0;
     for (const cell of level.cells) {
       const x = GRID.LEFT + cell.col * GRID.STRIDE_X;
-      const y = GRID.TOP + cell.row * GRID.STRIDE_Y;
+      const y = this.layout.gridTop + cell.row * this.layout.strideY;
       const hp = BRICK_HP[cell.kind];
       const brick: SimBrick = {
         id: this.nextId++,
@@ -600,7 +612,7 @@ export class BreakerEngine {
         baseX: x,
         baseY: y,
         w: GRID.BRICK_W,
-        h: GRID.BRICK_H,
+        h: this.layout.brickH,
         kind: cell.kind,
         hp,
         maxHp: hp,
@@ -676,7 +688,7 @@ export class BreakerEngine {
     const p = this.paddle;
     const dt = dtMs / 1000;
     p.prevX = p.x;
-    p.targetW = this.params.paddleWidth * paddleWidthFactor(this.effects);
+    p.targetW = this.basePaddleWidth() * paddleWidthFactor(this.effects);
     if (dt <= 0) return;
 
     if (this.stunGuardMs > 0) this.stunGuardMs = Math.max(0, this.stunGuardMs - dtMs);
@@ -771,7 +783,7 @@ export class BreakerEngine {
   private newBall(): SimBall {
     const ball =
       this.ballPool.pop() ??
-      ({ id: 0, x: 0, y: 0, prevX: 0, prevY: 0, vx: 0, vy: 0, r: BALL.R, stuck: false, stuckOffset: 0, alive: true, holdMs: 0 } as SimBall);
+      ({ id: 0, x: 0, y: 0, prevX: 0, prevY: 0, vx: 0, vy: 0, r: this.layout.ballR, stuck: false, stuckOffset: 0, alive: true, holdMs: 0 } as SimBall);
     ball.id = this.nextId++;
     ball.alive = true;
     ball.stuck = false;
@@ -1368,13 +1380,13 @@ export class BreakerEngine {
       c.prevY = c.y;
       c.y += c.vy * dt;
       const caught =
-        Math.abs(c.x - p.x) < (CAPSULE.W + p.w) / 2 && c.y + CAPSULE.H / 2 >= p.y && c.y - CAPSULE.H / 2 <= p.y + p.h;
+        Math.abs(c.x - p.x) < (this.capsuleW + p.w) / 2 && c.y + this.capsuleH / 2 >= p.y && c.y - this.capsuleH / 2 <= p.y + p.h;
       if (caught) {
         c.alive = false;
         this.powerUpsCaught++;
         this.emit({ type: 'capsule-caught', kind: c.kind, x: c.x, y: c.y });
         this.applyPowerUp(c.kind);
-      } else if (c.y - CAPSULE.H / 2 > this.layout.lostY) {
+      } else if (c.y - this.capsuleH / 2 > this.layout.lostY) {
         c.alive = false;
       }
     }
@@ -1560,7 +1572,7 @@ export class BreakerEngine {
     this.boss = {
       number,
       x: center - BOSS.W / 2,
-      y: BOSS.Y,
+      y: this.layout.bossY,
       prevX: center - BOSS.W / 2,
       w: BOSS.W,
       h: BOSS.H,
@@ -1594,7 +1606,7 @@ export class BreakerEngine {
         baseX: 0,
         baseY: 0,
         w: GRID.BRICK_W,
-        h: GRID.BRICK_H,
+        h: this.layout.brickH,
         kind,
         hp: brickHp,
         maxHp: brickHp,
@@ -1656,7 +1668,7 @@ export class BreakerEngine {
     for (const brick of this.shieldBricks) {
       const slot = SHIELD_SLOTS[brick.shield];
       brick.x = brick.baseX = core.x + slot.dx;
-      brick.y = brick.baseY = core.y + slot.dy;
+      brick.y = brick.baseY = core.y + shieldOffsetY(slot, this.layout.strideY);
     }
   }
 
@@ -1724,8 +1736,8 @@ export class BreakerEngine {
     const gifts = phaseCapsules(phase);
     for (let k = 0; k < gifts.length; k++) {
       if (this.capsules.length >= CAPSULE.MAX_FALLING + 2) break;
-      const offset = (k - (gifts.length - 1) / 2) * (CAPSULE.W + 16);
-      this.spawnCapsule(gifts[k], Math.max(CAPSULE.W, Math.min(WORLD.WIDTH - CAPSULE.W, cx + offset)), bottom + 14);
+      const offset = (k - (gifts.length - 1) / 2) * (this.capsuleW + 16);
+      this.spawnCapsule(gifts[k], Math.max(this.capsuleW, Math.min(WORLD.WIDTH - this.capsuleW, cx + offset)), bottom + 14);
     }
   }
 
@@ -1916,9 +1928,9 @@ export class BreakerEngine {
     }
     const core = this.boss;
     const centerX = core && core.alive ? core.x + core.w / 2 : breakable > 0 ? sumX / breakable : WORLD.WIDTH / 2;
-    const half = CAPSULE.W / 2 + 4;
+    const half = this.capsuleW / 2 + 4;
     const x = Math.max(half, Math.min(WORLD.WIDTH - half, centerX));
-    const y = WORLD.CEILING_Y + CAPSULE.H;
+    const y = WORLD.CEILING_Y + this.capsuleH;
     this.spawnCapsule(kind, x, y);
     this.emit({ type: 'rescue', mode: 'capsule', kind, x, y });
   }

@@ -24,7 +24,7 @@ import { PaddleView } from '../view/PaddleView';
 import { type BridgeHost, SceneBridge } from '../view/SceneBridge';
 import { createLayers, DEPTH } from '../view/scene-kit';
 import { cardCanContinue, type ClearedSector, sectorCardText } from '../view/sector-card';
-import { BreakerSceneKeys } from './scene-keys';
+import { BREAKER_BOARD, BreakerSceneKeys } from './scene-keys';
 
 /**
  * Registry key of an optional `(seed) => BreakerEngine`. Only specs set it,
@@ -41,12 +41,7 @@ export type BreakerEngineFactory = (seed: number) => BreakerEngine;
 export const BREAKER_RECORDS_SOURCE = 'breaker-records-source';
 export type BreakerRecordsSource = () => BreakerRecords;
 
-/**
- * Registry key of the `Board` (world height + the HUD rows above it) that
- * main.ts measured from the parent element before booting. Missing (the
- * specs): the desktop 960x720.
- */
-export const BREAKER_BOARD = 'breaker-board';
+export { BREAKER_BOARD };
 
 export interface GameSceneData {
   /** Start playing at once (RESTART) instead of waiting for PLAY. */
@@ -138,11 +133,11 @@ export class GameScene extends Phaser.Scene implements BridgeHost, ReactorHost {
     const layers = createLayers(this, board);
     const { world, ui } = layers;
     this.background = new BackgroundView(this, world, randomSeed(), board.height);
-    this.bricks = new BrickLayer(this, world);
-    this.capsules = new CapsuleLayer(this, world);
+    this.bricks = new BrickLayer(this, world, layout.brickH);
+    this.capsules = new CapsuleLayer(this, world, layout.capsuleScale);
     this.lasers = new LaserLayer(this, world);
     this.barrier = new BarrierView(this, world, layout.barrierY);
-    this.balls = new BallLayer(this, world);
+    this.balls = new BallLayer(this, world, layout.ballR);
     this.paddle = new PaddleView(this, world);
     this.fx = new FxLayer(this, world, ui, board);
     this.boss = new BossView(this, world, ui, this.fx);

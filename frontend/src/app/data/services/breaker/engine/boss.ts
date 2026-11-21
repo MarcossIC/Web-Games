@@ -1,4 +1,4 @@
-import { BOSS } from './config';
+import { BOSS, GRID } from './config';
 import { isSpecialSector } from './difficulty';
 import type { BossPhase, BrickKind, PowerUpKind } from './types';
 
@@ -88,6 +88,17 @@ export const SHIELD_SLOTS: readonly ShieldSlot[] = [
   { dx: 284, dy: 1, tone: 5 },
   { dx: 284, dy: 31, tone: 5 },
 ];
+
+/**
+ * How far under the core's top a shield sits. The side stacks are laid out
+ * for the desktop row stride (30): on a tall world, with taller bricks, the
+ * lower brick of each stack moves down with the stride so the two never overlap.
+ * The row under the core stays where it is.
+ */
+export function shieldOffsetY(slot: ShieldSlot, strideY: number): number {
+  if (slot.dy >= BOSS.H) return slot.dy;
+  return 1 + ((slot.dy - 1) / GRID.STRIDE_Y) * strideY;
+}
 
 /** Which shields an explosive shield takes with it. */
 export const SHIELD_NEIGHBORS: readonly (readonly number[])[] = [[1, 5], [0, 2], [1, 3], [2, 7], [5], [4, 0], [7], [6, 3]];

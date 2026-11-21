@@ -5,7 +5,9 @@ import { releasePixelSnapshots } from '../assets/release-snapshots';
 import { drawTextureSheet, generateBreakerTextures } from '../assets/texture-factory';
 import { buildBitmapFonts } from '../view/bitmap-fonts';
 import { readBreakerFlags } from '../view/looks';
-import { BreakerSceneKeys } from './scene-keys';
+import { worldLayout } from '../engine/config';
+import { type Board, DESKTOP_BOARD } from '../view/board-layout';
+import { BREAKER_BOARD, BreakerSceneKeys } from './scene-keys';
 
 /** This long at most is spent waiting; past it the bitmap fonts are baked from the fallback font. */
 export const FONT_WAIT_MS = 1500;
@@ -34,7 +36,9 @@ export class BootScene extends Phaser.Scene {
       drawTextureSheet(this);
       return;
     }
-    generateBreakerTextures(this);
+    // Bricks are painted at the world's brick height: taller on a phone held upright.
+    const board = (this.registry.get(BREAKER_BOARD) as Board | undefined) ?? DESKTOP_BOARD;
+    generateBreakerTextures(this, worldLayout(board.height).brickH);
     // crt-overlay already has scanlines and vignette baked in; the stars are
     // sprites. These full-screen canvases would only hold memory.
     for (const key of [BreakerTexture.SCANLINES, BreakerTexture.VIGNETTE, BreakerTexture.BG_STARS]) {

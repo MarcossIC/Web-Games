@@ -149,13 +149,15 @@ function addPaddleFrames(texture: Phaser.Textures.Texture, spec: BreakerTextureS
  * texture manager. Idempotent: keys that already exist are skipped, so it can run
  * on every boot (and after a scene restart) for free.
  *
+ * `brickHeight`: the world's brick height (see `worldLayout`), the desktop one by default.
+ *
  * Call it once in the boot scene's `create()` (it needs no loader). It runs in
  * roughly 100-300 ms on a desktop; nothing here runs per frame.
  */
-export function generateBreakerTextures(scene: Phaser.Scene): void {
+export function generateBreakerTextures(scene: Phaser.Scene, brickHeight?: number): void {
   const textures = scene.textures;
   const paint = painters();
-  for (const spec of breakerTextureSpecs()) {
+  for (const spec of breakerTextureSpecs(brickHeight)) {
     if (textures.exists(spec.key)) {
       continue;
     }

@@ -206,16 +206,32 @@ const FIXED_SPECS: Record<BreakerTextureKey, Omit<BreakerTextureSpec, 'key'>> = 
   'meter-fill': { width: HudArt.FILL_WIDTH, height: HudArt.FILL_HEIGHT, scale: S },
 };
 
-/** Size and scale of every generated texture, by key. */
-export function breakerTextureSpecs(): BreakerTextureSpec[] {
+/** Fixed textures painted at the brick's size: on a tall world they follow its brick height. */
+const BRICK_SIZED: ReadonlySet<string> = new Set([
+  'crack-1',
+  'crack-2',
+  'armor-plate',
+  'brick-flash',
+  'steel',
+  'explosive',
+  'capsule-brick',
+  'prism',
+]);
+
+/**
+ * Size and scale of every generated texture, by key. `brickHeight` is the
+ * world's brick height (taller on a phone held upright): every brick texture
+ * is painted at it, so a tall brick is not a stretched short one.
+ */
+export function breakerTextureSpecs(brickHeight: number = BrickArt.HEIGHT): BreakerTextureSpec[] {
   const specs: BreakerTextureSpec[] = [];
   for (let theme = 0; theme < BREAKER_THEME_COUNT; theme++) {
     for (let tone = 0; tone < BREAKER_TONE_COUNT; tone++) {
-      specs.push({ key: brickTextureKey(theme, tone), width: BrickArt.WIDTH, height: BrickArt.HEIGHT, scale: S });
+      specs.push({ key: brickTextureKey(theme, tone), width: BrickArt.WIDTH, height: brickHeight, scale: S });
     }
   }
   for (const [key, spec] of Object.entries(FIXED_SPECS)) {
-    specs.push({ key, ...spec });
+    specs.push({ key, ...spec, ...(BRICK_SIZED.has(key) ? { height: brickHeight } : {}) });
   }
   for (const kind of BREAKER_POWER_UPS) {
     specs.push({ key: capsuleTextureKey(kind), width: CapsuleArt.WIDTH, height: CapsuleArt.HEIGHT, scale: S });

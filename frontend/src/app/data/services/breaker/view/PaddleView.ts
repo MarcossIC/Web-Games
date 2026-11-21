@@ -14,7 +14,7 @@ const POWER_DOWN_MS = 900;
 /** How the paddle is drawn: a NineSlice on WebGL, three images on Canvas. */
 interface PaddleSkin {
   setKey(key: string): void;
-  /** x center, y center, body width, squash factors, alpha. */
+  /** x center, y center, body width in art px, scale factors (squash times art scale), alpha. */
   draw(x: number, y: number, w: number, sx: number, sy: number, alpha: number): void;
 }
 
@@ -154,6 +154,10 @@ export class PaddleView {
       alpha = flicker * (1 - Math.max(0, t - 0.35) / 0.65);
       drop = t * t * 46;
     }
-    this.skin.draw(this.x, this.y + drop, p.w, s.x, s.y, alpha);
+    // The art is painted for an 18 px body; a taller paddle (a phone held
+    // upright) scales it evenly, caps and glow included, and slices k times
+    // fewer texture px so the body still comes out p.w wide.
+    const k = p.h / PaddleArt.BODY_HEIGHT;
+    this.skin.draw(this.x, this.y + drop, p.w / k, s.x * k, s.y * k, alpha);
   }
 }
