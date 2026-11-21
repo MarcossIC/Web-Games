@@ -6,7 +6,10 @@ import { BoardServiceService } from './BoardService.service';
 import { FoodService } from './Food.service';
 import { ScoreService } from './Score.service';
 import { SnakeService } from './Snake.service';
-import { SnakelingControllerService } from './SnakelingController.service';
+import {
+  SnakelingControllerService,
+  TIME_ATTACK_MS,
+} from './SnakelingController.service';
 
 /** Only here to hand out a Renderer2, which comes with a component. */
 @Component({ standalone: true, template: '' })
@@ -64,13 +67,17 @@ describe('Service: SnakelingController', () => {
     expect(controller.isPaused).toBeFalse();
   });
 
-  it('starts the snake away from the edges', () => {
-    for (let i = 0; i < 50; i++) {
-      controller.start('classic');
-      for (const [x] of snake.body) {
-        expect(x).toBeGreaterThan(1);
-        expect(x).toBeLessThan(width);
-      }
+  it('always starts the snake in the middle of the board', () => {
+    const height = TestBed.inject(BoardSizeService).HEIGHT;
+    for (const mode of ['classic', 'portal', 'time'] as const) {
+      controller.start(mode);
+      // Three segments, head to the right, the middle one on the center column.
+      expect(snake.body.map(([x]) => x)).toEqual([
+        Math.floor(width / 2) + 1,
+        Math.floor(width / 2),
+        Math.floor(width / 2) - 1,
+      ]);
+      expect(snake.snakeY).toBe(Math.ceil(height / 2));
     }
   });
 
@@ -106,5 +113,54 @@ describe('Service: SnakelingController', () => {
     expect(controller.started).toBeFalse();
     expect(controller.isPaused).toBeTrue();
     expect(controller.isGameOver).toBeFalse();
+  });
+
+  describe('Time Attack', () => {
+    it('ends the game when the minute is up', () => {
+      controller.start('time');
+      controller.tickClock(TIME_ATTACK_MS - 1000);
+
+      expect(controller.isGameOver).toBeFalse();
+      expect(controller.timeLeftMs).toBe(1000);
+
+      controller.tickClock(1000);
+
+      expect(controller.isGameOver).toBeTrue();
+      expect(controller.endedBy).toBe('time');
+      expect(controller.timeLeftMs).toBe(0);
+    });
+
+    it('stops the clock while paused', () => {
+      controller.start('time');
+      controller.changePause();
+      controller.tickClock(5000);
+
+      expect(controller.timeLeftMs).toBe(TIME_ATTACK_MS);
+    });
+
+    it('gives a full minute again on a new game', () => {
+      controller.start('time');
+      controller.tickClock(20_000);
+      controller.reset();
+
+      expect(controller.timeLeftMs).toBe(TIME_ATTACK_MS);
+    });
+
+    it('has no clock in the other modes', () => {
+      controller.start('classic');
+      controller.tickClock(TIME_ATTACK_MS);
+
+      expect(controller.isGameOver).toBeFalse();
+    });
+
+    it('ends the game at a wall, like Classic', () => {
+      controller.start('time');
+      runTo(width);
+      controller.runGame();
+
+      expect(controller.isGameOver).toBeTrue();
+      expect(controller.endedBy).toBe('wall');
+      expect(snake.snakeX).toBe(width);
+    });
   });
 });

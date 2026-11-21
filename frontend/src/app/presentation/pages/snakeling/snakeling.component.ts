@@ -28,12 +28,15 @@ import { SnakelingCanvas } from './snakeling-canvas';
 import { Turn, TurnQueue, headingTurn, swipeTurn } from './steering';
 import { ACTIONS, SNAKE_FRAME_PX, SNAKE_FRAME_PX_MOBILE } from 'assets/constants/snakeling';
 import { ACTION } from '@app/data/models/snakeling/Actions';
+import { hasWalls, isTimed } from '@app/data/models/snakeling/Mode';
 
 /** Time between two steps of the game. */
 const STEP_MS = 180;
 /** Above this the extra pixels cost a lot and are barely visible. */
 const MAX_PIXEL_RATIO = 2;
 const MIN_CELL_PX = 8;
+/** Time Attack: below this many seconds left, the clock turns urgent. */
+const HURRY_SECONDS = 10;
 /** The width at which the stylesheet switches to the phone layout. */
 const PHONE_QUERY = '(max-width: 600px)';
 
@@ -127,6 +130,8 @@ export class SnakelingComponent implements OnInit {
     const lengthBefore = this.snake.body.length;
     const scoreBefore = this.controller.scoreService.score;
     if (running) {
+      // Each step is STEP_MS of game time, taken off a Time Attack clock.
+      this.controller.tickClock(STEP_MS);
       const turn = this.turns.take();
       if (turn) this.controller.executeAction(turn);
     } else {
@@ -213,7 +218,7 @@ export class SnakelingComponent implements OnInit {
         heading: { x: this.snake.speedSnakeX, y: this.snake.speedSnakeY },
         food: { x: this.food.foodX, y: this.food.foodY },
         dead: this.controller.isGameOver,
-        walls: this.controller.mode === 'classic',
+        walls: hasWalls(this.controller.mode),
         time: now,
       });
       frame = requestAnimationFrame(paint);
@@ -272,6 +277,23 @@ export class SnakelingComponent implements OnInit {
       turn,
       headingTurn(this.snake.speedSnakeX, this.snake.speedSnakeY)
     );
+  }
+
+  /** Whether the game is played against the clock. */
+  protected timed(): boolean {
+    return isTimed(this.controller.mode) && this.controller.started;
+  }
+
+  /** The time left, as m:ss. */
+  protected clock(): string {
+    const seconds = Math.ceil(this.controller.timeLeftMs / 1000);
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  }
+
+  /** The last seconds of a Time Attack game. */
+  protected hurry(): boolean {
+    const seconds = Math.ceil(this.controller.timeLeftMs / 1000);
+    return seconds <= HURRY_SECONDS && !this.controller.isGameOver;
   }
 
   onPress(key: string) {

@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { SnakelingControllerService } from '@app/data/services/snakeling/SnakelingController.service';
+import { POINTS_PER_APPLE } from '@app/data/services/snakeling/Score.service';
 import { TrapFocusDirective } from '@app/shared/directives/TrapFocus.directive';
 import { SNAKELING_MODES } from 'assets/constants/snakeling';
 
@@ -44,6 +45,11 @@ export class EndgameModalSnakelingComponent {
     this.controller.reset();
     this.router.navigate(['/games']);
   }
+
+  /** Apples eaten this game: each one gave the same points. */
+  protected readonly apples = computed(() =>
+    Math.round(this.controller.scoreService.score / POINTS_PER_APPLE)
+  );
 
   /** Another game in the same mode. */
   protected playAgain(): void {

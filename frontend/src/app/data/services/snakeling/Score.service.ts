@@ -10,6 +10,7 @@ export const POINTS_PER_APPLE = 8;
 const RECORD_FIELD: Record<SnakelingMode, keyof SnakelingRecords> = {
   portal: 'bestScore',
   classic: 'bestClassic',
+  time: 'bestTimeAttack',
 };
 
 @Injectable()

@@ -6,11 +6,19 @@
     aria-modal="true"
     aria-labelledby="snakeling-result-title"
   >
-    <h2 id="snakeling-result-title" class="modal-title-with-bar">Game Over</h2>
+    <h2 id="snakeling-result-title" class="modal-title-with-bar">
+      {{ controller.endedBy === "time" ? "Time's Up" : "Game Over" }}
+    </h2>
 
     <p class="cause">
       <span class="mode" [class]="'is-' + controller.mode">{{ modeName() }}</span>
-      {{ controller.endedBy === "wall" ? "You hit the wall." : "You bit your own tail." }}
+      @switch (controller.endedBy) {
+      @case ("time") {
+      {{ apples() }} {{ apples() === 1 ? "apple" : "apples" }} in one minute.
+      }
+      @case ("wall") { You hit the wall. }
+      @default { You bit your own tail. }
+      }
     </p>
 
     <dl class="results">

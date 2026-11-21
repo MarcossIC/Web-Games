@@ -50,6 +50,20 @@ describe('EndgameModalSnakelingComponent', () => {
     expect(root.querySelector('.mode')!.textContent!.trim()).toBe('Classic');
   });
 
+  it('counts the apples when the minute of Time Attack is up', () => {
+    controller.start('time');
+    // reset is spied on, so the game is still paused: let it run.
+    controller.changePause();
+    controller.scoreService.score = 40;
+    controller.tickClock(60_000);
+    show();
+
+    expect(root.querySelector('h2')!.textContent!.trim()).toBe("Time's Up");
+    expect(root.querySelector('.cause')!.textContent).toContain(
+      '5 apples in one minute.'
+    );
+  });
+
   it('offers to play again, change mode, or exit', () => {
     controller.start('portal');
     show();

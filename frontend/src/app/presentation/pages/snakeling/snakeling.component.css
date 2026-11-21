@@ -56,6 +56,30 @@
   color: var(--gg-yellow);
 }
 
+/* Time Attack: the clock, cyan while there is time, magenta and beating
+   in the last seconds. */
+.readout-time dd {
+  color: var(--gg-cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.readout-time.is-hurry dd {
+  color: var(--gg-magenta);
+  animation: hurry 1s steps(2, jump-none) infinite;
+}
+
+@keyframes hurry {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .readout-time.is-hurry dd {
+    animation: none;
+  }
+}
+
 /* Takes whatever height is left; `min-height: 0` lets it shrink below
    the size of its content, which a flex item does not do by default. */
 .stage {

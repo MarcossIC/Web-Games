@@ -1,5 +1,4 @@
 import { inject, Injectable, Renderer2 } from '@angular/core';
-import { ramdomNumber } from '../util.service';
 import {
   NEXT_POSITION,
   NOT_MOVE,
@@ -7,9 +6,6 @@ import {
 } from 'assets/constants/snakeling';
 import { Axis } from '@app/data/models/Axis';
 import { BoardSizeService } from '@app/data/services/BoardSize.service';
-
-/** Free cells kept between a new snake and the edges of the board. */
-const SPAWN_MARGIN = 3;
 
 @Injectable()
 export class SnakeService {
@@ -33,19 +29,20 @@ export class SnakeService {
   }
 
   /**
-   * Puts the head of a new snake somewhere away from the edges. The body
-   * trails to its left and it sets off to the right: near an edge it would
-   * start cut in two by a portal, or one step from a wall in Classic.
+   * Puts a new snake in the middle of the board. The body trails to the
+   * left of the head and it sets off to the right, so with three segments
+   * the body sits on the center column: as far from every edge as it gets.
    */
   private placeHead(): void {
     const { WIDTH, HEIGHT } = this.boardSize;
-    this.snakeX = SPAWN_MARGIN + ramdomNumber(false, WIDTH - SPAWN_MARGIN * 2);
-    this.snakeY = SPAWN_MARGIN + ramdomNumber(false, HEIGHT - SPAWN_MARGIN * 2);
+    this.snakeX = Math.floor(WIDTH / 2) + 1;
+    this.snakeY = Math.ceil(HEIGHT / 2);
   }
 
   /**
    * Whether the next step takes the head off the board. In Portal mode it
-   * just comes back on the other side; in Classic it hits a wall.
+   * just comes back on the other side; with walls (Classic, Time Attack)
+   * it hits one.
    */
   public nextStepLeavesBoard(): boolean {
     const x = this.snakeX + this.speedSnakeX;

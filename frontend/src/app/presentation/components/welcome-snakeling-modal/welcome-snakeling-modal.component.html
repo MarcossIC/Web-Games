@@ -132,7 +132,7 @@
         (click)="play(mode.id)"
       >
         <span class="mode-icon" aria-hidden="true">
-          @if (mode.id === "classic") {
+          @switch (mode.id) { @case ("classic") {
           <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
             <path
               fill="currentColor"
@@ -141,7 +141,7 @@
             <path fill="currentColor" d="M4 7h2v2H4zM7 7h2v2H7z" />
             <path class="icon-head" d="M10 7h2v2h-2z" />
           </svg>
-          } @else {
+          } @case ("portal") {
           <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
             <path
               fill="currentColor"
@@ -152,12 +152,25 @@
             <path class="icon-head" d="M11 7h2v2h-2z" />
             <path fill="currentColor" d="M14 6h1v4h-1zM15 7h1v2h-1z" />
           </svg>
-          }
+          } @default {
+          <!-- A stopwatch: crown, ring and a hand at a quarter past. -->
+          <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <path fill="currentColor" d="M6 0h4v2H6zM7 2h2v1H7zM12 2h2v2h-2z" />
+            <path
+              fill="currentColor"
+              d="M5 3h6v2H5zM3 5h2v2H3zM11 5h2v2h-2zM2 7h2v4H2zM12 7h2v4h-2zM3 11h2v2H3zM11 11h2v2h-2zM5 13h6v2H5z"
+            />
+            <path class="icon-head" d="M7 6h2v4H7zM9 8h2v2H9z" />
+          </svg>
+          } }
         </span>
-        <span class="mode-name">{{ mode.name }}</span>
-        <span class="mode-tagline">{{ mode.tagline }}</span>
+        <span class="mode-text">
+          <span class="mode-name">{{ mode.name }}</span>
+          <span class="mode-tagline">{{ mode.tagline }}</span>
+        </span>
         <span class="mode-best">
-          Best {{ controller.scoreService.bestFor(mode.id) }}
+          <span class="mode-best-label">Best</span>
+          {{ controller.scoreService.bestFor(mode.id) }}
         </span>
       </button>
       }
