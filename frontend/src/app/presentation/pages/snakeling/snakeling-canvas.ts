@@ -9,6 +9,8 @@ export interface SnakeFrame {
   food: Cell;
   /** True once the game is lost. */
   dead: boolean;
+  /** True when the edges are walls (Classic); false when they are portals. */
+  walls: boolean;
   /** Clock for the idle animations, in milliseconds. */
   time: number;
 }
@@ -30,6 +32,9 @@ const FLOWER = '#fdfbe6';
 /** The color of the original dashed fence around the board. */
 const FENCE = '#151d00';
 const SHADOW = 'rgba(46, 78, 0, 0.38)';
+/** Classic mode: the edges are a wall of dark stone. */
+const WALL = '#2a3410';
+const WALL_MORTAR = '#6f8a2a';
 
 // The serpent wears the colors of the site: magenta at the head, violet
 // along the body, cyan at the tail.
@@ -129,7 +134,8 @@ export class SnakelingCanvas {
     context.drawImage(this.garden, 0, 0);
     context.setTransform(this.scale, 0, 0, this.scale, 0, 0);
 
-    this.drawPortals(frame.time);
+    if (frame.walls) this.drawWalls();
+    else this.drawPortals(frame.time);
     this.drawApple(frame.food, frame.time);
     this.drawSnake(frame);
     this.drawBursts(frame.time);
@@ -207,6 +213,40 @@ export class SnakelingCanvas {
       board.columns * cell - width,
       board.rows * cell - width
     );
+    context.restore();
+  }
+
+  /**
+   * The edges of this board are walls: a solid band of stone blocks, one
+   * per cell, that does not move. It reads as something that stops you,
+   * next to the marching dashes of the portals.
+   */
+  private drawWalls(): void {
+    const { context, cell, board } = this;
+    const width = cell * 0.2;
+    const right = board.columns * cell;
+    const bottom = board.rows * cell;
+
+    context.save();
+    context.fillStyle = WALL;
+    context.fillRect(0, 0, right, width);
+    context.fillRect(0, bottom - width, right, width);
+    context.fillRect(0, 0, width, bottom);
+    context.fillRect(right - width, 0, width, bottom);
+
+    // Mortar between the blocks, at every cell, so the band reads as built.
+    context.fillStyle = WALL_MORTAR;
+    const joint = Math.max(1, cell * 0.06);
+    for (let column = 1; column < board.columns; column++) {
+      const x = column * cell - joint / 2;
+      context.fillRect(x, 0, joint, width);
+      context.fillRect(x, bottom - width, joint, width);
+    }
+    for (let row = 1; row < board.rows; row++) {
+      const y = row * cell - joint / 2;
+      context.fillRect(0, y, width, joint);
+      context.fillRect(right - width, y, width, joint);
+    }
     context.restore();
   }
 

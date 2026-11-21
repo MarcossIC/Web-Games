@@ -17,19 +17,19 @@ describe('Service: Score', () => {
     const service = newService();
     service.updateScore();
     service.updateScore();
-    service.updateMaxScore();
+    service.updateMaxScore('portal');
 
     expect(snakelingRecords.read(store).bestScore).toBe(16);
-    expect(newService().maxScore).toBe(16);
+    expect(newService().bestFor('portal')).toBe(16);
   });
 
   it('keeps the best score when the run did worse', () => {
-    snakelingRecords.write(store, { bestScore: 40 });
+    snakelingRecords.write(store, { bestScore: 40, bestClassic: 0 });
     const service = newService();
     service.updateScore();
-    service.updateMaxScore();
+    service.updateMaxScore('portal');
 
-    expect(service.maxScore).toBe(40);
+    expect(service.bestFor('portal')).toBe(40);
     expect(snakelingRecords.read(store).bestScore).toBe(40);
   });
 
@@ -37,11 +37,33 @@ describe('Service: Score', () => {
     store.write(snakelingRecords.key, JSON.stringify({ v: 1, data: { bestScore: 'undefined' } }));
     const service = newService();
 
-    expect(service.maxScore).toBe(0);
+    expect(service.bestFor('portal')).toBe(0);
 
     service.updateScore();
-    service.updateMaxScore();
+    service.updateMaxScore('portal');
 
     expect(snakelingRecords.read(store).bestScore).toBe(8);
+  });
+
+  it('keeps a best score for each mode', () => {
+    const service = newService();
+    service.updateScore();
+    service.updateMaxScore('classic');
+
+    expect(service.bestFor('classic')).toBe(8);
+    expect(service.bestFor('portal')).toBe(0);
+
+    service.updateScore();
+    service.updateMaxScore('portal');
+
+    expect(snakelingRecords.read(store)).toEqual({ bestScore: 16, bestClassic: 8 });
+  });
+
+  it('reads records saved before modes existed as Portal records', () => {
+    store.write(snakelingRecords.key, JSON.stringify({ v: 1, data: { bestScore: 96 } }));
+    const service = newService();
+
+    expect(service.bestFor('portal')).toBe(96);
+    expect(service.bestFor('classic')).toBe(0);
   });
 });

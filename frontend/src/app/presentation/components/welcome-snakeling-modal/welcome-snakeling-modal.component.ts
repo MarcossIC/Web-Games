@@ -3,14 +3,16 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  computed,
   ElementRef,
   inject,
   Injector,
-  input,
   signal,
-  viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { SnakelingMode } from '@app/data/models/snakeling/Mode';
+import { SNAKELING_MODES } from 'assets/constants/snakeling';
+import { POINTS_PER_APPLE } from '@app/data/services/snakeling/Score.service';
 import { SnakelingControllerService } from '@app/data/services/snakeling/SnakelingController.service';
 import { TrapFocusDirective } from '@app/shared/directives/TrapFocus.directive';
 
@@ -18,8 +20,8 @@ import { TrapFocusDirective } from '@app/shared/directives/TrapFocus.directive';
 export type SnakelingMenuView = 'menu' | 'help';
 
 /**
- * The menu shown when the game opens and while it is paused:
- * play (or resume), learn how to play, or leave.
+ * The menu of the game. On opening it offers the modes; during a game it
+ * is the pause menu. Both lead to a page that explains how to play.
  */
 @Component({
   standalone: true,
@@ -38,16 +40,20 @@ export class WelcomeSnakelingModalComponent {
   );
   private router = inject(Router);
   private injector = inject(Injector);
-  /** The first button of the view on show: Play, or Back. */
-  private firstButton = viewChild<ElementRef<HTMLButtonElement>>('first');
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  /** True when the dialog is a pause in a game that is already going. */
-  readonly resuming = input(false);
-
+  protected readonly modes = SNAKELING_MODES;
+  protected readonly pointsPerApple = POINTS_PER_APPLE;
   protected readonly view = signal<SnakelingMenuView>('menu');
+  /** The mode of the game that is paused. */
+  protected readonly current = computed(
+    () =>
+      SNAKELING_MODES.find((mode) => mode.id === this.controller.mode) ??
+      SNAKELING_MODES[0]
+  );
 
   constructor() {
-    // Enter starts or resumes the game without reaching for the mouse.
+    // Enter starts the first mode, or resumes, without reaching for the mouse.
     afterNextRender(() => this.focusFirst());
   }
 
@@ -61,21 +67,35 @@ export class WelcomeSnakelingModalComponent {
 
   private switchTo(view: SnakelingMenuView): void {
     this.view.set(view);
-    // The view's buttons are new elements: move the focus onto them.
+    this.focusAfterRender();
+  }
+
+  /** The buttons are new elements once the view changes: focus them then. */
+  private focusAfterRender(): void {
     afterNextRender(() => this.focusFirst(), { injector: this.injector });
   }
 
+  /** Each view marks the button to start from with `data-autofocus`. */
   private focusFirst(): void {
-    this.firstButton()?.nativeElement.focus();
+    this.host.nativeElement
+      .querySelector<HTMLElement>('[data-autofocus]')
+      ?.focus();
+  }
+
+  protected play(mode: SnakelingMode): void {
+    this.controller.start(mode);
+  }
+
+  protected resume(): void {
+    this.controller.changePause();
+  }
+
+  protected changeMode(): void {
+    this.controller.backToMenu();
+    this.focusAfterRender();
   }
 
   protected close(): void {
-    this.controller.reset();
-    this.controller.changePause();
     this.router.navigate(['/games']);
-  }
-
-  protected playGame(): void {
-    this.controller.executeAction('p');
   }
 }

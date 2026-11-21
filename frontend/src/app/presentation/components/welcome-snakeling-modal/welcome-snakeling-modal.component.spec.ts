@@ -43,42 +43,72 @@ describe('WelcomeSnakelingModalComponent', () => {
     fixture.detectChanges();
   });
 
-  it('opens on a menu to play, learn how, or exit', () => {
-    expect(root.querySelector('h2')!.textContent!.trim()).toBe('Snakeling');
-    expect(buttons()).toEqual(['Play', 'How to play', 'Exit']);
+  const title = () => root.querySelector('h2')!.textContent!.trim();
+  const cards = () =>
+    Array.from(root.querySelectorAll('.mode-card')).map(
+      (c) => c.querySelector('.mode-name')!.textContent!.trim()
+    );
+
+  it('opens on the modes to pick from, with how to play and exit', () => {
+    expect(title()).toBe('Snakeling');
+    expect(cards()).toEqual(['Classic', 'Portal']);
+    expect(buttons().slice(2)).toEqual(['How to play', 'Exit']);
   });
 
-  it('offers to resume when the game is paused', () => {
-    fixture.componentRef.setInput('resuming', true);
+  it('starts the game in the mode picked', () => {
+    const start = spyOn(controller, 'start');
+
+    (root.querySelectorAll('.mode-card')[0] as HTMLButtonElement).click();
+
+    expect(start).toHaveBeenCalledWith('classic');
+  });
+
+  it('shows the best score of each mode on its card', () => {
+    const score = controller.scoreService;
+    score.score = 24;
+    score.updateMaxScore('classic');
+    score.score = 96;
+    score.updateMaxScore('portal');
     fixture.detectChanges();
 
-    expect(root.querySelector('h2')!.textContent!.trim()).toBe('Paused');
-    expect(buttons()[0]).toBe('Resume');
+    const best = Array.from(root.querySelectorAll('.mode-best')).map((b) =>
+      b.textContent!.trim()
+    );
+    expect(best).toEqual(['Best 24', 'Best 96']);
   });
 
-  it('shows how to play, and goes back to the menu', () => {
-    click('How to play');
-
-    expect(root.querySelector('h2')!.textContent!.trim()).toBe('How to play');
-    expect(root.querySelector('.rules')).not.toBeNull();
-    expect(buttons()).toEqual(['← Back']);
-
-    click('← Back');
-
-    expect(buttons()).toEqual(['Play', 'How to play', 'Exit']);
-  });
-
-  it('starts the game from Play', () => {
+  it('is a pause menu while a game is going', () => {
+    // A game started, then paused (reset is left out: it needs the board).
+    spyOn(controller, 'reset');
+    controller.start('portal');
+    fixture.detectChanges();
     expect(controller.isPaused).toBeTrue();
 
-    click('Play');
+    expect(title()).toBe('Paused');
+    expect(buttons()).toEqual(['Resume', 'How to play', 'Change mode', 'Exit']);
+
+    click('Resume');
 
     expect(controller.isPaused).toBeFalse();
   });
 
+  it('explains both modes, and goes back to the menu', () => {
+    click('How to play');
+
+    expect(title()).toBe('How to play');
+    const modes = Array.from(root.querySelectorAll('.mode-rule dt')).map((d) =>
+      d.textContent!.trim()
+    );
+    expect(modes).toEqual(['Classic', 'Portal']);
+    expect(buttons()).toEqual(['← Back']);
+
+    click('← Back');
+
+    expect(cards()).toEqual(['Classic', 'Portal']);
+  });
+
   it('leaves for the game list from Exit', () => {
     const navigate = spyOn(TestBed.inject(Router), 'navigate');
-    spyOn(controller, 'reset');
 
     click('Exit');
 

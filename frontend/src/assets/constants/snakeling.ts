@@ -1,4 +1,5 @@
 import { ACTION } from '@app/data/models/snakeling/Actions';
+import { SnakelingMode } from '@app/data/models/snakeling/Mode';
 
 export const BOARD_WIDTH_MOBILE: number = 14;
 export const BOARD_WIDTH: number = 26;
@@ -43,3 +44,28 @@ export const ACTIONS: Record<string, ACTION> = {
   ArrowUp: ACTION.UP,
   w: ACTION.UP,
 };
+
+export interface SnakelingModeInfo {
+  id: SnakelingMode;
+  name: string;
+  /** A few words on the mode's card. */
+  tagline: string;
+  /** The full rule, on the How to play page. */
+  rule: string;
+}
+
+/** The modes, in the order the menu offers them. */
+export const SNAKELING_MODES: readonly SnakelingModeInfo[] = [
+  {
+    id: 'classic',
+    name: 'Classic',
+    tagline: 'Walls are deadly',
+    rule: 'The edges are walls: run into one and the game is over.',
+  },
+  {
+    id: 'portal',
+    name: 'Portal',
+    tagline: 'No walls',
+    rule: 'No walls: leave on one side and come back on the other.',
+  },
+];

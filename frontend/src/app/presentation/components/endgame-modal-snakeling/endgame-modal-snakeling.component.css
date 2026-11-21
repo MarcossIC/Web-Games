@@ -1,1 +1,40 @@
 /* The dialog frame and the result lines come from modal.css. */
+
+.cause {
+  margin: -0.5rem 0 0;
+  text-align: center;
+  font-family: var(--gg-font-mono);
+  font-size: 0.9375rem;
+  color: var(--gg-soft);
+}
+
+/* The mode, as a small tag in its color (as on the menu cards). */
+.mode {
+  display: inline-block;
+  margin-inline-end: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  border: 2px solid var(--tone);
+  font-family: var(--gg-font-pixel);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  color: var(--tone);
+  vertical-align: 0.0625rem;
+}
+
+.is-classic {
+  --tone: var(--gg-cyan);
+}
+
+.is-portal {
+  --tone: var(--gg-magenta);
+}
+
+/* Play Again on a row of its own, the two ways out under it. */
+.sheet-actions + .sheet-actions {
+  margin-block-start: -0.5rem;
+}
+
+.sheet-actions + .sheet-actions .abstract-button {
+  white-space: nowrap;
+  font-size: 0.9375rem;
+}

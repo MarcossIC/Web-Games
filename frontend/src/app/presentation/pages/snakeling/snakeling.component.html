@@ -14,7 +14,7 @@
       </div>
       <div class="readout readout-end">
         <dt>High Score</dt>
-        <dd>{{ controller.scoreService.maxScore }}</dd>
+        <dd>{{ controller.bestScore }}</dd>
       </div>
     </dl>
 
@@ -34,5 +34,5 @@
 @if(this.controller.isGameOver){
 <endgame-modal-snakeling></endgame-modal-snakeling>
 } @if(this.controller.isPaused){
-<welcome-snakeling-modal [resuming]="started()"></welcome-snakeling-modal>
+<welcome-snakeling-modal></welcome-snakeling-modal>
 }

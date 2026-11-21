@@ -8,11 +8,14 @@ import {
 import { Axis } from '@app/data/models/Axis';
 import { BoardSizeService } from '@app/data/services/BoardSize.service';
 
+/** Free cells kept between a new snake and the edges of the board. */
+const SPAWN_MARGIN = 3;
+
 @Injectable()
 export class SnakeService {
   private boardSize = inject(BoardSizeService);
-  public snakeX: number;
-  public snakeY: number;
+  public snakeX = 0;
+  public snakeY = 0;
   public speedSnakeX: number = 1;
   public speedSnakeY: number = 0;
 
@@ -24,10 +27,32 @@ export class SnakeService {
   }
   constructor() {
     this.boardSize.typeToSnake();
-    this.snakeX = ramdomNumber(false, this.boardSize.WIDTH);
-    this.snakeY = ramdomNumber(false, this.boardSize.HEIGHT);
+    this.placeHead();
 
     this.initSnakeBody();
+  }
+
+  /**
+   * Puts the head of a new snake somewhere away from the edges. The body
+   * trails to its left and it sets off to the right: near an edge it would
+   * start cut in two by a portal, or one step from a wall in Classic.
+   */
+  private placeHead(): void {
+    const { WIDTH, HEIGHT } = this.boardSize;
+    this.snakeX = SPAWN_MARGIN + ramdomNumber(false, WIDTH - SPAWN_MARGIN * 2);
+    this.snakeY = SPAWN_MARGIN + ramdomNumber(false, HEIGHT - SPAWN_MARGIN * 2);
+  }
+
+  /**
+   * Whether the next step takes the head off the board. In Portal mode it
+   * just comes back on the other side; in Classic it hits a wall.
+   */
+  public nextStepLeavesBoard(): boolean {
+    const x = this.snakeX + this.speedSnakeX;
+    const y = this.snakeY + this.speedSnakeY;
+    return (
+      x < 1 || x > this.boardSize.WIDTH || y < 1 || y > this.boardSize.HEIGHT
+    );
   }
 
   /**
@@ -57,8 +82,7 @@ export class SnakeService {
   public resetSnake(): void {
     this.speedSnakeX = 1;
     this.speedSnakeY = 0;
-    this.snakeX = ramdomNumber(false, this.boardSize.WIDTH);
-    this.snakeY = ramdomNumber(false, this.boardSize.HEIGHT);
+    this.placeHead();
 
     this.initSnakeBody();
   }

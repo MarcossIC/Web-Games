@@ -5,11 +5,17 @@ import { SnakeService } from './Snake.service';
 import { FoodService } from './Food.service';
 import { ACTION } from '@app/data/models/snakeling/Actions';
 import { ScoreService } from './Score.service';
+import { SnakelingMode } from '@app/data/models/snakeling/Mode';
 
 @Injectable()
 export class SnakelingControllerService {
   private _isPaused = signal(true);
   private _isGameOver = signal(false);
+  private _mode = signal<SnakelingMode>('portal');
+  /** False on the opening menu, true once a mode was picked. */
+  private _started = signal(false);
+  /** What ended the last game: a wall (Classic only) or the snake's own body. */
+  private _endedBy = signal<'wall' | 'tail'>('tail');
 
   private renderer!: Renderer2;
   private boardService = inject(BoardServiceService);
@@ -38,7 +44,7 @@ export class SnakelingControllerService {
    *
    * Realiza las siguientes acciones si el juego está activo:
    * - Actualiza la posición de la serpiente.
-   * - Verifica colisiones con los bordes o consigo misma.
+   * - Verifica colisiones con las paredes (modo clásico) o consigo misma.
    * - Detecta y maneja la colisión con la comida.
    * - Actualiza la puntuación y reposiciona la comida si es necesario.
    *
@@ -46,6 +52,16 @@ export class SnakelingControllerService {
    */
   public runGame(): void {
     if (!this._isGameOver() && !this._isPaused()) {
+      // Classic: the edges are walls. The snake stops against the wall,
+      // where it can be seen, instead of stepping out of the board.
+      if (
+        this._mode() === 'classic' &&
+        this.snakeService.nextStepLeavesBoard()
+      ) {
+        this._endedBy.set('wall');
+        this.isGameOver = true;
+        return;
+      }
       this.snakeService.removeSnake(this.boardDiv, this.renderer);
       this.snakeService.moveBody();
       this.snakeService.moveSnake();
@@ -55,13 +71,16 @@ export class SnakelingControllerService {
       );
 
       //Si la serpiente colisiona con su propio cuerpo
-      if (isCollision) this.isGameOver = true;
+      if (isCollision) {
+        this._endedBy.set('tail');
+        this.isGameOver = true;
+      }
 
       //Si la serpiente come la comida
       if (this.snakeAndFoodCollision()) {
         this.foodService.removeFood(this.boardDiv, this.renderer);
         this.scoreService.updateScore();
-        this.scoreService.updateMaxScore();
+        this.scoreService.updateMaxScore(this._mode());
         //Agranda el cuerpo de la serpiente
         this.snakeService.addToSnakeBody({
           x: this.foodService.foodX,
@@ -93,13 +112,31 @@ export class SnakelingControllerService {
     this.scoreService.resetScore();
     this.snakeService.resetSnake();
 
-    this.foodService.foodChangePosition();
+    do {
+      this.foodService.foodChangePosition();
+    } while (this.foodCollisionInSnakeBody());
     this.initSnakeAndFood();
     this._isPaused.set(false);
     this.isGameOver = false;
   }
 
+  /** Starts a new game in `mode`, from the menu. */
+  public start(mode: SnakelingMode): void {
+    this._mode.set(mode);
+    this._started.set(true);
+    this.reset();
+  }
+
+  /** Leaves the game for the opening menu, where a mode is picked. */
+  public backToMenu(): void {
+    this.reset();
+    this._isPaused.set(true);
+    this._started.set(false);
+  }
+
   public changePause(): void {
+    // On the opening menu there is no game to resume: a mode starts one.
+    if (!this._started()) return;
     const current = this._isPaused();
     this._isPaused.set(!current);
   }
@@ -116,6 +153,26 @@ export class SnakelingControllerService {
       this.foodService.foodX,
       this.foodService.foodY
     );
+  }
+
+  /** The mode being played, or the last one played. */
+  public get mode(): SnakelingMode {
+    return this._mode();
+  }
+
+  /** False on the opening menu, true once a game is going. */
+  public get started(): boolean {
+    return this._started();
+  }
+
+  /** What ended the last game. */
+  public get endedBy(): 'wall' | 'tail' {
+    return this._endedBy();
+  }
+
+  /** The best score of the mode being played. */
+  public get bestScore(): number {
+    return this.scoreService.bestFor(this._mode());
   }
 
   public get isPaused(): boolean {

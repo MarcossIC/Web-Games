@@ -1,11 +1,17 @@
 <div class="modal-scrim">
   <div
     class="modal modal-bg sheet"
+    trapFocus
     role="dialog"
     aria-modal="true"
     aria-labelledby="snakeling-result-title"
   >
     <h2 id="snakeling-result-title" class="modal-title-with-bar">Game Over</h2>
+
+    <p class="cause">
+      <span class="mode" [class]="'is-' + controller.mode">{{ modeName() }}</span>
+      {{ controller.endedBy === "wall" ? "You hit the wall." : "You bit your own tail." }}
+    </p>
 
     <dl class="results">
       <div class="result-row">
@@ -14,14 +20,11 @@
       </div>
       <div class="result-row is-best">
         <dt>High Score</dt>
-        <dd>{{ controller.scoreService.maxScore }}</dd>
+        <dd>{{ controller.bestScore }}</dd>
       </div>
     </dl>
 
     <div class="sheet-actions">
-      <button class="abstract-button exit-button" type="button" (click)="close()">
-        Exit Game
-      </button>
       <button
         #play
         class="abstract-button play-button"
@@ -29,6 +32,14 @@
         (click)="playAgain()"
       >
         Play Again
+      </button>
+    </div>
+    <div class="sheet-actions">
+      <button class="abstract-button exit-button" type="button" (click)="changeMode()">
+        Change mode
+      </button>
+      <button class="abstract-button exit-button" type="button" (click)="close()">
+        Exit
       </button>
     </div>
   </div>

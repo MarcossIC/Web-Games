@@ -77,8 +77,6 @@ export class SnakelingComponent implements OnInit {
 
   /** Number of segments of the snake, for the readout. */
   protected readonly length = signal(0);
-  /** False until the first step: tells the opening dialog from a pause. */
-  protected readonly started = signal(false);
 
   // The last two bodies the game produced. Each frame is drawn somewhere
   // between them, which is what makes the snake glide.
@@ -138,7 +136,6 @@ export class SnakelingComponent implements OnInit {
     // While stopped nothing moves, but a restart may have placed the snake
     // somewhere else: reading it without motion shows that at once.
     this.readBody(!running);
-    if (running) this.started.set(true);
 
     // The snake grew, so it just ate: celebrate it where the head is,
     // with the points the game gave for it.
@@ -216,6 +213,7 @@ export class SnakelingComponent implements OnInit {
         heading: { x: this.snake.speedSnakeX, y: this.snake.speedSnakeY },
         food: { x: this.food.foodX, y: this.food.foodY },
         dead: this.controller.isGameOver,
+        walls: this.controller.mode === 'classic',
         time: now,
       });
       frame = requestAnimationFrame(paint);

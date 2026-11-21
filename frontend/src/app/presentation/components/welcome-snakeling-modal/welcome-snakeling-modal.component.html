@@ -6,42 +6,7 @@
     aria-modal="true"
     aria-labelledby="snakeling-dialog-title"
   >
-    @if (view() === "menu") {
-    <h2 id="snakeling-dialog-title" class="modal-title-with-bar">
-      {{ resuming() ? "Paused" : "Snakeling" }}
-    </h2>
-
-    <p class="best">
-      @if (controller.scoreService.maxScore > 0) {
-      High score <strong>{{ controller.scoreService.maxScore }}</strong>
-      } @else { No high score yet }
-    </p>
-
-    <nav class="menu" aria-label="Game menu">
-      <button
-        #first
-        class="abstract-button menu-button menu-play"
-        type="button"
-        (click)="playGame()"
-      >
-        {{ resuming() ? "Resume" : "Play" }}
-      </button>
-      <button
-        class="abstract-button menu-button"
-        type="button"
-        (click)="showHelp()"
-      >
-        How to play
-      </button>
-      <button
-        class="abstract-button menu-button menu-exit"
-        type="button"
-        (click)="close()"
-      >
-        Exit
-      </button>
-    </nav>
-    } @else {
+    @if (view() === "help") {
     <h2 id="snakeling-dialog-title" class="modal-title-with-bar">
       How to play
     </h2>
@@ -49,17 +14,22 @@
     <ul class="rules">
       <li>
         <span class="bullet bullet-food" aria-hidden="true"></span>
-        Eat the apples to grow. Each one is worth 8 points.
-      </li>
-      <li>
-        <span class="bullet bullet-wrap" aria-hidden="true"></span>
-        The edges wrap around: leave on one side, come back on the other.
+        <span>Eat the apples to grow. Each one is worth {{ pointsPerApple }} points.</span>
       </li>
       <li>
         <span class="bullet bullet-tail" aria-hidden="true"></span>
-        Don't bite your own tail, or the game is over.
+        <span>Don't bite your own tail, or the game is over.</span>
       </li>
     </ul>
+
+    <dl class="mode-rules">
+      @for (mode of modes; track mode.id) {
+      <div class="mode-rule" [class]="'is-' + mode.id">
+        <dt>{{ mode.name }}</dt>
+        <dd>{{ mode.rule }}</dd>
+      </div>
+      }
+    </dl>
 
     <!-- Touch screens have no keys: one legend for each, the CSS shows the
          one that fits the device. -->
@@ -110,7 +80,7 @@
 
     <div class="sheet-actions">
       <button
-        #first
+        data-autofocus
         class="abstract-button play-button"
         type="button"
         (click)="showMenu()"
@@ -118,6 +88,90 @@
         &larr; Back
       </button>
     </div>
+    } @else if (controller.started) {
+    <!-- A game is going: it is paused. -->
+    <h2 id="snakeling-dialog-title" class="modal-title-with-bar">Paused</h2>
+
+    <p class="best">
+      {{ current().name }} &middot; High score
+      <strong>{{ controller.bestScore }}</strong>
+    </p>
+
+    <nav class="menu" aria-label="Pause menu">
+      <button
+        data-autofocus
+        class="abstract-button menu-button menu-play"
+        type="button"
+        (click)="resume()"
+      >
+        Resume
+      </button>
+      <button class="abstract-button menu-button" type="button" (click)="showHelp()">
+        How to play
+      </button>
+      <button class="abstract-button menu-button" type="button" (click)="changeMode()">
+        Change mode
+      </button>
+      <button class="abstract-button menu-button menu-exit" type="button" (click)="close()">
+        Exit
+      </button>
+    </nav>
+    } @else {
+    <!-- The opening menu: pick a mode to play. -->
+    <h2 id="snakeling-dialog-title" class="modal-title-with-bar">Snakeling</h2>
+
+    <p class="best">Pick a mode</p>
+
+    <nav class="modes" aria-label="Game modes">
+      @for (mode of modes; track mode.id) {
+      <button
+        class="mode-card"
+        [class]="'is-' + mode.id"
+        type="button"
+        [attr.data-autofocus]="$first ? '' : null"
+        (click)="play(mode.id)"
+      >
+        <span class="mode-icon" aria-hidden="true">
+          @if (mode.id === "classic") {
+          <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <path
+              fill="currentColor"
+              d="M0 0h16v2H0zM0 14h16v2H0zM0 2h2v12H0zM14 2h2v12h-2z"
+            />
+            <path fill="currentColor" d="M4 7h2v2H4zM7 7h2v2H7z" />
+            <path class="icon-head" d="M10 7h2v2h-2z" />
+          </svg>
+          } @else {
+          <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <path
+              fill="currentColor"
+              opacity="0.55"
+              d="M0 0h3v1H0zM5 0h3v1H5zM10 0h3v1h-3zM0 15h3v1H0zM5 15h3v1H5zM10 15h3v1h-3zM0 3h1v3H0zM0 10h1v3H0zM15 3h1v3h-1zM15 10h1v3h-1z"
+            />
+            <path fill="currentColor" d="M0 7h3v2H0zM5 7h2v2H5zM8 7h2v2H8z" />
+            <path class="icon-head" d="M11 7h2v2h-2z" />
+            <path fill="currentColor" d="M14 6h1v4h-1zM15 7h1v2h-1z" />
+          </svg>
+          }
+        </span>
+        <span class="mode-name">{{ mode.name }}</span>
+        <span class="mode-tagline">{{ mode.tagline }}</span>
+        <span class="mode-best">
+          Best {{ controller.scoreService.bestFor(mode.id) }}
+        </span>
+      </button>
+      }
+    </nav>
+
+    <div class="menu-row">
+      <button class="abstract-button menu-button" type="button" (click)="showHelp()">
+        How to play
+      </button>
+      <button class="abstract-button menu-button menu-exit" type="button" (click)="close()">
+        Exit
+      </button>
+    </div>
     }
   </div>
 </div>
+
