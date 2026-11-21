@@ -80,7 +80,8 @@
 }
 
 /* ---- Mode cards ----------------------------------------------------
-   Each mode has its color: cyan for Classic, magenta for Portal. */
+   One wide card per mode, in a list: icon, name and what is different,
+   and the record at the end. Each mode has its color. */
 .is-classic {
   --tone: var(--gg-cyan);
 }
@@ -89,19 +90,23 @@
   --tone: var(--gg-magenta);
 }
 
+.is-time {
+  --tone: var(--gg-yellow);
+}
+
 .modes {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
 }
 
 .mode-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.375rem;
-  min-width: 0;
-  padding: 0.875rem 0.875rem 0.75rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.875rem;
+  min-height: 72px;
+  padding: 0.75rem 1rem 0.75rem 0.875rem;
   background: var(--gg-ink);
   border: 2px solid var(--tone);
   box-shadow: 4px 4px 0 var(--tone);
@@ -130,7 +135,6 @@
   display: block;
   width: 2.25rem;
   height: 2.25rem;
-  margin-block-end: 0.25rem;
   color: var(--tone);
 }
 
@@ -144,9 +148,21 @@
   fill: var(--gg-yellow);
 }
 
+/* On a yellow card the head stands out in white instead. */
+.is-time .icon-head {
+  fill: #fff;
+}
+
+.mode-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
 .mode-name {
   font-family: var(--gg-font-display);
-  font-size: 1.25rem;
+  font-size: 1.1875rem;
   line-height: 1.1;
   color: #fff;
 }
@@ -159,13 +175,21 @@
 }
 
 .mode-best {
-  /* At the bottom of the card, level on both cards whatever the tagline. */
-  margin-block-start: auto;
-  padding-block-start: 0.375rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
   font-family: var(--gg-font-pixel);
-  font-size: 0.75rem;
-  letter-spacing: 1px;
+  font-size: 1rem;
+  line-height: 1;
   color: var(--gg-yellow);
+}
+
+.mode-best-label {
+  font-size: 0.625rem;
+  letter-spacing: 1px;
+  color: var(--gg-muted);
+  text-transform: uppercase;
 }
 
 /* ---- How to play --------------------------------------------------- */
@@ -219,7 +243,7 @@
 
 .mode-rule {
   display: grid;
-  grid-template-columns: 5.25rem minmax(0, 1fr);
+  grid-template-columns: 6.5rem minmax(0, 1fr);
   gap: 0.75rem;
   align-items: baseline;
 }

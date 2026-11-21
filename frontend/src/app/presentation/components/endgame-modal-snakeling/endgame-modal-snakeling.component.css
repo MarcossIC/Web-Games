@@ -29,6 +29,10 @@
   --tone: var(--gg-magenta);
 }
 
+.is-time {
+  --tone: var(--gg-yellow);
+}
+
 /* Play Again on a row of its own, the two ways out under it. */
 .sheet-actions + .sheet-actions {
   margin-block-start: -0.5rem;

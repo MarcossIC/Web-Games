@@ -68,4 +68,10 @@ export const SNAKELING_MODES: readonly SnakelingModeInfo[] = [
     tagline: 'No walls',
     rule: 'No walls: leave on one side and come back on the other.',
   },
+  {
+    id: 'time',
+    name: 'Time Attack',
+    tagline: 'One minute, top score',
+    rule: 'You have one minute to score as much as you can. No walls, like Portal.',
+  },
 ];

@@ -8,10 +8,18 @@
         <dt>Score</dt>
         <dd>{{ controller.scoreService.score }}</dd>
       </div>
+      @if (timed()) {
+      <!-- Time Attack: the clock takes the place of the length. -->
+      <div class="readout readout-time" [class.is-hurry]="hurry()">
+        <dt>Time</dt>
+        <dd>{{ clock() }}</dd>
+      </div>
+      } @else {
       <div class="readout">
         <dt>Length</dt>
         <dd>{{ length() }}</dd>
       </div>
+      }
       <div class="readout readout-end">
         <dt>High Score</dt>
         <dd>{{ controller.bestScore }}</dd>

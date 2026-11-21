@@ -5,7 +5,15 @@ import { SnakeService } from './Snake.service';
 import { FoodService } from './Food.service';
 import { ACTION } from '@app/data/models/snakeling/Actions';
 import { ScoreService } from './Score.service';
-import { SnakelingMode } from '@app/data/models/snakeling/Mode';
+import {
+  hasWalls,
+  isTimed,
+  SnakelingEnding,
+  SnakelingMode,
+} from '@app/data/models/snakeling/Mode';
+
+/** How long a Time Attack game lasts. */
+export const TIME_ATTACK_MS = 60_000;
 
 @Injectable()
 export class SnakelingControllerService {
@@ -14,8 +22,10 @@ export class SnakelingControllerService {
   private _mode = signal<SnakelingMode>('portal');
   /** False on the opening menu, true once a mode was picked. */
   private _started = signal(false);
-  /** What ended the last game: a wall (Classic only) or the snake's own body. */
-  private _endedBy = signal<'wall' | 'tail'>('tail');
+  /** What ended the last game: a wall, the snake's own body, or the clock. */
+  private _endedBy = signal<SnakelingEnding>('tail');
+  /** Time Attack: what is left of the minute. */
+  private _timeLeftMs = signal(TIME_ATTACK_MS);
 
   private renderer!: Renderer2;
   private boardService = inject(BoardServiceService);
@@ -55,7 +65,7 @@ export class SnakelingControllerService {
       // Classic: the edges are walls. The snake stops against the wall,
       // where it can be seen, instead of stepping out of the board.
       if (
-        this._mode() === 'classic' &&
+        hasWalls(this._mode()) &&
         this.snakeService.nextStepLeavesBoard()
       ) {
         this._endedBy.set('wall');
@@ -96,6 +106,27 @@ export class SnakelingControllerService {
     }
   }
 
+  /**
+   * Time Attack: takes `elapsedMs` of game time off the clock, and ends
+   * the game when the minute is up. It only runs while the game does, so
+   * a pause stops the clock.
+   *
+   * The clock counts game steps, not the time on the wall: if the browser
+   * slows the game down (a tab in the background), the minute slows with
+   * it, and a player always gets the same number of steps.
+   */
+  public tickClock(elapsedMs: number): void {
+    if (!isTimed(this._mode()) || this._isPaused() || this._isGameOver()) {
+      return;
+    }
+    const left = Math.max(0, this._timeLeftMs() - elapsedMs);
+    this._timeLeftMs.set(left);
+    if (left === 0) {
+      this._endedBy.set('time');
+      this.isGameOver = true;
+    }
+  }
+
   public executeAction(key: string): void {
     const action = ACTIONS[key];
     if (action === ACTION.UP) this.snakeService.moveUp();
@@ -116,6 +147,7 @@ export class SnakelingControllerService {
       this.foodService.foodChangePosition();
     } while (this.foodCollisionInSnakeBody());
     this.initSnakeAndFood();
+    this._timeLeftMs.set(TIME_ATTACK_MS);
     this._isPaused.set(false);
     this.isGameOver = false;
   }
@@ -166,8 +198,13 @@ export class SnakelingControllerService {
   }
 
   /** What ended the last game. */
-  public get endedBy(): 'wall' | 'tail' {
+  public get endedBy(): SnakelingEnding {
     return this._endedBy();
+  }
+
+  /** Time Attack: the milliseconds left in the minute. */
+  public get timeLeftMs(): number {
+    return this._timeLeftMs();
   }
 
   /** The best score of the mode being played. */
