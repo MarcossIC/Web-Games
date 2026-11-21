@@ -30,3 +30,25 @@
     transform: scale(2.2);
   }
 }
+
+/* A slip that ended the game can be taken back. */
+.undo-link {
+  align-self: flex-start;
+  min-height: 44px;
+  font-family: var(--gg-font-pixel);
+  font-size: 0.8125rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gg-yellow);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.undo-link:hover {
+  color: var(--gg-cyan);
+}
+
+.undo-link:focus-visible {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 3px;
+}

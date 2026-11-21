@@ -6,6 +6,7 @@ import {
 } from '@angular/common';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   DestroyRef,
   OnInit,
@@ -84,6 +85,7 @@ export class ChessComponent implements OnInit {
   private document = inject(DOCUMENT);
   private platformId = inject(PLATFORM_ID);
   private destroy$ = inject(DestroyRef);
+  private cdr = inject(ChangeDetectorRef);
   protected selectedSquare: SelectedSquare;
   private pieceSafeCoords: Coords[];
   public isPromotionActive: boolean;
@@ -111,32 +113,30 @@ export class ChessComponent implements OnInit {
             (event) =>
               event.key === 'ArrowRight' ||
               event.key === 'ArrowLeft' ||
+              event.key === 'u' ||
               event.key === 'p' ||
               event.key === 'Escape'
           ),
+          filter(() => !this.controller.isPaused && !this.controller.isGameOver),
           tap(({ key }) => {
             const pointer = this.controller.gameHistory.gameHistoryPointer;
-            const historySize =
-              this.controller.gameHistory.gameHistory.length - 1;
             switch (key) {
               case 'ArrowRight':
-                if (pointer === historySize) return;
-                this.controller.gameHistory.advanceHistoryPointer();
+                if (pointer < this.livePointer)
+                  this.showPreviousPosition(pointer + 1);
                 break;
               case 'ArrowLeft':
-                if (pointer === 0) return;
-                this.controller.gameHistory.goBackHistoryPointer();
+                if (pointer > 0) this.showPreviousPosition(pointer - 1);
+                break;
+              case 'u':
+                this.undoMove();
                 break;
               case 'p':
               case 'Escape':
-                if (this.controller.isPaused) return;
                 this.controller.isPaused = true;
                 break;
-              default:
-                break;
             }
-
-            this.showPreviousPosition(pointer);
+            this.cdr.markForCheck();
           }),
           takeUntilDestroyed(this.destroy$)
         )
@@ -150,6 +150,17 @@ export class ChessComponent implements OnInit {
 
   public restartGame() {
     this.controller.restartGame();
+    this.syncWithLiveGame();
+  }
+
+  /** Takes back the last move, even the one that ended the game. */
+  public undoMove(): void {
+    if (!this.controller.undoLastMove()) return;
+    this.syncWithLiveGame();
+  }
+
+  /** Shows the position being played and forgets any half-made move. */
+  private syncWithLiveGame(): void {
     this.chessBoardView = this.controller.currentChessBoardView;
     this.selectedSquare = { symbol: PieceSymbol.UNKNOWN };
     this.pieceSafeCoords = [];
@@ -237,11 +248,6 @@ export class ChessComponent implements OnInit {
     }
 
     const { x: prevX, y: prevY } = this.selectedSquare;
-    const realPointer = this.realHistoryPointer;
-    if (realPointer !== this.controller.gameHistory.gameHistoryPointer) {
-      this.controller.gameHistory.moveHistoryPointerTo(realPointer);
-    }
-
     this.updateBoard(prevX!, prevY!, newX, newY, this.promotedPiece);
   }
 
@@ -322,36 +328,41 @@ export class ChessComponent implements OnInit {
     this.controller.gameHistory.setCheckState(checkState);
   }
 
-  public dragMove([x, y]: CoordsInARow) {
-    const { symbol } = this.selectedSquare;
-    if (!this.controller.isPaused) {
-      this.selectingPiece(x, y);
-      this.placingPiece(x, y);
-    }
+  public dragMove(coords: CoordsInARow) {
+    this.move(coords);
   }
   public move([x, y]: CoordsInARow): void {
-    if (!this.controller.isPaused) {
-      this.selectingPiece(x, y);
-      this.placingPiece(x, y);
+    if (this.controller.isPaused) return;
+    // A past position is only to look at: touching the board brings the
+    // game back, and the next touch plays.
+    if (this.isViewingHistory) {
+      this.showPreviousPosition(this.livePointer);
+      return;
     }
+    this.selectingPiece(x, y);
+    this.placingPiece(x, y);
   }
 
   public showPreviousPosition(moveIndex: number): void {
-    const { board, checkState, lastMove } = this.controller.history[moveIndex];
+    const snapshot = this.controller.history[moveIndex];
+    if (!snapshot) return;
+    if (moveIndex !== this.livePointer) {
+      this.selectedSquare = { symbol: PieceSymbol.UNKNOWN };
+      this.pieceSafeCoords = [];
+    }
+    const { board, checkState, lastMove } = snapshot;
     this.chessBoardView = board;
     this.markLastMoveAndCheckState(lastMove, checkState);
     this.controller.gameHistory.moveHistoryPointerTo(moveIndex);
   }
 
-  private get realHistoryPointer() {
-    const list = this.controller.gameHistory.moveList;
-    const listSize = list.length;
-    if (listSize === 1 || listSize === 0) {
-      return listSize === 0 ? 0 : list[0]?.length;
-    }
-    return this.currentPlayer === ChessPlayers.BLACK
-      ? listSize * 2 - 1
-      : listSize * 2;
+  /** Index of the position being played in the history. */
+  protected get livePointer(): number {
+    return Math.max(this.controller.history.length - 1, 0);
+  }
+
+  protected get isViewingHistory(): boolean {
+    return this.controller.gameHistory.gameHistoryPointer !== this.livePointer;
   }
 
   protected get currentPlayer() {

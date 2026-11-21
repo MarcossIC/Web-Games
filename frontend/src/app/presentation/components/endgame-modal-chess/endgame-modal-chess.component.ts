@@ -5,6 +5,7 @@ import {
   Component,
   ElementRef,
   inject,
+  output,
   viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
@@ -26,6 +27,8 @@ export class EndGameModalChess {
   protected controller = inject(ChessController);
   private router = inject(Router);
   private playButton = viewChild.required<ElementRef<HTMLButtonElement>>('play');
+  /** Asks the page to take back the move that ended the game. */
+  readonly undo = output<void>();
 
   constructor() {
     // Enter starts the next game without reaching for the mouse.

@@ -42,10 +42,10 @@
   </chess-game-board>
   <chess-side-controller
     [pointer]="controller.gameHistory.gameHistoryPointer"
-    [fullMoveSize]="controller.gameHistory.moveList.length"
-    [moveList]="controller.gameHistory.moveList"
-    (forward)="showPreviousPosition($event)"
-    (goBack)="showPreviousPosition($event)"
+    [lastPointer]="livePointer"
+    [canUndo]="controller.canUndo"
+    (navigate)="showPreviousPosition($event)"
+    (undo)="undoMove()"
     (reset)="restartGame()"
   >
     <chess-move-list
@@ -59,5 +59,5 @@
 @if(controller.isPaused){
 <welcome-chess-modal [resuming]="started()"></welcome-chess-modal>
 } @if(controller.isGameOver){
-<endgame-modal-chess></endgame-modal-chess>
+<endgame-modal-chess (undo)="undoMove()"></endgame-modal-chess>
 }

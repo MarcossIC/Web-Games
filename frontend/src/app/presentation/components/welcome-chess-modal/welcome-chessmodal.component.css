@@ -10,3 +10,14 @@
 .modal .rule {
   text-align: left;
 }
+
+.touch-hint strong {
+  color: var(--gg-yellow);
+}
+
+/* A phone has no keyboard: the key legend would only take room. */
+@media (hover: none) and (pointer: coarse) {
+  .keys {
+    display: none;
+  }
+}

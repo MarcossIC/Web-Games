@@ -2,18 +2,15 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
-  effect,
-  EventEmitter,
   input,
-  model,
-  Output,
-  Signal,
+  output,
 } from '@angular/core';
-import { createWatch, SIGNAL } from '@angular/core/primitives/signals';
-import { MoveList } from '@app/data/models/chess/chess-history-move';
 import { ChessButton } from '@app/presentation/components/chess-button/chess-button.component';
 
+/**
+ * The moves panel: the list of moves (projected) and the buttons to walk
+ * through it, take a move back or start over.
+ */
 @Component({
   standalone: true,
   imports: [CommonModule, ChessButton],
@@ -26,8 +23,8 @@ import { ChessButton } from '@app/presentation/components/chess-button/chess-but
           <div class="move-buttons">
             <chess-button
               label="New game"
-              (click)="reset.emit(0)"
-              [disabled]="pointer() < 0"
+              (click)="reset.emit()"
+              [disabled]="!canUndo()"
             >
               <svg
                 fill="none"
@@ -44,9 +41,30 @@ import { ChessButton } from '@app/presentation/components/chess-button/chess-but
             </chess-button>
 
             <chess-button
+              class="undo"
+              label="Undo move"
+              (click)="canUndo() && undo.emit()"
+              [disabled]="!canUndo()"
+            >
+              <svg
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"
+                />
+              </svg>
+              <span class="undo-text">Undo</span>
+            </chess-button>
+
+            <chess-button
               label="Previous move"
-              (click)="goBack.emit(pointer() - 1)"
-              [disabled]="pointer() === 0"
+              (click)="pointer() > 0 && navigate.emit(pointer() - 1)"
+              [disabled]="pointer() <= 0"
             >
               <svg
                 fill="none"
@@ -64,8 +82,8 @@ import { ChessButton } from '@app/presentation/components/chess-button/chess-but
 
             <chess-button
               label="Next move"
-              (click)="forward.emit(pointer() + 1)"
-              [disabled]="pointerIsInLast()"
+              (click)="pointer() < lastPointer() && navigate.emit(pointer() + 1)"
+              [disabled]="pointer() >= lastPointer()"
             >
               <svg
                 fill="none"
@@ -80,6 +98,25 @@ import { ChessButton } from '@app/presentation/components/chess-button/chess-but
                 />
               </svg>
             </chess-button>
+
+            <chess-button
+              label="Back to the game"
+              (click)="pointer() < lastPointer() && navigate.emit(lastPointer())"
+              [disabled]="pointer() >= lastPointer()"
+            >
+              <svg
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5"
+                />
+              </svg>
+            </chess-button>
           </div>
           <ng-content></ng-content>
         </div>
@@ -90,23 +127,13 @@ import { ChessButton } from '@app/presentation/components/chess-button/chess-but
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChessSideController {
+  /** Position shown on the board, as an index in the history. */
   public pointer = input.required<number>();
-  public fullMoveSize = input.required<number>();
-  public moveList = input<MoveList>([]);
-  @Output() reset = new EventEmitter<number>();
-  @Output() forward = new EventEmitter<number>();
-  @Output() goBack = new EventEmitter<number>();
-
-  constructor() {}
-
-  public pointerIsInLast() {
-    const last = this.moveList()[this.fullMoveSize() - 1]?.length;
-    if (this.pointer() === 0 && !last) return true;
-
-    if (last === 2) {
-      return this.pointer() === this.fullMoveSize() * 2;
-    }
-
-    return this.pointer() === this.fullMoveSize() * 2 - 1;
-  }
+  /** Index of the position being played: the end of the history. */
+  public lastPointer = input.required<number>();
+  public canUndo = input(false);
+  readonly reset = output<void>();
+  readonly undo = output<void>();
+  /** Asks to show the position at this index of the history. */
+  readonly navigate = output<number>();
 }

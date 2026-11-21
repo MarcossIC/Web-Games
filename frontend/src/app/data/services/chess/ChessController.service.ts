@@ -14,6 +14,15 @@ import { ChessMoveHandler } from '@app/data/services/chess/ChessMoveHandler.serv
 import { ChessGameStateManager } from '@app/data/services/chess/ChessGameStateManager.service';
 import { Subject } from 'rxjs';
 
+/** A move as the player asked for it, enough to play it again. */
+type PlayedMove = {
+  prevX: number;
+  prevY: number;
+  newX: number;
+  newY: number;
+  promotedPieceType: PieceSymbol | null;
+};
+
 @Injectable()
 export class ChessController {
   private chessBoard = inject(ChessBoard);
@@ -29,6 +38,8 @@ export class ChessController {
   private _gameOverType = signal(ChessGameOverType.IN_GAME);
   private _isPaused = signal(true);
   public restartActive = new Subject<boolean>();
+  /** Every move of the game so far, in order: what undo replays. */
+  private playedMoves: PlayedMove[] = [];
 
   constructor() {
     this.pieceMover.updateSafeCoords(this.chessBoard.board, {
@@ -43,6 +54,7 @@ export class ChessController {
     this.gameOverType = ChessGameOverType.IN_GAME;
     this.isGameOver = false;
     this.playerTurn = ChessPlayers.WHITE;
+    this.playedMoves = [];
 
     this.chessBoard.restart();
     this.chessHistory.resetAllHistory();
@@ -73,6 +85,7 @@ export class ChessController {
     );
     if (!moveType) return;
 
+    this.playedMoves.push({ prevX, prevY, newX, newY, promotedPieceType });
     this.swapPlayer();
     this.moveHandler.updateMoveHistory(prevX, prevY, newX, newY, moveType);
 
@@ -88,6 +101,29 @@ export class ChessController {
       this.gameOverType = gameOverType;
       this.isGameOver = true;
     }
+  }
+
+  /**
+   * Takes back the last move. The game is played again from the start
+   * without it, so castling rights, en passant, captures, check and the
+   * draw counters all come back exactly as they were.
+   */
+  public undoLastMove(): boolean {
+    if (!this.playedMoves.length) return false;
+
+    const replay = this.playedMoves.slice(0, -1);
+    this.restartGame();
+    for (const move of replay) {
+      this.movePiece(
+        move.prevX, move.prevY, move.newX, move.newY, move.promotedPieceType
+      );
+    }
+    this.chessHistory.moveHistoryPointerTo(this.history.length - 1);
+    return true;
+  }
+
+  public get canUndo(): boolean {
+    return this.playedMoves.length > 0;
   }
 
   private swapPlayer(): void {

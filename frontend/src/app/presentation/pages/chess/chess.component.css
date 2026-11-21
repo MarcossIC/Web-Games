@@ -18,6 +18,9 @@ section.chess-container {
   justify-content: center;
   gap: 1rem;
   height: 100dvh;
+  /* The game bar floats over the top of the page: the board is centered
+     in what is left under it, so it can never cover Exit or Pause. */
+  padding-block-start: var(--chess-bar-h);
   padding-inline: 1rem;
   padding-block-end: 1rem;
   font-family: var(--gg-font-mono);
@@ -30,14 +33,17 @@ section.chess-container {
   --chess-black-accent: var(--gg-magenta);
 
   /* Stacked layout: the board is as wide as the screen allows, and as
-     tall as what is left above the moves panel. */
-  --chess-side-w: min(100%, calc(var(--chess-square-size) * 8 + var(--chess-frame)));
-  --chess-side-h: 5.5rem;
+     tall as what is left above the moves strip and its buttons. The
+     panel is capped at 100% by its own max-width: a percentage inside
+     this width would not resolve on a size-contained element. */
+  --chess-player-h: 3.25rem;
+  --chess-side-w: calc(var(--chess-square-size) * 8 + var(--chess-frame));
+  --chess-side-h: 2.75rem;
   --chess-square-size: clamp(
-    28px,
+    24px,
     min(
       (100vw - 2rem - var(--chess-frame)) / 8,
-      (100dvh - var(--chess-bar-h) - 2 * var(--chess-player-h) - var(--chess-side-h) - 11.5rem) / 8
+      (100dvh - var(--chess-bar-h) - 2 * var(--chess-player-h) - var(--chess-side-h) - 10.75rem) / 8
     ),
     88px
   );
@@ -67,6 +73,7 @@ section.chess-container {
     align-items: center;
     gap: clamp(1rem, 3vw, 2.5rem);
 
+    --chess-player-h: 4rem;
     --chess-side-w: clamp(15rem, 24vw, 24rem);
     --chess-square-size: clamp(
       34px,
