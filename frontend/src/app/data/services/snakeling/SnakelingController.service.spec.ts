@@ -153,13 +153,14 @@ describe('Service: SnakelingController', () => {
       expect(controller.isGameOver).toBeFalse();
     });
 
-    it('goes through the edges, like Portal', () => {
+    it('ends the game at a wall, like Classic', () => {
       controller.start('time');
       runTo(width);
       controller.runGame();
 
-      expect(controller.isGameOver).toBeFalse();
-      expect(snake.snakeX).toBe(1);
+      expect(controller.isGameOver).toBeTrue();
+      expect(controller.endedBy).toBe('wall');
+      expect(snake.snakeX).toBe(width);
     });
   });
 });

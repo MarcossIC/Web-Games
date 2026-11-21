@@ -41,7 +41,8 @@ export class SnakeService {
 
   /**
    * Whether the next step takes the head off the board. In Portal mode it
-   * just comes back on the other side; in Classic it hits a wall.
+   * just comes back on the other side; with walls (Classic, Time Attack)
+   * it hits one.
    */
   public nextStepLeavesBoard(): boolean {
     const x = this.snakeX + this.speedSnakeX;

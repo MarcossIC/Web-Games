@@ -72,6 +72,6 @@ export const SNAKELING_MODES: readonly SnakelingModeInfo[] = [
     id: 'time',
     name: 'Time Attack',
     tagline: 'One minute, top score',
-    rule: 'You have one minute to score as much as you can. No walls, like Portal.',
+    rule: 'You have one minute to score as much as you can. Walls are deadly, like Classic.',
   },
 ];

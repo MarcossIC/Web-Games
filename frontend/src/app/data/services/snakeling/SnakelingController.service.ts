@@ -62,7 +62,7 @@ export class SnakelingControllerService {
    */
   public runGame(): void {
     if (!this._isGameOver() && !this._isPaused()) {
-      // Classic: the edges are walls. The snake stops against the wall,
+      // Walls (Classic, Time Attack): the snake stops against the wall,
       // where it can be seen, instead of stepping out of the board.
       if (
         hasWalls(this._mode()) &&
