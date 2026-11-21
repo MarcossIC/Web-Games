@@ -5,9 +5,23 @@ export const BOARD_WIDTH: number = 26;
 export const BOARD_WIDTH_MEDIUM: number = 29;
 export const BOARD_WIDTH_LARGE: number = 32;
 
+/** Fallback for phones; the real count fills the screen's height. */
 export const BOARD_HEIGHT_MOBILE: number = 22;
+export const BOARD_HEIGHT_MOBILE_MIN: number = 16;
+export const BOARD_HEIGHT_MOBILE_MAX: number = 32;
 export const BOARD_HEIGHT: number = 15;
 export const BOARD_HEIGHT_LARGE: number = 18;
+
+/** Frame, outline and shadow the stylesheet draws around the board. */
+export const SNAKE_FRAME_PX: number = 32;
+export const SNAKE_FRAME_PX_MOBILE: number = 16;
+/** Side padding of the play area on phones, both sides together. */
+export const SNAKE_SIDE_PADDING_MOBILE: number = 16;
+/**
+ * Height of everything on a phone that is not the board: the game bar,
+ * the readouts, the gaps and paddings, and the frame.
+ */
+export const SNAKE_CHROME_HEIGHT_MOBILE: number = 160;
 
 export const NOT_MOVE: number = 0;
 export const NEXT_POSITION: number = 1;

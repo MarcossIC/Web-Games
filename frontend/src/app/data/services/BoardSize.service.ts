@@ -4,6 +4,11 @@ import { WINDOW } from '@app/data/services/Window.service';
 import {
   BOARD_HEIGHT as B_SNAKE_HEIGHT,
   BOARD_HEIGHT_MOBILE as B_SNAKE_HEIGHT_MOBILE,
+  BOARD_HEIGHT_MOBILE_MIN as B_SNAKE_HEIGHT_MOBILE_MIN,
+  BOARD_HEIGHT_MOBILE_MAX as B_SNAKE_HEIGHT_MOBILE_MAX,
+  SNAKE_CHROME_HEIGHT_MOBILE,
+  SNAKE_FRAME_PX_MOBILE,
+  SNAKE_SIDE_PADDING_MOBILE,
   BOARD_HEIGHT_LARGE as B_SNAKE_HEIGHT_LARGE,
   BOARD_WIDTH as B_SNAKE_WIDTH,
   BOARD_WIDTH_MOBILE as B_SNAKE_WIDTH_MOBILE,
@@ -91,7 +96,26 @@ export class BoardSizeService {
       ? B_SNAKE_HEIGHT_LARGE
       : window.innerWidth > 600
       ? B_SNAKE_HEIGHT
-      : B_SNAKE_HEIGHT_MOBILE;
+      : this.getSnakeMobileHeight();
+  }
+  /**
+   * On a phone the board is as wide as the screen, so the cell size comes
+   * from the width; the rows are as many of those cells as fit in the
+   * height that is left, so the board fills the screen whatever its shape.
+   */
+  private getSnakeMobileHeight() {
+    const cell = Math.floor(
+      (window.innerWidth - SNAKE_SIDE_PADDING_MOBILE - SNAKE_FRAME_PX_MOBILE) /
+        B_SNAKE_WIDTH_MOBILE
+    );
+    const rows = Math.floor(
+      (window.innerHeight - SNAKE_CHROME_HEIGHT_MOBILE) / cell
+    );
+    if (!Number.isFinite(rows) || cell <= 0) return B_SNAKE_HEIGHT_MOBILE;
+    return Math.min(
+      B_SNAKE_HEIGHT_MOBILE_MAX,
+      Math.max(B_SNAKE_HEIGHT_MOBILE_MIN, rows)
+    );
   }
   private getTetrisBoardHeight() {
     return window.innerWidth <= 500

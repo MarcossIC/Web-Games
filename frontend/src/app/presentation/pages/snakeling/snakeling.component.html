@@ -1,7 +1,8 @@
 <section class="shared-container">
   <app-game-bar title="Snakeling" (pause)="onPress('p')" />
 
-  <main class="play">
+  <!-- On touch screens the snake is steered by swiping anywhere here. -->
+  <main #play class="play">
     <dl class="readouts">
       <div class="readout">
         <dt>Score</dt>
@@ -26,41 +27,6 @@
         role="img"
         aria-label="Snakeling board"
       ></canvas>
-    </div>
-
-    <div class="dpad" role="group" aria-label="Move the snake">
-      <button
-        class="dpad-key dpad-up"
-        type="button"
-        aria-label="Up"
-        (pointerdown)="onPress('w')"
-      >
-        &uarr;
-      </button>
-      <button
-        class="dpad-key dpad-left"
-        type="button"
-        aria-label="Left"
-        (pointerdown)="onPress('a')"
-      >
-        &larr;
-      </button>
-      <button
-        class="dpad-key dpad-down"
-        type="button"
-        aria-label="Down"
-        (pointerdown)="onPress('s')"
-      >
-        &darr;
-      </button>
-      <button
-        class="dpad-key dpad-right"
-        type="button"
-        aria-label="Right"
-        (pointerdown)="onPress('d')"
-      >
-        &rarr;
-      </button>
     </div>
   </main>
 </section>

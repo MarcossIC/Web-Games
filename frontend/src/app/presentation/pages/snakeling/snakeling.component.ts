@@ -25,14 +25,25 @@ import { FoodService } from '@app/data/services/snakeling/Food.service';
 import { SnakeService } from '@app/data/services/snakeling/Snake.service';
 import { Board, Cell, interpolateBody, settleBody } from './snake-motion';
 import { SnakelingCanvas } from './snakeling-canvas';
+import { Turn, TurnQueue, headingTurn, swipeTurn } from './steering';
+import { ACTIONS, SNAKE_FRAME_PX, SNAKE_FRAME_PX_MOBILE } from 'assets/constants/snakeling';
+import { ACTION } from '@app/data/models/snakeling/Actions';
 
 /** Time between two steps of the game. */
 const STEP_MS = 180;
 /** Above this the extra pixels cost a lot and are barely visible. */
 const MAX_PIXEL_RATIO = 2;
-/** Frame, outline and shadow drawn around the screen by the stylesheet. */
-const FRAME_PX = 32;
 const MIN_CELL_PX = 8;
+/** The width at which the stylesheet switches to the phone layout. */
+const PHONE_QUERY = '(max-width: 600px)';
+
+/** The key that steers each way, whichever key was pressed for it. */
+const TURN_KEYS: Partial<Record<ACTION, Turn>> = {
+  [ACTION.UP]: 'w',
+  [ACTION.LEFT]: 'a',
+  [ACTION.DOWN]: 's',
+  [ACTION.RIGHT]: 'd',
+};
 
 @Component({
   standalone: true,
@@ -48,6 +59,7 @@ const MIN_CELL_PX = 8;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SnakelingComponent implements OnInit {
+  private readonly play = viewChild.required<ElementRef<HTMLElement>>('play');
   private readonly stage = viewChild.required<ElementRef<HTMLElement>>('stage');
   private readonly screen =
     viewChild.required<ElementRef<HTMLCanvasElement>>('screen');
@@ -75,19 +87,26 @@ export class SnakelingComponent implements OnInit {
   private steppedAt = 0;
   /** Set once the canvas exists (in the browser, after the first render). */
   private painter?: SnakelingCanvas;
+  /** Turns asked for that the next steps will make, one per step. */
+  private readonly turns = new TurnQueue();
 
   constructor() {
     if (isPlatformBrowser(this.PLATFORM)) {
       const throttleDuration = 90;
       fromEvent<KeyboardEvent>(this.document, 'keydown')
         .pipe(throttleTime(throttleDuration), takeUntilDestroyed(this.destroy))
-        .subscribe((event: any) => {
-          this.controller.executeAction(event.key);
-        });
+        .subscribe((event: KeyboardEvent) => this.onPress(event.key));
     }
     // The drawing loop runs outside Angular: a frame changes pixels only,
     // so there is nothing for change detection to do 60 times a second.
-    afterNextRender(() => this.zone.runOutsideAngular(() => this.draw()));
+    // Swipes too: a finger moving fires many events, and only a turn
+    // matters, which the next step picks up.
+    afterNextRender(() =>
+      this.zone.runOutsideAngular(() => {
+        this.draw();
+        this.listenToSwipes();
+      })
+    );
   }
 
   ngOnInit(): void {
@@ -109,6 +128,12 @@ export class SnakelingComponent implements OnInit {
     const running = !this.controller.isPaused && !this.controller.isGameOver;
     const lengthBefore = this.snake.body.length;
     const scoreBefore = this.controller.scoreService.score;
+    if (running) {
+      const turn = this.turns.take();
+      if (turn) this.controller.executeAction(turn);
+    } else {
+      this.turns.clear();
+    }
     this.controller.runGame();
     // While stopped nothing moves, but a restart may have placed the snake
     // somewhere else: reading it without motion shows that at once.
@@ -150,14 +175,17 @@ export class SnakelingComponent implements OnInit {
 
     // The board is as large as the space allows, in whole pixels per cell
     // so the checkered field stays crisp.
+    const phone = window.matchMedia(PHONE_QUERY);
     const fit = () => {
       const room = stage.getBoundingClientRect();
+      // Frame, outline and shadow the stylesheet draws around the screen.
+      const frame = phone.matches ? SNAKE_FRAME_PX_MOBILE : SNAKE_FRAME_PX;
       const cell = Math.max(
         MIN_CELL_PX,
         Math.floor(
           Math.min(
-            (room.width - FRAME_PX) / columns,
-            (room.height - FRAME_PX) / rows
+            (room.width - frame) / columns,
+            (room.height - frame) / rows
           )
         )
       );
@@ -201,8 +229,57 @@ export class SnakelingComponent implements OnInit {
     });
   }
 
+  /**
+   * Steers the snake with a finger: a swipe turns it the way the finger
+   * went. The finger does not have to lift between turns: once a turn is
+   * taken, the swipe starts again from there, so one stroke can draw a
+   * whole path (right, then down, then left...).
+   */
+  private listenToSwipes(): void {
+    const area = this.play().nativeElement;
+    let from: { x: number; y: number; id: number } | null = null;
+
+    const down = (event: PointerEvent) => {
+      // A mouse is steered with the keyboard; clicks stay clicks.
+      if (event.pointerType === 'mouse') return;
+      from = { x: event.clientX, y: event.clientY, id: event.pointerId };
+    };
+    const move = (event: PointerEvent) => {
+      if (!from || event.pointerId !== from.id) return;
+      const turn = swipeTurn(event.clientX - from.x, event.clientY - from.y);
+      if (!turn) return;
+      this.steer(turn);
+      from = { x: event.clientX, y: event.clientY, id: from.id };
+    };
+    const up = (event: PointerEvent) => {
+      if (from && event.pointerId === from.id) from = null;
+    };
+
+    area.addEventListener('pointerdown', down);
+    area.addEventListener('pointermove', move);
+    area.addEventListener('pointerup', up);
+    area.addEventListener('pointercancel', up);
+    this.destroy.onDestroy(() => {
+      area.removeEventListener('pointerdown', down);
+      area.removeEventListener('pointermove', move);
+      area.removeEventListener('pointerup', up);
+      area.removeEventListener('pointercancel', up);
+    });
+  }
+
+  /** Keeps a turn for the next step, while the game is running. */
+  private steer(turn: Turn): void {
+    if (this.controller.isPaused || this.controller.isGameOver) return;
+    this.turns.push(
+      turn,
+      headingTurn(this.snake.speedSnakeX, this.snake.speedSnakeY)
+    );
+  }
+
   onPress(key: string) {
-    this.controller.executeAction(key);
+    const turn = TURN_KEYS[ACTIONS[key]];
+    if (turn) this.steer(turn);
+    else this.controller.executeAction(key);
   }
 }
 

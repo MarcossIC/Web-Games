@@ -1,1 +1,37 @@
 /* The dialog frame and the key legend come from modal.css. */
+
+.key-row dd .word {
+  margin-inline-end: 0.25rem;
+  font-family: var(--gg-font-pixel);
+  font-size: 0.9375rem;
+  color: #fff;
+}
+
+.touch-tip {
+  margin-block-start: -0.25rem;
+  font-family: var(--gg-font-mono);
+  font-size: 0.8125rem;
+  color: var(--gg-muted);
+}
+
+/* A keyboard legend where there is a keyboard, a swipe legend where the
+   screen is touched instead. Two classes, to win over `.keys` in
+   modal.css, which loads after this file. */
+.keys.touch-legend,
+.touch-tip {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .keys.touch-legend {
+    display: flex;
+  }
+
+  .touch-tip {
+    display: block;
+  }
+
+  .keys.key-legend {
+    display: none;
+  }
+}

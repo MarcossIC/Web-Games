@@ -76,15 +76,22 @@
   animation: gg-emerge 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s backwards;
 }
 
-/* On-screen keys for touch. Hidden where there is a keyboard-sized
-   window, as the game always did. */
-.dpad {
-  display: none;
-}
-
 @media screen and (max-width: 600px) {
+  /* The whole play area takes swipes: the page must not scroll, zoom or
+     pull to refresh under the finger. The 16px of side padding and the
+     thinner frame are SNAKE_SIDE_PADDING_MOBILE and SNAKE_FRAME_PX_MOBILE
+     in the snakeling constants: keep them in step. */
   .play {
-    padding: 0.25rem 0.75rem 1rem;
+    padding: 0.25rem 0.5rem 0.75rem;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .screen {
+    border-width: 4px;
+    box-shadow: 5px 5px 0 0 var(--gg-magenta);
   }
 
   .readout {
@@ -95,46 +102,5 @@
 
   .readout dd {
     font-size: 1.125rem;
-  }
-
-  .dpad {
-    flex: none;
-    display: grid;
-    grid-template-columns: repeat(3, 56px);
-    grid-template-rows: repeat(2, 56px);
-    gap: 6px;
-  }
-
-  .dpad-key {
-    display: grid;
-    place-items: center;
-    background: var(--gg-panel);
-    border: 2px solid #3a3360;
-    box-shadow: 0 4px 0 #3a3360;
-    color: #fff;
-    font-size: 1.375rem;
-    /* A double tap must steer twice, not zoom the page. */
-    touch-action: manipulation;
-  }
-
-  .dpad-key:active {
-    transform: translateY(3px);
-    box-shadow: 0 1px 0 #3a3360;
-  }
-
-  .dpad-up {
-    grid-area: 1 / 2;
-  }
-
-  .dpad-left {
-    grid-area: 2 / 1;
-  }
-
-  .dpad-down {
-    grid-area: 2 / 2;
-  }
-
-  .dpad-right {
-    grid-area: 2 / 3;
   }
 }
