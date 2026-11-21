@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { SnakelingControllerService } from '@app/data/services/snakeling/SnakelingController.service';
-import { POINTS_PER_APPLE } from '@app/data/services/snakeling/Score.service';
+import { comboMultiplier } from '@app/data/services/snakeling/scoring';
 import { TrapFocusDirective } from '@app/shared/directives/TrapFocus.directive';
 import { SNAKELING_MODES } from 'assets/constants/snakeling';
 
@@ -46,10 +46,17 @@ export class EndgameModalSnakelingComponent {
     this.router.navigate(['/games']);
   }
 
-  /** Apples eaten this game: each one gave the same points. */
-  protected readonly apples = computed(() =>
-    Math.round(this.controller.scoreService.score / POINTS_PER_APPLE)
-  );
+  /** Apples eaten this game (golden ones not counted). */
+  protected apples(): number {
+    return this.controller.scoreService.apples;
+  }
+
+  /** The longest combo of the game, with the multiplier it reached. */
+  protected bestCombo(): string {
+    const combo = this.controller.scoreService.bestCombo;
+    const multiplier = comboMultiplier(combo);
+    return `${combo} (x${multiplier >= 10 ? multiplier : multiplier.toFixed(1)})`;
+  }
 
   /** Another game in the same mode. */
   protected playAgain(): void {

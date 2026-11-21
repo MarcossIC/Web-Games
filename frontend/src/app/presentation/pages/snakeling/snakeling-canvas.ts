@@ -1,4 +1,5 @@
 import { Board, Cell, unwrapBody } from './snake-motion';
+import { GOLDEN_APPLE_WARNING_MS } from '@app/data/services/snakeling/scoring';
 
 /** What the painter needs to draw one frame. Cells are 1-based. */
 export interface SnakeFrame {
@@ -7,6 +8,8 @@ export interface SnakeFrame {
   /** Direction the head is facing: one of x or y is -1 or 1. */
   heading: Cell;
   food: Cell;
+  /** The golden apple and the time it has left, while one is out. */
+  golden: { at: Cell; leftMs: number } | null;
   /** True once the game is lost. */
   dead: boolean;
   /** True when the edges are walls (Classic); false when they are portals. */
@@ -20,6 +23,8 @@ interface Burst {
   at: Cell;
   label: string;
   startedAt: number;
+  /** A golden apple's burst: more sparks, in gold. */
+  golden: boolean;
 }
 
 type Rgb = readonly [number, number, number];
@@ -51,6 +56,13 @@ const APPLE = '#d81e2c';
 const APPLE_OUTLINE = '#7c0f18';
 const APPLE_SHINE = '#ff9aa2';
 const LEAF = '#2f8f2a';
+
+const GOLD = '#ffc928';
+const GOLD_OUTLINE = '#8a5a00';
+const GOLD_SHINE = '#fff6c2';
+const GOLD_GLOW = 'rgba(255, 225, 74, 0.45)';
+/** In its last moments the golden apple blinks this fast. */
+const GOLD_BLINK_MS = 160;
 const STEM = '#5a3a1a';
 
 const BURST_MS = 650;
@@ -121,8 +133,13 @@ export class SnakelingCanvas {
    * The snake just ate: sparks and the points earned where it happened,
    * the head swells, and the bite starts travelling down the body.
    */
-  bite(at: Cell, label: string, now: number): void {
-    this.bursts.push({ at: { x: at.x, y: at.y }, label, startedAt: now });
+  bite(at: Cell, label: string, now: number, golden = false): void {
+    this.bursts.push({
+      at: { x: at.x, y: at.y },
+      label,
+      startedAt: now,
+      golden,
+    });
     this.bittenAt = now;
   }
 
@@ -137,6 +154,7 @@ export class SnakelingCanvas {
     if (frame.walls) this.drawWalls();
     else this.drawPortals(frame.time);
     this.drawApple(frame.food, frame.time);
+    if (frame.golden) this.drawGoldenApple(frame.golden, frame.time);
     this.drawSnake(frame);
     this.drawBursts(frame.time);
   }
@@ -250,7 +268,54 @@ export class SnakelingCanvas {
     context.restore();
   }
 
-  private drawApple(food: Cell, time: number): void {
+  /**
+   * The golden apple: the shape of the apple, in gold, with a pulsing
+   * glow and a twinkle so it is seen at once. In its last moments it
+   * blinks, to say it is about to go.
+   */
+  private drawGoldenApple(
+    golden: { at: Cell; leftMs: number },
+    time: number
+  ): void {
+    const leaving = golden.leftMs <= GOLDEN_APPLE_WARNING_MS;
+    if (leaving && Math.floor(time / GOLD_BLINK_MS) % 2 === 1) return;
+
+    const { context, cell } = this;
+    const at = this.center(golden.at);
+    const pulse = 0.5 + 0.5 * Math.sin(time / 180);
+
+    context.save();
+    context.fillStyle = GOLD_GLOW;
+    context.globalAlpha = 0.5 + 0.5 * pulse;
+    context.beginPath();
+    context.arc(at.x, at.y, cell * (0.5 + 0.1 * pulse), 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+
+    this.drawApple(golden.at, time + 400, {
+      body: GOLD,
+      outline: GOLD_OUTLINE,
+      shine: GOLD_SHINE,
+    });
+
+    // A four-pointed twinkle that comes and goes at the top right.
+    const twinkle = Math.max(0, Math.sin(time / 240));
+    if (twinkle > 0) {
+      const size = cell * 0.22 * twinkle;
+      const x = at.x + cell * 0.3;
+      const y = at.y - cell * 0.28;
+      const thin = Math.max(1, cell * 0.05);
+      context.fillStyle = '#fff';
+      context.fillRect(x - size / 2, y - thin / 2, size, thin);
+      context.fillRect(x - thin / 2, y - size / 2, thin, size);
+    }
+  }
+
+  private drawApple(
+    food: Cell,
+    time: number,
+    colors = { body: APPLE, outline: APPLE_OUTLINE, shine: APPLE_SHINE }
+  ): void {
     const { context, cell } = this;
     const at = this.center(food);
     // A slow bob, so the eye finds the apple without it being loud.
@@ -271,15 +336,15 @@ export class SnakelingCanvas {
     );
     context.fill();
 
-    context.fillStyle = APPLE;
-    context.strokeStyle = APPLE_OUTLINE;
+    context.fillStyle = colors.body;
+    context.strokeStyle = colors.outline;
     context.lineWidth = cell * 0.06;
     context.beginPath();
     context.arc(at.x, y + cell * 0.04, radius, 0, Math.PI * 2);
     context.fill();
     context.stroke();
 
-    context.fillStyle = APPLE_SHINE;
+    context.fillStyle = colors.shine;
     context.beginPath();
     context.arc(
       at.x - radius * 0.38,
@@ -550,10 +615,17 @@ export class SnakelingCanvas {
       context.globalAlpha = 1 - t;
 
       const spark = cell * 0.16 * (1 - t * 0.6);
-      for (let i = 0; i < 8; i++) {
-        const angle = (i / 8) * Math.PI * 2;
-        const distance = cell * (0.4 + out * 1.1);
-        context.fillStyle = i % 2 === 0 ? '#fff' : '#ffe14a';
+      const sparks = burst.golden ? 12 : 8;
+      for (let i = 0; i < sparks; i++) {
+        const angle = (i / sparks) * Math.PI * 2;
+        const distance = cell * (0.4 + out * (burst.golden ? 1.6 : 1.1));
+        context.fillStyle = burst.golden
+          ? i % 2 === 0
+            ? GOLD
+            : '#fff'
+          : i % 2 === 0
+          ? '#fff'
+          : '#ffe14a';
         context.fillRect(
           at.x + Math.cos(angle) * distance - spark / 2,
           at.y + Math.sin(angle) * distance - spark / 2,
@@ -567,7 +639,7 @@ export class SnakelingCanvas {
       context.textBaseline = 'middle';
       context.lineWidth = cell * 0.12;
       context.strokeStyle = FENCE;
-      context.fillStyle = '#fff';
+      context.fillStyle = burst.golden ? GOLD : '#fff';
       const labelY = at.y - cell * (0.7 + out * 0.9);
       context.strokeText(burst.label, at.x, labelY);
       context.fillText(burst.label, at.x, labelY);

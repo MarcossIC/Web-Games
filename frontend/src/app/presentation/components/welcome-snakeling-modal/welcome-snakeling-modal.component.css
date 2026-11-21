@@ -227,6 +227,14 @@
   border-radius: 50%;
 }
 
+.bullet-combo {
+  background: var(--gg-cyan);
+}
+
+.bullet-food.is-golden {
+  background: #ffc928;
+}
+
 .bullet-tail {
   background: var(--gg-magenta);
 }

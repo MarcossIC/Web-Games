@@ -26,6 +26,25 @@
       </div>
     </dl>
 
+    <!-- The combo: its multiplier, and a bar that drains while there is
+         still time to eat the next apple. The row is always there, so
+         the board does not move when a combo starts or ends. -->
+    <div
+      class="combo"
+      [class.is-on]="controller.scoreService.combo > 0"
+      [class.is-hot]="controller.scoreService.combo >= 5"
+    >
+      <span class="combo-label">
+        Combo <b>{{ multiplier() }}</b>
+      </span>
+      <span class="combo-track" aria-hidden="true">
+        <span
+          class="combo-fill"
+          [style.transform]="'scaleX(' + controller.scoreService.comboShare() + ')'"
+        ></span>
+      </span>
+    </div>
+
     <!-- The stage is the room the board may use; the canvas is sized
          inside it from the component. -->
     <div #stage class="stage">

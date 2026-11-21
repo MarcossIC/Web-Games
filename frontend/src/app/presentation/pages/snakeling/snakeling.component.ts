@@ -127,11 +127,10 @@ export class SnakelingComponent implements OnInit {
 
   private step(): void {
     const running = !this.controller.isPaused && !this.controller.isGameOver;
-    const lengthBefore = this.snake.body.length;
-    const scoreBefore = this.controller.scoreService.score;
     if (running) {
-      // Each step is STEP_MS of game time, taken off a Time Attack clock.
-      this.controller.tickClock(STEP_MS);
+      // Each step is STEP_MS of game time: off a Time Attack clock, the
+      // combo and the golden apple.
+      this.controller.tick(STEP_MS);
       const turn = this.turns.take();
       if (turn) this.controller.executeAction(turn);
     } else {
@@ -142,11 +141,16 @@ export class SnakelingComponent implements OnInit {
     // somewhere else: reading it without motion shows that at once.
     this.readBody(!running);
 
-    // The snake grew, so it just ate: celebrate it where the head is,
-    // with the points the game gave for it.
-    if (running && this.snake.body.length > lengthBefore) {
-      const earned = this.controller.scoreService.score - scoreBefore;
-      this.painter?.bite(this.current[0], `+${earned}`, this.steppedAt);
+    // The snake just ate: celebrate it where the head is, with the
+    // points the game gave for it.
+    const bite = this.controller.lastBite;
+    if (running && bite) {
+      this.painter?.bite(
+        this.current[0],
+        `+${bite.points}`,
+        this.steppedAt,
+        bite.golden
+      );
     }
   }
 
@@ -217,6 +221,9 @@ export class SnakelingComponent implements OnInit {
         ),
         heading: { x: this.snake.speedSnakeX, y: this.snake.speedSnakeY },
         food: { x: this.food.foodX, y: this.food.foodY },
+        golden: this.food.golden
+          ? { at: this.food.golden, leftMs: this.food.goldenLeftMs }
+          : null,
         dead: this.controller.isGameOver,
         walls: hasWalls(this.controller.mode),
         time: now,
@@ -277,6 +284,12 @@ export class SnakelingComponent implements OnInit {
       turn,
       headingTurn(this.snake.speedSnakeX, this.snake.speedSnakeY)
     );
+  }
+
+  /** The combo multiplier, as the readout shows it: x1.0, x1.2 ... x10. */
+  protected multiplier(): string {
+    const value = this.controller.scoreService.multiplier();
+    return `x${value >= 10 ? value : value.toFixed(1)}`;
   }
 
   /** Whether the game is played against the clock. */

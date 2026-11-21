@@ -20,9 +20,9 @@ export const SNAKE_FRAME_PX_MOBILE: number = 16;
 export const SNAKE_SIDE_PADDING_MOBILE: number = 16;
 /**
  * Height of everything on a phone that is not the board: the game bar,
- * the readouts, the gaps and paddings, and the frame.
+ * the readouts, the combo meter, the gaps and paddings, and the frame.
  */
-export const SNAKE_CHROME_HEIGHT_MOBILE: number = 160;
+export const SNAKE_CHROME_HEIGHT_MOBILE: number = 186;
 
 export const NOT_MOVE: number = 0;
 export const NEXT_POSITION: number = 1;

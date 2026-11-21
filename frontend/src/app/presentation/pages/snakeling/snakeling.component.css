@@ -80,6 +80,70 @@
   }
 }
 
+/* The combo meter, as wide as the board. Dim while there is no combo. */
+.combo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: var(--board-width, 100%);
+  max-width: 100%;
+  height: 1.125rem;
+  margin-block-start: -0.25rem;
+  font-family: var(--gg-font-pixel);
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.combo.is-on {
+  opacity: 1;
+}
+
+.combo-label {
+  flex: none;
+  min-width: 7.5em;
+  font-size: 0.875rem;
+  letter-spacing: 1px;
+  color: var(--gg-muted);
+}
+
+.combo-label b {
+  font-weight: normal;
+  color: #fff;
+}
+
+.combo.is-hot .combo-label b {
+  color: var(--gg-yellow);
+}
+
+.combo-track {
+  flex: 1 1 auto;
+  height: 0.5rem;
+  border: 2px solid var(--gg-line);
+  background: var(--gg-panel);
+  overflow: hidden;
+}
+
+/* Scaled from the left, one game step at a time: the transition is the
+   length of a step (STEP_MS), so it drains smoothly. */
+.combo-fill {
+  display: block;
+  height: 100%;
+  background: var(--gg-cyan);
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 180ms linear;
+}
+
+.combo.is-hot .combo-fill {
+  background: var(--gg-yellow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combo-fill {
+    transition: none;
+  }
+}
+
 /* Takes whatever height is left; `min-height: 0` lets it shrink below
    the size of its content, which a flex item does not do by default. */
 .stage {
@@ -126,5 +190,9 @@
 
   .readout dd {
     font-size: 1.125rem;
+  }
+
+  .combo-label {
+    font-size: 0.75rem;
   }
 }

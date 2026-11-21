@@ -10,6 +10,12 @@ import {
   SnakelingControllerService,
   TIME_ATTACK_MS,
 } from './SnakelingController.service';
+import {
+  GOLDEN_APPLE_LIFE_MS,
+  GOLDEN_APPLE_POINTS,
+  POINTS_PER_APPLE,
+  comboWindowMs,
+} from './scoring';
 
 /** Only here to hand out a Renderer2, which comes with a component. */
 @Component({ standalone: true, template: '' })
@@ -118,12 +124,12 @@ describe('Service: SnakelingController', () => {
   describe('Time Attack', () => {
     it('ends the game when the minute is up', () => {
       controller.start('time');
-      controller.tickClock(TIME_ATTACK_MS - 1000);
+      controller.tick(TIME_ATTACK_MS - 1000);
 
       expect(controller.isGameOver).toBeFalse();
       expect(controller.timeLeftMs).toBe(1000);
 
-      controller.tickClock(1000);
+      controller.tick(1000);
 
       expect(controller.isGameOver).toBeTrue();
       expect(controller.endedBy).toBe('time');
@@ -133,14 +139,14 @@ describe('Service: SnakelingController', () => {
     it('stops the clock while paused', () => {
       controller.start('time');
       controller.changePause();
-      controller.tickClock(5000);
+      controller.tick(5000);
 
       expect(controller.timeLeftMs).toBe(TIME_ATTACK_MS);
     });
 
     it('gives a full minute again on a new game', () => {
       controller.start('time');
-      controller.tickClock(20_000);
+      controller.tick(20_000);
       controller.reset();
 
       expect(controller.timeLeftMs).toBe(TIME_ATTACK_MS);
@@ -148,7 +154,7 @@ describe('Service: SnakelingController', () => {
 
     it('has no clock in the other modes', () => {
       controller.start('classic');
-      controller.tickClock(TIME_ATTACK_MS);
+      controller.tick(TIME_ATTACK_MS);
 
       expect(controller.isGameOver).toBeFalse();
     });
@@ -161,6 +167,145 @@ describe('Service: SnakelingController', () => {
       expect(controller.isGameOver).toBeTrue();
       expect(controller.endedBy).toBe('wall');
       expect(snake.snakeX).toBe(width);
+    });
+  });
+
+  /** Puts the apple on the cell right ahead of the head. */
+  const appleAhead = () => {
+    food.foodX = snake.snakeX + snake.speedSnakeX;
+    food.foodY = snake.snakeY + snake.speedSnakeY;
+  };
+
+  describe('Combo', () => {
+    beforeEach(() => {
+      controller.start('portal');
+      // No golden apple gets in the way of these.
+      controller.random = () => 0.99;
+    });
+
+    it('multiplies the points of apples eaten in a row', () => {
+      appleAhead();
+      controller.runGame();
+      expect(controller.scoreService.score).toBe(POINTS_PER_APPLE);
+      expect(controller.lastBite?.points).toBe(POINTS_PER_APPLE);
+
+      appleAhead();
+      controller.runGame();
+      // The second in a row is worth x1.2: 8 * 1.2 = 9.6, so 10.
+      expect(controller.scoreService.combo).toBe(2);
+      expect(controller.lastBite?.points).toBe(10);
+      expect(controller.scoreService.score).toBe(18);
+    });
+
+    it('ends when the time for the next apple runs out', () => {
+      appleAhead();
+      controller.runGame();
+      controller.tick(comboWindowMs(1));
+
+      expect(controller.scoreService.combo).toBe(0);
+
+      appleAhead();
+      controller.runGame();
+      expect(controller.lastBite?.points).toBe(POINTS_PER_APPLE);
+      expect(controller.scoreService.combo).toBe(1);
+    });
+
+    it('stops its time while paused', () => {
+      appleAhead();
+      controller.runGame();
+      controller.changePause();
+      controller.tick(comboWindowMs(1));
+
+      expect(controller.scoreService.combo).toBe(1);
+    });
+
+    it('starts over on a new game', () => {
+      appleAhead();
+      controller.runGame();
+      controller.reset();
+
+      expect(controller.scoreService.combo).toBe(0);
+      expect(controller.scoreService.apples).toBe(0);
+    });
+  });
+
+  describe('Golden apple', () => {
+    beforeEach(() => controller.start('portal'));
+
+    /** Rolls the dice so that the apple brings its golden apple now. */
+    const bringGolden = () => {
+      controller.random = () => 0;
+      controller.tick(180);
+      controller.random = () => 0.99;
+    };
+
+    it('shows up by luck, at most once for each apple', () => {
+      controller.random = () => 0.99;
+      controller.tick(180);
+      expect(food.golden).toBeNull();
+
+      bringGolden();
+      expect(food.golden).not.toBeNull();
+
+      // It goes when its time is up...
+      controller.tick(GOLDEN_APPLE_LIFE_MS);
+      expect(food.golden).toBeNull();
+
+      // ...and the same apple does not bring another one.
+      controller.random = () => 0;
+      controller.tick(180);
+      expect(food.golden).toBeNull();
+
+      // Eating the apple lets the next one bring its own.
+      appleAhead();
+      controller.runGame();
+      controller.tick(180);
+      expect(food.golden).not.toBeNull();
+    });
+
+    it('never shows up on the snake, the apple, or right ahead of the head', () => {
+      for (let i = 0; i < 50; i++) {
+        food.resetGolden();
+        // The first roll brings the golden apple, the second places it.
+        const rolls = [0, i / 50];
+        controller.random = () => rolls.shift() ?? 0;
+        controller.tick(180);
+        const golden = food.golden!;
+        expect(snake.verifyCollision(golden.x, golden.y)).toBeFalse();
+        expect(golden.x === food.foodX && golden.y === food.foodY).toBeFalse();
+        expect(
+          golden.x === snake.snakeX + 1 && golden.y === snake.snakeY
+        ).toBeFalse();
+      }
+    });
+
+    it('gives its points without growing the snake or touching the combo', () => {
+      bringGolden();
+      food.golden = { x: snake.snakeX + 1, y: snake.snakeY };
+      // The apple elsewhere, so only the golden one is eaten.
+      food.foodX = snake.snakeX;
+      food.foodY = snake.snakeY === 1 ? 2 : 1;
+      const length = snake.body.length;
+
+      controller.runGame();
+
+      expect(controller.scoreService.score).toBe(GOLDEN_APPLE_POINTS);
+      expect(snake.body.length).toBe(length);
+      expect(controller.scoreService.combo).toBe(0);
+      expect(food.golden).toBeNull();
+      expect(controller.lastBite).toEqual({
+        at: { x: snake.snakeX, y: snake.snakeY },
+        points: GOLDEN_APPLE_POINTS,
+        golden: true,
+      });
+    });
+
+    it('is gone on a new game', () => {
+      bringGolden();
+      controller.reset();
+
+      expect(food.golden).toBeNull();
+      expect(food.goldenSpent).toBeFalse();
     });
   });
 });

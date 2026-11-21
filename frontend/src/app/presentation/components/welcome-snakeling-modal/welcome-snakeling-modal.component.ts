@@ -12,7 +12,10 @@ import {
 import { Router } from '@angular/router';
 import { SnakelingMode } from '@app/data/models/snakeling/Mode';
 import { SNAKELING_MODES } from 'assets/constants/snakeling';
-import { POINTS_PER_APPLE } from '@app/data/services/snakeling/Score.service';
+import {
+  GOLDEN_APPLE_POINTS,
+  POINTS_PER_APPLE,
+} from '@app/data/services/snakeling/scoring';
 import { SnakelingControllerService } from '@app/data/services/snakeling/SnakelingController.service';
 import { TrapFocusDirective } from '@app/shared/directives/TrapFocus.directive';
 
@@ -44,6 +47,7 @@ export class WelcomeSnakelingModalComponent {
 
   protected readonly modes = SNAKELING_MODES;
   protected readonly pointsPerApple = POINTS_PER_APPLE;
+  protected readonly goldenPoints = GOLDEN_APPLE_POINTS;
   protected readonly view = signal<SnakelingMenuView>('menu');
   /** The mode of the game that is paused. */
   protected readonly current = computed(

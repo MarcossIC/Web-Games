@@ -19,11 +19,14 @@ export interface SnakelingRecords {
  * `bestClassic` and `bestTimeAttack` came later without a version bump on
  * purpose: the shape only grew, a value saved without them reads them as
  * 0, and the records already saved are kept.
+ *
+ * Version 2: the combo and the golden apple changed the scoring, so the
+ * records of the old scoring are not kept.
  */
 export const snakelingRecords = defineEntry<SnakelingRecords>({
   game: 'snakeling',
   name: 'records',
-  version: 1,
+  version: 2,
   fallback: { bestScore: 0, bestClassic: 0, bestTimeAttack: 0 },
   fields: { bestScore: count(), bestClassic: count(), bestTimeAttack: count() },
 });

@@ -26,6 +26,12 @@
         <dt>Score</dt>
         <dd>{{ controller.scoreService.score }}</dd>
       </div>
+      @if (controller.scoreService.bestCombo > 1) {
+      <div class="result-row">
+        <dt>Best Combo</dt>
+        <dd>{{ bestCombo() }}</dd>
+      </div>
+      }
       <div class="result-row is-best">
         <dt>High Score</dt>
         <dd>{{ controller.bestScore }}</dd>

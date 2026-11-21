@@ -54,14 +54,27 @@ describe('EndgameModalSnakelingComponent', () => {
     controller.start('time');
     // reset is spied on, so the game is still paused: let it run.
     controller.changePause();
-    controller.scoreService.score = 40;
-    controller.tickClock(60_000);
+    for (let i = 0; i < 5; i++) controller.scoreService.eatApple();
+    controller.scoreService.eatGoldenApple();
+    controller.tick(60_000);
     show();
 
     expect(root.querySelector('h2')!.textContent!.trim()).toBe("Time's Up");
     expect(root.querySelector('.cause')!.textContent).toContain(
       '5 apples in one minute.'
     );
+  });
+
+  it('shows the best combo of the game', () => {
+    controller.start('portal');
+    for (let i = 0; i < 3; i++) controller.scoreService.eatApple();
+    show();
+
+    const rows = Array.from(root.querySelectorAll('.result-row')).map((row) => [
+      row.querySelector('dt')!.textContent!.trim(),
+      row.querySelector('dd')!.textContent!.trim(),
+    ]);
+    expect(rows).toContain(['Best Combo', '3 (x1.3)']);
   });
 
   it('offers to play again, change mode, or exit', () => {

@@ -17,6 +17,21 @@
         <span>Eat the apples to grow. Each one is worth {{ pointsPerApple }} points.</span>
       </li>
       <li>
+        <span class="bullet bullet-combo" aria-hidden="true"></span>
+        <span>
+          Eat them in a row for a combo: x1.2 for the second, 0.1 more for
+          each one after, up to x10. Each apple gives you a little more
+          time for the next.
+        </span>
+      </li>
+      <li>
+        <span class="bullet bullet-food is-golden" aria-hidden="true"></span>
+        <span>
+          Now and then a golden apple shows up for a few seconds: {{ goldenPoints }}
+          points, and you don't grow.
+        </span>
+      </li>
+      <li>
         <span class="bullet bullet-tail" aria-hidden="true"></span>
         <span>Don't bite your own tail, or the game is over.</span>
       </li>
