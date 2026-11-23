@@ -5,4 +5,6 @@ export { hasMouse, type MediaHost, startsAsTouch } from './device';
 export { HoldToConfirm } from './hold';
 export { CanvasPointerLock, type PointerLockHost } from './pointer-lock';
 export { isFreshPress } from './repeat';
+export { type Direction, SWIPE_MIN_PX, type SwipePointer, SwipeTracker, swipeDirection } from './swipe';
 export { TapTracker } from './tap';
+export { contains, type Finger, heldZones, type Rect, type Zone } from './zones';

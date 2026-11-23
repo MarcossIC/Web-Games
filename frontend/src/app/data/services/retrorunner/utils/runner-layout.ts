@@ -1,3 +1,5 @@
+import type { Rect } from '@app-input';
+
 /**
  * The shape of the picture, decided from the screen it is shown on.
  *
@@ -58,12 +60,7 @@ export const LAYOUT_CHANGED = 'runner-layout-changed';
 
 export type LayoutMode = 'desktop' | 'deck' | 'overlay';
 
-export interface Rect {
-  readonly x: number;
-  readonly y: number;
-  readonly w: number;
-  readonly h: number;
-}
+export { contains, type Rect } from '@app-input';
 
 /** A key on the screen. */
 export interface TouchButton {
@@ -276,10 +273,6 @@ export function wasTurned(previous: RunnerLayout, next: RunnerLayout): boolean {
 /** The layout a scene draws with, read from the game's registry. */
 export function layoutOf(registry: { get(key: string): unknown }): RunnerLayout {
   return (registry.get(RUNNER_LAYOUT) as RunnerLayout | undefined) ?? DESKTOP_LAYOUT;
-}
-
-export function contains(rect: Rect, x: number, y: number): boolean {
-  return x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h;
 }
 
 /** Where a line of the HUD goes: `originX` 0 starts at x, 1 ends at it. */
