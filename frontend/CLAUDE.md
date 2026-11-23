@@ -44,7 +44,19 @@ Constants and static assets live under `src/assets/constants/` and `src/assets/i
 @app-services/*     → src/app/data/services/*
 @app-models/*       → src/app/data/models/*
 @app-persistence    → src/app/data/persistence/index.ts
+@app-input          → src/app/data/input/index.ts
 ```
+
+### Input
+
+Everything a player controls a game with (keys, the pointer, touch pads and swipes, buttons drawn on a canvas, vibration) goes through `data/input/` (`@app-input`). Games ask for actions (`left`, `jump`, `pause`…) and never read a key or a device themselves:
+
+- Each game declares its actions and keys in `data/services/<game>/<game>-controls.ts` as `KeyBinding`s, matched by `keys` (`KeyboardEvent.key`), `codes` (the place on the keyboard) or `keyCodes` (the layout's letter, what Phaser's Keys use). Keep the one the game already used. Filters are per binding: `ignoreCase`, `ignoreRepeat`, `ignoreModifiers` (Ctrl, Cmd, Alt). `bindKeys` turns the table into a function; `otherwise` gives an action to keys with no binding (Tetris: any key settles a resting piece).
+- The core is plain TypeScript: `key-bindings`, `action-source` (`ActionSource`, `anyDown`: an action is down if any source holds it — the place to add a stick on screen, a gamepad or the tilt of the phone), `zones` (`heldZones`, touch pads read from scratch every frame), `tap` (`TapTracker`, buttons that act on release), `swipe`, `hold` (`HoldToConfirm`), `repeat` (`isFreshPress`), `device`, `pointer-lock` and `haptics` (`vibrate`, a no-op where the device cannot). It never imports a game, Angular or Phaser.
+- Angular pages use `keyActions(bindings, { on, throttleMs?, otherwise? })` in an injection context: it listens on the document in the browser, nothing on the server, and stops with the component. `listenSwipes(element, onDirection)` is plain DOM, for code outside the zone.
+- Phaser scenes import `@app-input/phaser-input`: `heldKeys(keyboard, bindings)` (Phaser Keys from `keyCodes`, read every frame; `onPress` hands each press its event) and `keyPresses(keyboard, bindings, onDown, onUp?)`. It only imports Phaser's types.
+- Picking with the pointer (a card, a cell, a chess square) stays a `(click)` in the template, and Nova Breaker's analog paddle stays in `InputState`: those are the game's own, not a device's.
+- Tests: core specs feed `KeyLike` objects; `phaser-input.spec.ts` boots a real Phaser game. Run the suite with `ng test --browsers=ChromeHeadless`: the windowed Chrome stalls on the Phaser specs.
 
 ### Persistence
 
@@ -72,7 +84,7 @@ Everything kept between visits (records, settings, the install prompt's snooze) 
 | Game | Rendering |
 |------|-----------|
 | Tetris | Canvas 2D |
-| Retro Runner | Phaser 3 engine |
+| Retro Runner | Phaser 4 engine |
 | Nova Breaker | Phaser 4 rendering a pure TS engine (`data/services/breaker/engine/`) |
 | Chess | Angular templates + SVG piece components |
 | Snake, Memorama, Tic-Tac-Toe | DOM-based with CSS |
