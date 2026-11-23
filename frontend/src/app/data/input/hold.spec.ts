@@ -1,4 +1,4 @@
-import { HoldToConfirm, isFreshPress } from './hold-to-confirm';
+import { HoldToConfirm } from './hold';
 
 const FRAME_MS = 1000 / 60;
 
@@ -50,16 +50,5 @@ describe('HoldToConfirm', () => {
 
     confirm.update(true, 1000);
     expect(confirm.progress).toBe(1);
-  });
-});
-
-describe('isFreshPress', () => {
-  it('counts a hold that began with a real press', () => {
-    expect(isFreshPress({ repeat: false })).toBeTrue();
-  });
-
-  it('does not count a key held from before, which comes back as repeats', () => {
-    expect(isFreshPress({ repeat: true })).toBeFalse();
-    expect(isFreshPress(undefined)).toBeFalse();
   });
 });

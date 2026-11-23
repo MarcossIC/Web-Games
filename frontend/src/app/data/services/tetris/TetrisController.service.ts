@@ -3,7 +3,6 @@ import { BoardService } from '@app/data/services/tetris/Board.service';
 import { BagOfPiecesService } from './BagOfPieces.service';
 import { Piece } from '@app/data/models/tetris/Piece';
 import {
-  ACTIONS,
   LINE_WIDTH_SCALE,
   SHADOW_BLUR_SCALE,
   SPEED_PER_LEVEL,
@@ -153,22 +152,22 @@ export class TetrisControllerService {
   }
 
   /**
-   * Ejecuta una acción en el juego basada en la tecla presionada.
+   * Ejecuta una acción en el juego.
    *
-   * @param key - La tecla presionada que determina la acción a ejecutar.
+   * @param action - La acción pedida (ver tetris-controls.ts), o null para
+   * una tecla sin acción.
    *
-   * Realiza diferentes acciones dependiendo de la tecla:
+   * Realiza diferentes acciones dependiendo de la acción:
    * - Mueve o rota la pieza si no hay colisión y el juego está activo.
-   * - Verifica efectos de colisión si la pieza no puede moverse hacia abajo.
-   * - Alterna el estado de pausa del juego si se presiona la tecla de pausa.
+   * - Verifica efectos de colisión si la pieza no puede moverse hacia abajo
+   *   (también con null: cualquier tecla fija una pieza apoyada).
+   * - Alterna el estado de pausa del juego con la acción de pausa.
    */
-  public executeAction(key: string): void {
-    const action = ACTIONS[key];
-
+  public executeAction(action: ACTION | null): void {
     //Las acciones solo se ejecutan si el juego no ha terminado y no está pausado
     if (!this._isGameOver() && !this._isPaused()) {
       if (
-        action !== undefined &&
+        action !== null &&
         !this.boardController.detectedACollision(this.bagOfPieces.currentPiece, action)
       ) {
         this.bagOfPieces.movePiece(action);

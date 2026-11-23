@@ -10,7 +10,8 @@ import {
   Rect,
   RunnerLayout,
 } from '@app/data/services/retrorunner/utils/runner-layout';
-import { idlePad, readPad, TapTracker } from '@app/data/services/retrorunner/utils/touch-pad';
+import { TapTracker } from '@app-input';
+import { idlePad, readPad } from '@app/data/services/retrorunner/utils/touch-pad';
 import { GameObjects, Scene } from 'phaser';
 
 const DECK_COLOR = 0x100e1c;

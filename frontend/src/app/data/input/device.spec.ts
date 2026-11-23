@@ -1,4 +1,4 @@
-import { hasMouse, startsAsTouch } from './input-device';
+import { hasMouse, startsAsTouch } from './device';
 
 describe('startsAsTouch', () => {
   const media = (coarse: boolean) => ({

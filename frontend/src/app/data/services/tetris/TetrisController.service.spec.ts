@@ -1,4 +1,7 @@
 import { TestBed } from '@angular/core/testing';
+import { bindKeys } from '@app-input';
+import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
+import { TETRIS_KEYS } from './tetris-controls';
 import { BagOfPiecesService } from './BagOfPieces.service';
 import { BoardService } from './Board.service';
 import { NextPieceBoardService } from './NextPieceBoard.service';
@@ -24,6 +27,9 @@ describe('TetrisControllerService', () => {
     controller = TestBed.inject(TetrisControllerService);
   });
 
+  /** A key press, read through the game's bindings as the page does. */
+  const press = (key: string) => controller.executeAction(bindKeys(TETRIS_KEYS, { otherwise: null })({ key }) ?? null);
+
   it('starts paused and has not started yet', () => {
     expect(controller.isPaused).toBeTrue();
     expect(controller.hasStarted).toBeFalse();
@@ -33,10 +39,10 @@ describe('TetrisControllerService', () => {
     it(`pauses a running game with "${key}" and resumes it with the same key`, () => {
       controller.resume();
 
-      controller.executeAction(key);
+      press(key);
       expect(controller.isPaused).toBeTrue();
 
-      controller.executeAction(key);
+      press(key);
       expect(controller.isPaused).toBeFalse();
     });
   }
@@ -53,8 +59,27 @@ describe('TetrisControllerService', () => {
     controller.gameOver = true;
     controller.pause();
 
-    controller.executeAction('p');
+    press('p');
 
     expect(controller.isPaused).toBeTrue();
+  });
+
+  it('settles a resting piece on any key, even one with no action', () => {
+    const board = TestBed.inject(BoardService);
+    spyOn(board, 'detectedACollision').and.returnValue(true);
+    const settle = spyOn<any>(controller, 'checkCollisionEffects');
+    controller.resume();
+
+    controller.executeAction(null);
+
+    expect(settle).toHaveBeenCalled();
+  });
+
+  it('does nothing with a key while paused', () => {
+    const settle = spyOn<any>(controller, 'checkCollisionEffects');
+
+    controller.executeAction(ACTION.LEFT);
+
+    expect(settle).not.toHaveBeenCalled();
   });
 });

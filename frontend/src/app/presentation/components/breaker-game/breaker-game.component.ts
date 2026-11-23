@@ -11,8 +11,7 @@ import {
 } from '@angular/core';
 import { BreakerControllerService } from '@app/data/services/breaker/BreakerController.service';
 import StartBreaker from '@app/data/services/breaker/main';
-import { CanvasPointerLock } from '@app/data/services/breaker/pointer-lock';
-import { hasMouse } from '@app/data/services/breaker/view/input-device';
+import { CanvasPointerLock, hasMouse } from '@app-input';
 import type { Game } from 'phaser';
 
 /** Hosts the Phaser game of Nova Breaker. */

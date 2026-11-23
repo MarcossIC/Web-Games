@@ -1,4 +1,4 @@
-import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -17,7 +17,9 @@ import { ChronometerComponent } from '@app/presentation/components/chronometer/c
 import { EndgameModalMemoramaComponent } from '@app/presentation/components/endgame-modal-memorama/endgame-modal-memorama.component';
 import { WelcomeMomeramaModalComponent } from '@app/presentation/components/welcome-momerama-modal/welcome-momerama-modal.component';
 import { TOTAL_CARDS } from 'assets/constants/memorama';
-import { filter, fromEvent, interval } from 'rxjs';
+import { interval } from 'rxjs';
+import { keyActions } from '@app-input';
+import { MEMORAMA_KEYS } from '@app/data/services/memorama/memorama-controls';
 import { GameBarComponent } from '@app-components/game-bar/game-bar.component';
 import { PixelEmblemComponent } from '@app-components/pixel-emblem/pixel-emblem.component';
 import { CardArt, cardArt } from './memorama-deck';
@@ -46,7 +48,6 @@ export class MemoramaComponent implements AfterViewInit {
   protected controller = inject(MemoramaControllerService);
   private destroy$ = inject(DestroyRef);
   private platform = inject(PLATFORM_ID);
-  private document = inject(DOCUMENT);
   public cards: number[] = [];
   protected readonly pairs = TOTAL_CARDS / 2;
 
@@ -86,16 +87,11 @@ export class MemoramaComponent implements AfterViewInit {
     interval(1000)
       .pipe(takeUntilDestroyed(this.destroy$))
       .subscribe(() => this.controller.verifyTime());
+    keyActions(MEMORAMA_KEYS, { on: 'keyup' }).subscribe(() => this.controller.pause());
   }
 
   ngAfterViewInit(): void {
     if (isPlatformBrowser(this.platform)) {
-      fromEvent<KeyboardEvent>(this.document, 'keyup')
-        .pipe(
-          takeUntilDestroyed(this.destroy$),
-          filter(({ key }) => key === 'p' || key === 'Escape')
-        )
-        .subscribe((_) => this.controller.pause());
 
       const gameCards = document.querySelectorAll('#game-memorama .game-card');
       gameCards.forEach((card: any) => {

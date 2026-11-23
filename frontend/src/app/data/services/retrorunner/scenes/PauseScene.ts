@@ -2,10 +2,11 @@ import * as Phaser from 'phaser';
 import { EventBus } from '@app/data/services/phaser/EventBus';
 import { RESTART_HOLD_MS, RunnerEvents, SceneKeys } from '@app/data/services/retrorunner/main';
 import HoldBar from '@app/data/services/retrorunner/utils/HoldBar';
-import { HoldToConfirm, isFreshPress } from '@app/data/services/retrorunner/utils/hold-to-confirm';
+import { HoldToConfirm, isFreshPress, TapTracker } from '@app-input';
+import { type HeldKeys, heldKeys, keyPresses } from '@app-input/phaser-input';
+import { PAUSE_SCREEN_HELD_KEYS, PAUSE_SCREEN_KEYS } from '@app/data/services/retrorunner/runner-controls';
 import PixelKey, { KEY_LOOKS } from '@app/data/services/retrorunner/utils/PixelKey';
 import { contains, LAYOUT_CHANGED, layoutOf, Rect } from '@app/data/services/retrorunner/utils/runner-layout';
-import { TapTracker } from '@app/data/services/retrorunner/utils/touch-pad';
 import { GameObjects, Scene } from 'phaser';
 
 const TITLE_FONT = 'Audiowide, sans-serif';
@@ -56,7 +57,7 @@ export function pauseMenu(cx: number, top: number): PauseButton[] {
  */
 export class PauseScene extends Scene {
   private restartHold!: HoldToConfirm;
-  private restartKey?: Phaser.Input.Keyboard.Key;
+  private restartKey?: HeldKeys<'restart'>;
   private restartBar?: HoldBar;
   /** The R down now was pressed during the pause, not held from before it. */
   private restartPressFresh = false;
@@ -86,16 +87,13 @@ export class PauseScene extends Scene {
     });
 
     this.restartHold = new HoldToConfirm(RESTART_HOLD_MS);
-    this.restartKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+    this.restartKey = heldKeys(this.input.keyboard, PAUSE_SCREEN_HELD_KEYS);
     this.restartPressFresh = false;
-    this.restartKey?.on(Phaser.Input.Keyboard.Events.DOWN, (_key: unknown, event: KeyboardEvent) => {
+    this.restartKey.onPress('restart', (event) => {
       this.restartPressFresh = isFreshPress(event);
     });
     // A key held since before the pause repeats: only a new press resumes.
-    this.input.keyboard?.on('keydown', (event: KeyboardEvent) => {
-      if (event.repeat) return;
-      if (event.code === 'Escape' || event.code === 'KeyP') EventBus.emit(RunnerEvents.TOGGLE_PAUSE);
-    });
+    keyPresses(this.input.keyboard, PAUSE_SCREEN_KEYS, () => EventBus.emit(RunnerEvents.TOGGLE_PAUSE));
 
     // A button acts when the finger comes up on it: nothing is left pressed
     // on the run as it goes on.
@@ -111,7 +109,7 @@ export class PauseScene extends Scene {
   }
 
   override update(_time: number, delta: number) {
-    const held = (this.restartKey?.isDown ?? false) && this.restartPressFresh;
+    const held = (this.restartKey?.isDown('restart') ?? false) && this.restartPressFresh;
     if (this.restartHold.update(held, delta)) {
       EventBus.emit(RunnerEvents.RESTART);
       return;

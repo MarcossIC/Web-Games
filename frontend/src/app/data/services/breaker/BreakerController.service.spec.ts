@@ -4,7 +4,9 @@ import { BreakerBridgeEvents } from '@app/data/models/breaker/BreakerBridge';
 import type { RunSummary } from '@app/data/services/breaker/engine/types';
 import { EventBus } from '@app/data/services/phaser/EventBus';
 import { browserStore, GAME_STORE, memoryStore } from '@app-persistence';
+import { bindKeys, type KeyLike } from '@app-input';
 import { BreakerControllerService } from './BreakerController.service';
+import { BREAKER_PAGE_KEYS } from './breaker-controls';
 import { breakerRecords, type BreakerSettings, breakerSettings } from './breaker-saves';
 
 const summary = (over: Partial<RunSummary> = {}): RunSummary => ({
@@ -66,8 +68,15 @@ describe('BreakerControllerService', () => {
   const fromScene = (event: BreakerBridgeEvents, ...args: unknown[]) =>
     (EventBus.listeners(event) as ((...a: unknown[]) => void)[]).forEach((fn) => fn(...args));
 
-  const key = (k: string, repeat = false, mods: Partial<Pick<KeyboardEvent, 'ctrlKey' | 'metaKey' | 'altKey'>> = {}) =>
-    ({ key: k, repeat, ctrlKey: false, metaKey: false, altKey: false, ...mods, preventDefault: () => {} }) as unknown as KeyboardEvent;
+  const key = (k: string, repeat = false, mods: Partial<Pick<KeyboardEvent, 'ctrlKey' | 'metaKey' | 'altKey'>> = {}): KeyLike =>
+    ({ key: k, repeat, ctrlKey: false, metaKey: false, altKey: false, ...mods });
+
+  /** A key press on the page, read through the page's bindings as BreakerComponent does. */
+  const resolvePage = bindKeys(BREAKER_PAGE_KEYS);
+  const press = (event: KeyLike) => {
+    const action = resolvePage(event);
+    if (action !== undefined) controller.handleAction(action, event.timeStamp ?? Number.NaN);
+  };
 
   const settings = () => breakerSettings.read(browserStore());
 
@@ -216,19 +225,19 @@ describe('BreakerControllerService', () => {
     expect(settings().muted).toBeFalse();
   });
 
-  it('handleKey: P and Escape pause while playing and resume while paused', () => {
+  it('page keys: P and Escape pause while playing and resume while paused', () => {
     fromScene(BreakerBridgeEvents.READY);
     controller.play();
-    controller.handleKey(key('p'));
+    press(key('p'));
     expect(controller.phase()).toBe('paused');
-    controller.handleKey(key('Escape'));
+    press(key('Escape'));
     expect(controller.phase()).toBe('playing');
-    controller.handleKey(key('P'));
+    press(key('P'));
     expect(controller.phase()).toBe('paused');
   });
 
   describe('mouse capture', () => {
-    const esc = (timeStamp: number) => ({ ...key('Escape'), timeStamp }) as unknown as KeyboardEvent;
+    const esc = (timeStamp: number) => ({ ...key('Escape'), timeStamp }) as KeyLike;
 
     it('is on by default, and toggling it is stored', () => {
       expect(controller.captureMouse()).toBeTrue();
@@ -242,17 +251,17 @@ describe('BreakerControllerService', () => {
     it('L switches the capture on and off, also mid-run, once per press', () => {
       fromScene(BreakerBridgeEvents.READY);
       controller.play();
-      controller.handleKey(key('l'));
+      press(key('l'));
       expect(controller.captureMouse()).toBeFalse();
-      controller.handleKey(key('L', true));
+      press(key('L', true));
       expect(controller.captureMouse()).toBeFalse();
-      controller.handleKey(key('L'));
+      press(key('L'));
       expect(controller.captureMouse()).toBeTrue();
       expect(controller.phase()).toBe('playing');
     });
 
     it('Ctrl+L is the browser address bar, not ours', () => {
-      controller.handleKey(key('l', false, { ctrlKey: true }));
+      press(key('l', false, { ctrlKey: true }));
       expect(controller.captureMouse()).toBeTrue();
     });
 
@@ -274,32 +283,40 @@ describe('BreakerControllerService', () => {
       fromScene(BreakerBridgeEvents.READY);
       controller.play();
       controller.lockLost(1000);
-      controller.handleKey(esc(1050));
+      press(esc(1050));
       expect(controller.phase()).toBe('paused');
       // A later Esc is a real one: it resumes.
-      controller.handleKey(esc(2000));
+      press(esc(2000));
+      expect(controller.phase()).toBe('playing');
+    });
+
+    it('a P right after the lock broke is a real one: only Esc echoes', () => {
+      fromScene(BreakerBridgeEvents.READY);
+      controller.play();
+      controller.lockLost(1000);
+      press({ ...key('p'), timeStamp: 1050 });
       expect(controller.phase()).toBe('playing');
     });
   });
 
-  it('handleKey ignores a held key and unrelated keys', () => {
+  it('page keys: ignores a held key and unrelated keys', () => {
     fromScene(BreakerBridgeEvents.READY);
     controller.play();
-    controller.handleKey(key('p', true));
-    controller.handleKey(key('x'));
+    press(key('p', true));
+    press(key('x'));
     expect(controller.phase()).toBe('playing');
   });
 
-  it('handleKey does not toggle the pause from the intro', () => {
+  it('page keys: does not toggle the pause from the intro', () => {
     fromScene(BreakerBridgeEvents.READY);
-    controller.handleKey(key('Escape'));
+    press(key('Escape'));
     expect(controller.phase()).toBe('intro');
   });
 
-  it('handleKey M toggles mute, once per press', () => {
-    controller.handleKey(key('m'));
+  it('page keys: M toggles mute, once per press', () => {
+    press(key('m'));
     expect(controller.muted()).toBeTrue();
-    controller.handleKey(key('m', true));
+    press(key('m', true));
     expect(controller.muted()).toBeTrue();
   });
 
@@ -366,7 +383,7 @@ describe('BreakerControllerService', () => {
       controller.play();
       fromScene(BreakerBridgeEvents.RUN_ENDING);
       controller.pause();
-      controller.handleKey(key('p'));
+      press(key('p'));
       fromScene(BreakerBridgeEvents.AUTO_PAUSED);
       expect(controller.phase()).toBe('playing');
       expect(sent(BreakerBridgeEvents.PAUSE).length).toBe(0);
@@ -385,18 +402,18 @@ describe('BreakerControllerService', () => {
     });
   });
 
-  it('handleKey ignores P, Esc and M with Ctrl, Cmd or Alt held', () => {
+  it('page keys: ignores P, Esc and M with Ctrl, Cmd or Alt held', () => {
     fromScene(BreakerBridgeEvents.READY);
     controller.play();
-    controller.handleKey(key('p', false, { ctrlKey: true }));
+    press(key('p', false, { ctrlKey: true }));
     expect(controller.phase()).toBe('playing');
-    controller.handleKey(key('Escape', false, { altKey: true }));
+    press(key('Escape', false, { altKey: true }));
     expect(controller.phase()).toBe('playing');
-    controller.handleKey(key('p', false, { metaKey: true }));
+    press(key('p', false, { metaKey: true }));
     expect(controller.phase()).toBe('playing');
-    controller.handleKey(key('m', false, { metaKey: true }));
+    press(key('m', false, { metaKey: true }));
     expect(controller.muted()).toBeFalse();
-    controller.handleKey(key('m', false, { altKey: true }));
+    press(key('m', false, { altKey: true }));
     expect(controller.muted()).toBeFalse();
   });
 

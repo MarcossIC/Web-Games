@@ -10,7 +10,9 @@ import { formatRunTime, RunSummary } from '@app/data/services/retrorunner/utils/
 import { runnerRecords } from '@app/data/services/retrorunner/runner-saves';
 import { browserStore, keepBest, type KeyValueStore } from '@app-persistence';
 import { contains, LAYOUT_CHANGED, layoutOf, Rect } from '@app/data/services/retrorunner/utils/runner-layout';
-import { TapTracker } from '@app/data/services/retrorunner/utils/touch-pad';
+import { TapTracker } from '@app-input';
+import { keyPresses } from '@app-input/phaser-input';
+import { GAME_OVER_KEYS } from '@app/data/services/retrorunner/runner-controls';
 import { GameObjects, Scene } from 'phaser';
 
 // The typefaces of the site. Silkscreen is a pixel face with a 8px grid:
@@ -156,8 +158,8 @@ class GameOverScene extends Scene {
     this.input.on(Phaser.Input.Events.POINTER_DOWN, (pointer: Phaser.Input.Pointer) => this.pressed(pointer));
     this.input.on(Phaser.Input.Events.POINTER_UP, (pointer: Phaser.Input.Pointer) => this.released(pointer));
     // Space starts a new run; with Shift, the same seed again.
-    this.input.keyboard?.on('keydown-SPACE', (event: KeyboardEvent) => {
-      const choice = retryChoice(event, this.shownMs);
+    keyPresses(this.input.keyboard, GAME_OVER_KEYS, (_retry, event) => {
+      const choice = retryChoice({ repeat: event.repeat ?? false, shiftKey: event.shiftKey ?? false }, this.shownMs);
       if (choice) this.retry(choice === 'same-seed');
     });
 

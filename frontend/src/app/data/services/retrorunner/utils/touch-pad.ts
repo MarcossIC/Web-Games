@@ -1,4 +1,7 @@
-import { contains, TouchControls } from './runner-layout';
+import { type Finger, heldZones, type Zone } from '@app-input';
+import { TouchControls } from './runner-layout';
+
+export type { Finger } from '@app-input';
 
 /** What the keys on the screen ask of the capybara right now. */
 export interface PadState {
@@ -8,83 +11,30 @@ export interface PadState {
   crouch: boolean;
 }
 
-/** What `readPad` needs from a finger: Phaser's pointers have it. */
-export interface Finger {
-  readonly isDown: boolean;
-  readonly x: number;
-  readonly y: number;
-}
+type PadKey = keyof PadState;
 
 export function idlePad(): PadState {
   return { left: false, right: false, jump: false, crouch: false };
 }
 
-/**
- * Which keys are held, from where the fingers are now.
- *
- * It is read from scratch on every frame, with no memory of presses and
- * releases: a finger that slides from one arrow to the other turns around
- * without lifting, and a release the game never heard of (a finger lifted
- * during a pause, a touch the system cancelled) cannot leave a key stuck.
- * `out` is filled and returned, so nothing is allocated per frame.
- */
-export function readPad(controls: TouchControls | null, fingers: readonly Finger[], out: PadState): PadState {
-  out.left = false;
-  out.right = false;
-  out.jump = false;
-  out.crouch = false;
-  if (!controls) return out;
+/** The zones of each layout, built once: readPad runs every frame. */
+const ZONES = new WeakMap<TouchControls, readonly Zone<PadKey>[]>();
 
-  for (let i = 0; i < fingers.length; i++) {
-    const finger = fingers[i];
-    if (!finger.isDown) continue;
-    const { x, y } = finger;
-    if (contains(controls.left.zone, x, y)) out.left = true;
-    else if (contains(controls.right.zone, x, y)) out.right = true;
-    else if (contains(controls.jump.zone, x, y)) out.jump = true;
-    else if (contains(controls.crouch.zone, x, y)) out.crouch = true;
+/** In this order: a finger where two zones meet holds the first. */
+function padZones(controls: TouchControls): readonly Zone<PadKey>[] {
+  let zones = ZONES.get(controls);
+  if (!zones) {
+    zones = (['left', 'right', 'jump', 'crouch'] as const).map((key) => ({ key, rect: controls[key].zone }));
+    ZONES.set(controls, zones);
   }
-  return out;
+  return zones;
 }
 
 /**
- * Taps on buttons: a finger that goes down on a button and comes up on the
- * same one. Sliding off before lifting cancels it, as on any button, and a
- * button acts on the release: no finger is left down on whatever comes next.
+ * Which keys are held, from where the fingers are now (see heldZones): a
+ * finger that slides from one arrow to the other turns around without
+ * lifting, and no key can be left stuck. `out` is filled and returned.
  */
-export class TapTracker<Key> {
-  /** The button each finger went down on. */
-  private readonly started = new Map<number, Key>();
-
-  /** `hit` says which button, if any, is at a point. */
-  constructor(private readonly hit: (x: number, y: number) => Key | null) {}
-
-  /** A finger went down. Returns the button under it, if any. */
-  down(finger: number, x: number, y: number): Key | null {
-    const key = this.hit(x, y);
-    if (key === null) this.started.delete(finger);
-    else this.started.set(finger, key);
-    return key;
-  }
-
-  /** A finger came up. Returns the button it tapped, if it did. */
-  up(finger: number, x: number, y: number): Key | null {
-    const key = this.started.get(finger);
-    this.started.delete(finger);
-    if (key === undefined) return null;
-    return this.hit(x, y) === key ? key : null;
-  }
-
-  /** A finger that started on `key` is still down. */
-  isPressed(key: Key): boolean {
-    for (const pressed of this.started.values()) {
-      if (pressed === key) return true;
-    }
-    return false;
-  }
-
-  /** Forgets every finger: the buttons moved, or are gone. */
-  clear(): void {
-    this.started.clear();
-  }
+export function readPad(controls: TouchControls | null, fingers: readonly Finger[], out: PadState): PadState {
+  return heldZones(controls ? padZones(controls) : null, fingers, out);
 }

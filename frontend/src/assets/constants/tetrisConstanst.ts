@@ -1,4 +1,3 @@
-import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
 import { Piece } from '@app/data/models/tetris/Piece';
 import { PieceColor } from '@app/data/models/tetris/PieceColor';
 import { PieceType } from '@app/data/models/tetris/PieceType.enum';
@@ -23,19 +22,6 @@ export const NEXT_PIECE_HEIGHT: number = 5;
 export const LINE_WIDTH_SCALE = 0.01;
 export const SHADOW_BLUR_SCALE = 1;
 export const NEXT_POSITION = 1;
-
-export const ACTIONS: Record<string, ACTION> = {
-  ArrowLeft: ACTION.LEFT,
-  a: ACTION.LEFT,
-  ArrowRight: ACTION.RIGHT,
-  d: ACTION.RIGHT,
-  ArrowDown: ACTION.DOWN,
-  s: ACTION.DOWN,
-  p: ACTION.PAUSE,
-  Escape: ACTION.PAUSE,
-  ArrowUp: ACTION.ROTATE,
-  w: ACTION.ROTATE,
-};
 
 export const DEFAULT_COLOR: PieceColor = {
   fill: '#FEEA67',
