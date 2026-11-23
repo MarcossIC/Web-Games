@@ -1,1 +1,24 @@
 /* The dialog frame and the key legend come from modal.css. */
+
+.key-row dd .word {
+  margin-inline-end: 0.25rem;
+  font-family: var(--gg-font-pixel);
+  font-size: 0.9375rem;
+  color: #fff;
+}
+
+/* A keyboard legend where there is a keyboard, a gesture legend where the
+   screen is touched instead. */
+.keys.touch-legend {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .keys.touch-legend {
+    display: flex;
+  }
+
+  .keys.key-legend {
+    display: none;
+  }
+}

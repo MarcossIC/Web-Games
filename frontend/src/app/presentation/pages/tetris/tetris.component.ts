@@ -19,9 +19,9 @@ import { ChronometerComponent } from '@app/presentation/components/chronometer/c
 import { EndgameModalTetrisComponent } from '@app/presentation/components/endgame-modal-tetris/endgame-modal-tetris.component';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { GameBarComponent } from '@app-components/game-bar/game-bar.component';
-import { keyActions } from '@app-input';
+import { type Direction, keyActions, listenDrags } from '@app-input';
 import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
-import { screenButtonsOn, TETRIS_KEYS } from '@app/data/services/tetris/tetris-controls';
+import { phoneLayout, TETRIS_DRAGS, TETRIS_KEYS } from '@app/data/services/tetris/tetris-controls';
 
 @Component({
   standalone: true,
@@ -36,10 +36,15 @@ import { screenButtonsOn, TETRIS_KEYS } from '@app/data/services/tetris/tetris-c
     GameBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    // The board's shape, for the CSS that fits it to a phone's screen.
+    '[style.--tetris-board-aspect]': 'controller.WIDTH / controller.HEIGHT',
+  },
 })
 export class TetrisComponent implements OnInit, OnDestroy {
   @ViewChild('tetris', { static: true }) canvasRef!: ElementRef;
   @ViewChild('nextPiece', { static: true }) nextPieceRef!: ElementRef;
+  @ViewChild('playArea', { static: true }) playAreaRef!: ElementRef<HTMLElement>;
 
   private board!: HTMLCanvasElement;
   private nextPiece!: HTMLCanvasElement;
@@ -49,8 +54,7 @@ export class TetrisComponent implements OnInit, OnDestroy {
   protected controller = inject(TetrisControllerService);
   protected point = inject(PointsService);
   private PLATFORM = inject(PLATFORM_ID);
-  /** For the buttons under the board. */
-  protected readonly ACTION = ACTION;
+  private stopDrags?: () => void;
 
   constructor() {
     // Every key goes to the game: one with no action still settles a resting piece.
@@ -63,9 +67,11 @@ export class TetrisComponent implements OnInit, OnDestroy {
     //Board
     this.board = this.canvasRef.nativeElement;
     this.boardContext = this.board.getContext('2d') as CanvasRenderingContext2D;
-    this.board.width = this.controller.BLOCK * this.controller.WIDTH;
-    this.board.height = this.controller.BLOCK * this.controller.HEIGHT;
-    this.boardContext.scale(this.controller.BLOCK, this.controller.BLOCK);
+    const sharpness = this.boardSharpness();
+    const block = this.controller.BLOCK * sharpness;
+    this.board.width = block * this.controller.WIDTH;
+    this.board.height = block * this.controller.HEIGHT;
+    this.boardContext.scale(block, block);
 
     //Next Piece Board
     this.nextPiece = this.nextPieceRef.nativeElement;
@@ -89,14 +95,46 @@ export class TetrisComponent implements OnInit, OnDestroy {
       this.boardWidth,
       this.boardHeight
     );
+
+    if (isPlatformBrowser(this.PLATFORM)) this.listenToFingers();
   }
 
   ngOnDestroy(): void {
     cancelAnimationFrame(this.controller.animationFrameId);
+    this.stopDrags?.();
   }
 
-  onPress(action: ACTION) {
-    this.isMobile() && this.controller.executeAction(action);
+  /**
+   * On a touch screen the whole play area is the pad: dragging sideways
+   * moves the piece a column per cell the finger travels, dragging down
+   * brings it down a row per cell, and a tap rotates it.
+   */
+  private listenToFingers(): void {
+    this.stopDrags = listenDrags(this.playAreaRef.nativeElement, {
+      // A cell as the board is drawn on screen: the piece follows the finger.
+      step: () => this.board.getBoundingClientRect().width / this.controller.WIDTH,
+      onStep: (direction: Direction) => {
+        const action = TETRIS_DRAGS[direction];
+        if (action !== null) this.controller.executeAction(action);
+      },
+      onTap: () => this.controller.executeAction(ACTION.ROTATE),
+    });
+  }
+
+  /**
+   * How many pixels the board is drawn with per pixel of its size. On a
+   * phone the CSS stretches the board to fill the screen, so it is drawn
+   * finer to stay sharp; elsewhere it is shown at most at its own size.
+   */
+  private boardSharpness(): number {
+    if (!isPlatformBrowser(this.PLATFORM) || !phoneLayout(window.innerWidth)) return 1;
+    return Math.min(4, Math.ceil((window.devicePixelRatio || 1) * 1.5));
+  }
+
+  /** A click on the board rotates the piece, as it goes down. Fingers tap instead. */
+  protected clickToRotate(event: PointerEvent): void {
+    if (event.pointerType !== 'mouse' || event.button !== 0) return;
+    this.controller.executeAction(ACTION.ROTATE);
   }
 
   get boardWidth() {
@@ -108,11 +146,6 @@ export class TetrisComponent implements OnInit, OnDestroy {
 
   pause(): void {
     this.controller.pause();
-  }
-
-  isMobile(): boolean {
-    if (isPlatformBrowser(this.PLATFORM)) return screenButtonsOn(window.innerWidth);
-    else return false;
   }
 }
 

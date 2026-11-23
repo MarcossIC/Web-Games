@@ -3,6 +3,7 @@ import { DestroyRef, inject, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, filter, fromEvent, map, type Observable, throttleTime } from 'rxjs';
 import { type BindOptions, bindKeys, type KeyBinding } from './key-bindings';
+import { type DragOptions, DragTracker } from './drag';
 import { type Direction, SWIPE_MIN_PX, SwipeTracker } from './swipe';
 
 /** An action asked for from the page, and when (KeyboardEvent.timeStamp). */
@@ -77,5 +78,47 @@ export function listenSwipes(
     element.removeEventListener('pointermove', move);
     element.removeEventListener('pointerup', up);
     element.removeEventListener('pointercancel', up);
+  };
+}
+
+export interface DragListeners extends DragOptions {
+  /** Each step of a drag, one call per cell the finger travelled. */
+  readonly onStep: (direction: Direction) => void;
+  /** A finger tapped. */
+  readonly onTap: () => void;
+}
+
+/**
+ * Drags and taps of a finger on an element (see DragTracker). Plain DOM,
+ * like listenSwipes. The element should have `touch-action: none`, or the
+ * browser scrolls the page with the drag instead. Returns the function that
+ * stops listening.
+ */
+export function listenDrags(element: HTMLElement, listeners: DragListeners): () => void {
+  const drags = new DragTracker(listeners);
+  const read = (event: PointerEvent) => ({
+    id: event.pointerId,
+    x: event.clientX,
+    y: event.clientY,
+    type: event.pointerType,
+  });
+  const down = (event: PointerEvent) => drags.down(read(event), event.timeStamp);
+  const move = (event: PointerEvent) => {
+    for (const direction of drags.move(read(event))) listeners.onStep(direction);
+  };
+  const up = (event: PointerEvent) => {
+    if (drags.up(read(event), event.timeStamp) === 'tap') listeners.onTap();
+  };
+  const cancel = (event: PointerEvent) => drags.cancel(read(event));
+
+  element.addEventListener('pointerdown', down);
+  element.addEventListener('pointermove', move);
+  element.addEventListener('pointerup', up);
+  element.addEventListener('pointercancel', cancel);
+  return () => {
+    element.removeEventListener('pointerdown', down);
+    element.removeEventListener('pointermove', move);
+    element.removeEventListener('pointerup', up);
+    element.removeEventListener('pointercancel', cancel);
   };
 }

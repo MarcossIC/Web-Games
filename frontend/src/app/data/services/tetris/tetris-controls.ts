@@ -1,4 +1,4 @@
-import type { KeyBinding } from '@app-input';
+import type { Direction, KeyBinding } from '@app-input';
 import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
 
 /**
@@ -14,10 +14,21 @@ export const TETRIS_KEYS: readonly KeyBinding<ACTION>[] = [
   { action: ACTION.ROTATE, keys: ['ArrowUp', 'w'] },
 ];
 
-/** The widest screen the buttons under the board work on: a phone's. */
-const SCREEN_BUTTONS_MAX_WIDTH = 500;
+/**
+ * What each step of a finger dragged over the board asks for. Up does
+ * nothing: rotating is a tap.
+ */
+export const TETRIS_DRAGS: Readonly<Record<Direction, ACTION | null>> = {
+  left: ACTION.LEFT,
+  right: ACTION.RIGHT,
+  down: ACTION.DOWN,
+  up: null,
+};
 
-/** Whether the buttons under the board act, on a window this wide. */
-export function screenButtonsOn(width: number): boolean {
-  return width <= SCREEN_BUTTONS_MAX_WIDTH;
+/** The widest screen the page lays out for a phone (the CSS's max-width: 500px). */
+const PHONE_MAX_WIDTH = 500;
+
+/** Whether a window this wide gets the phone layout: the board stretched to fill it. */
+export function phoneLayout(width: number): boolean {
+  return width <= PHONE_MAX_WIDTH;
 }

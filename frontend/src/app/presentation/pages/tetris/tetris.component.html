@@ -4,8 +4,8 @@
 >
   <app-game-bar title="Tetris" (pause)="pause()" />
 
-  <main class="shared-wrapper">
-    <div class="game-container">
+  <main #playArea class="shared-wrapper">
+    <div class="game-container" (pointerdown)="clickToRotate($event)">
       <canvas #tetris></canvas>
     </div>
 
@@ -32,22 +32,6 @@
           <chronometer
             class="text-base min-[600px]:text-2xl min-[1500px]:text-3xl"
           ></chronometer>
-        </li>
-        <li class="controllers">
-          <div class="display-buttons">
-            <button class="button action-rotate" (mousedown)="onPress(ACTION.ROTATE)">
-              w
-            </button>
-            <button class="button action-left" (mousedown)="onPress(ACTION.LEFT)">
-              a
-            </button>
-            <button class="button action-down" (mousedown)="onPress(ACTION.DOWN)">
-              s
-            </button>
-            <button class="button action-right" (mousedown)="onPress(ACTION.RIGHT)">
-              d
-            </button>
-          </div>
         </li>
       </ul>
     </div>

@@ -9,7 +9,7 @@
     {{ controller.hasStarted ? "Paused" : "How to play" }}
   </h2>
 
-  <dl class="keys">
+  <dl class="keys key-legend">
     <div class="key-row">
       <dt>Move</dt>
       <dd>
@@ -41,6 +41,27 @@
         <span class="or">or</span>
         <kbd>Esc</kbd>
       </dd>
+    </div>
+  </dl>
+
+  <!-- Touch screens have no keys: the fingers play on the board. The CSS
+       shows the legend that fits the device. -->
+  <dl class="keys touch-legend">
+    <div class="key-row">
+      <dt>Move</dt>
+      <dd><span class="word">Drag</span><kbd>&larr;</kbd><kbd>&rarr;</kbd></dd>
+    </div>
+    <div class="key-row">
+      <dt>Rotate Piece</dt>
+      <dd><span class="word">Tap</span></dd>
+    </div>
+    <div class="key-row">
+      <dt>Down</dt>
+      <dd><span class="word">Drag</span><kbd>&darr;</kbd></dd>
+    </div>
+    <div class="key-row">
+      <dt>Pause/Resume</dt>
+      <dd><kbd>II</kbd></dd>
     </div>
   </dl>
 

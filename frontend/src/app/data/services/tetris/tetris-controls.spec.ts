@@ -1,6 +1,6 @@
 import { bindKeys } from '@app-input';
 import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
-import { screenButtonsOn, TETRIS_KEYS } from './tetris-controls';
+import { phoneLayout, TETRIS_DRAGS, TETRIS_KEYS } from './tetris-controls';
 
 describe('Tetris controls', () => {
   const resolve = bindKeys(TETRIS_KEYS, { otherwise: null });
@@ -40,13 +40,25 @@ describe('Tetris controls', () => {
   });
 });
 
-describe('screenButtonsOn', () => {
-  it('works the buttons on the screen up to 500 px wide', () => {
-    expect(screenButtonsOn(320)).toBeTrue();
-    expect(screenButtonsOn(500)).toBeTrue();
+describe('Tetris drags', () => {
+  it('moves the piece the way the finger drags it, and brings it down', () => {
+    expect(TETRIS_DRAGS.left).toBe(ACTION.LEFT);
+    expect(TETRIS_DRAGS.right).toBe(ACTION.RIGHT);
+    expect(TETRIS_DRAGS.down).toBe(ACTION.DOWN);
   });
 
-  it('leaves them off on wider screens', () => {
-    expect(screenButtonsOn(501)).toBeFalse();
+  it('does nothing on a drag up: rotating is a tap', () => {
+    expect(TETRIS_DRAGS.up).toBeNull();
+  });
+});
+
+describe('phoneLayout', () => {
+  it('lays the page out for a phone up to 500 px wide', () => {
+    expect(phoneLayout(320)).toBeTrue();
+    expect(phoneLayout(500)).toBeTrue();
+  });
+
+  it('not on wider screens', () => {
+    expect(phoneLayout(501)).toBeFalse();
   });
 });

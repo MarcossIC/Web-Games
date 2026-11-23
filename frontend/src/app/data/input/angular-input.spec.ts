@@ -6,7 +6,7 @@ import {
   runInInjectionContext,
 } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { type ActionEvent, keyActions, listenSwipes } from './angular-input';
+import { type ActionEvent, keyActions, listenDrags, listenSwipes } from './angular-input';
 import type { KeyBinding } from './key-bindings';
 
 type Action = 'left' | 'pause';
@@ -169,5 +169,71 @@ describe('listenSwipes', () => {
     pointer('pointermove', 200, 100);
 
     expect(ways).toEqual([]);
+  });
+});
+
+describe('listenDrags', () => {
+  let area: HTMLElement;
+
+  beforeEach(() => {
+    area = document.createElement('div');
+    document.body.appendChild(area);
+  });
+
+  afterEach(() => area.remove());
+
+  const pointer = (type: string, x: number, y: number, pointerType = 'touch') =>
+    area.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, pointerType, pointerId: 1 }));
+
+  const listen = () => {
+    const heard: string[] = [];
+    const stop = listenDrags(area, {
+      step: () => 30,
+      onStep: (direction) => heard.push(direction),
+      onTap: () => heard.push('tap'),
+    });
+    return { heard, stop };
+  };
+
+  it('reports a step per cell the finger drags over the element', () => {
+    const { heard } = listen();
+
+    pointer('pointerdown', 100, 100);
+    pointer('pointermove', 165, 100);
+    pointer('pointerup', 165, 100);
+
+    expect(heard).toEqual(['right', 'right']);
+  });
+
+  it('reports a tap', () => {
+    const { heard } = listen();
+
+    pointer('pointerdown', 100, 100);
+    pointer('pointerup', 102, 101);
+
+    expect(heard).toEqual(['tap']);
+  });
+
+  it('leaves the mouse and cancelled fingers alone', () => {
+    const { heard } = listen();
+
+    pointer('pointerdown', 100, 100, 'mouse');
+    pointer('pointermove', 200, 100, 'mouse');
+    pointer('pointerup', 200, 100, 'mouse');
+    pointer('pointerdown', 100, 100);
+    pointer('pointercancel', 100, 100);
+    pointer('pointerup', 100, 100);
+
+    expect(heard).toEqual([]);
+  });
+
+  it('stops listening when the returned function is called', () => {
+    const { heard, stop } = listen();
+
+    stop();
+    pointer('pointerdown', 100, 100);
+    pointer('pointerup', 100, 100);
+
+    expect(heard).toEqual([]);
   });
 });
