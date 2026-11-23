@@ -1,8 +1,6 @@
 import {
   CommonModule,
-  DOCUMENT,
   NgClass,
-  isPlatformBrowser,
 } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -10,7 +8,6 @@ import {
   Component,
   DestroyRef,
   OnInit,
-  PLATFORM_ID,
   effect,
   inject,
   signal,
@@ -25,7 +22,9 @@ import { RookPieceComponent } from '@app/presentation/components/chess-pieces/ro
 import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import { ChessGameOverType } from '@app/data/models/chess/chess-gameOverType';
 import { Coords, CoordsInARow } from '@app/data/models/chess/chess-coords';
-import { filter, fromEvent, tap } from 'rxjs';
+import { filter, tap } from 'rxjs';
+import { keyActions } from '@app-input';
+import { CHESS_KEYS } from '@app/data/services/chess/chess-controls';
 import { QueenPieceComponent } from '@app/presentation/components/chess-pieces/queen.component';
 import { ChessCardPlayer } from '@app/presentation/components/chess-card-player/chess-card-player.component';
 import { LastMove } from '@app/data/models/chess/chess-lastmove';
@@ -82,8 +81,6 @@ export class ChessComponent implements OnInit {
     },
     { allowSignalWrites: true }
   );
-  private document = inject(DOCUMENT);
-  private platformId = inject(PLATFORM_ID);
   private destroy$ = inject(DestroyRef);
   private cdr = inject(ChangeDetectorRef);
   protected selectedSquare: SelectedSquare;
@@ -106,42 +103,30 @@ export class ChessComponent implements OnInit {
     this.promotionCoords = null;
     this.promotedPiece = PieceSymbol.UNKNOWN;
 
-    if (isPlatformBrowser(this.platformId)) {
-      fromEvent<KeyboardEvent>(this.document, 'keyup')
-        .pipe(
-          filter(
-            (event) =>
-              event.key === 'ArrowRight' ||
-              event.key === 'ArrowLeft' ||
-              event.key === 'u' ||
-              event.key === 'p' ||
-              event.key === 'Escape'
-          ),
-          filter(() => !this.controller.isPaused && !this.controller.isGameOver),
-          tap(({ key }) => {
-            const pointer = this.controller.gameHistory.gameHistoryPointer;
-            switch (key) {
-              case 'ArrowRight':
-                if (pointer < this.livePointer)
-                  this.showPreviousPosition(pointer + 1);
-                break;
-              case 'ArrowLeft':
-                if (pointer > 0) this.showPreviousPosition(pointer - 1);
-                break;
-              case 'u':
-                this.undoMove();
-                break;
-              case 'p':
-              case 'Escape':
-                this.controller.isPaused = true;
-                break;
-            }
-            this.cdr.markForCheck();
-          }),
-          takeUntilDestroyed(this.destroy$)
-        )
-        .subscribe();
-    }
+    keyActions(CHESS_KEYS, { on: 'keyup' })
+      .pipe(
+        filter(() => !this.controller.isPaused && !this.controller.isGameOver),
+        tap(({ action }) => {
+          const pointer = this.controller.gameHistory.gameHistoryPointer;
+          switch (action) {
+            case 'next':
+              if (pointer < this.livePointer)
+                this.showPreviousPosition(pointer + 1);
+              break;
+            case 'previous':
+              if (pointer > 0) this.showPreviousPosition(pointer - 1);
+              break;
+            case 'undo':
+              this.undoMove();
+              break;
+            case 'pause':
+              this.controller.isPaused = true;
+              break;
+          }
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe();
   }
 
   public ngOnInit(): void {
