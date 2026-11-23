@@ -37,6 +37,38 @@ describe('chess engine search', () => {
     expect(score).toBeGreaterThanOrEqual(MATE_BOUND);
   });
 
+  it('finds the same mates when it looks at every move', () => {
+    const every = (fen: string, depth: number) => {
+      const { moves } = search.run(Position.fromFen(fen), { depth, everyMove: true });
+      return { move: moveName(moves[0].move), score: moves[0].score };
+    };
+
+    expect(every('2bqkbn1/2pppp2/np2N3/r3P1p1/p2N2B1/5Q2/PPPPKPP1/RNB2r2 w - - 0 1', 4)).toEqual({
+      move: 'f3f7',
+      score: MATE - 3,
+    });
+    expect(every('r5rk/5p1p/5R2/4B3/8/8/7P/7K w - - 0 1', 6).move).toBe('f6a6');
+  });
+
+  it('looks further in the same time when it may leave moves out', () => {
+    const fen = 'r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10';
+    const every = search.run(Position.fromFen(fen), { depth: 30, nodes: 50000, everyMove: true });
+    const likely = search.run(Position.fromFen(fen), { depth: 30, nodes: 50000 });
+
+    expect(likely.depth).toBeGreaterThan(every.depth);
+  });
+
+  it('answers well before its time is up when one move stands alone', () => {
+    // The queen on g5 is there for the taking, and nothing else comes close.
+    const position = Position.fromFen('rnb1kbnr/pppp1ppp/8/4p1q1/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 1');
+    const start = performance.now();
+
+    const { moves } = search.run(position, { depth: 40, timeMs: 1600 });
+
+    expect(moveName(moves[0].move)).toBe('c1g5');
+    expect(performance.now() - start).toBeLessThan(800);
+  });
+
   it('takes a queen left hanging', () => {
     expect(best('rnb1kbnr/pppp1ppp/8/4p1q1/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 1', 2).move).toBe('c1g5');
   });

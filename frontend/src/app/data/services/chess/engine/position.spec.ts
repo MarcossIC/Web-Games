@@ -1,4 +1,5 @@
-import { MAX_MOVES, Position, QUEEN, ROOK, moveName } from './position';
+import { SQUARE_ENDGAME, SQUARE_OPENING } from './piece-squares';
+import { MAX_MOVES, Move, Position, QUEEN, ROOK, moveName } from './position';
 
 /** Counts the games of `depth` moves from a position: the classic check of a move generator. */
 function countLines(position: Position, depth: number): number {
@@ -126,6 +127,119 @@ describe('chess engine position', () => {
     const watched = Position.fromFen('r3kr2/8/8/8/8/8/8/R3K2R w KQq - 0 1');
     expect(names(watched)).not.toContain('e1g1');
     expect(names(watched)).toContain('e1c1');
+  });
+
+  it('keeps its lists of pieces and its running totals right through any game', () => {
+    // Random games, with every special move in them sooner or later.
+    let seed = 7;
+    const random = () => {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      return seed / 0x7fffffff;
+    };
+    /** Whether what the position keeps matches what is on its board. */
+    const isRight = (position: Position): boolean => {
+      let opening = 0;
+      let endgame = 0;
+      const counts = [0, 0];
+      for (let square = 0; square < 64; square++) {
+        const piece = position.board[square];
+        if (piece === 0) continue;
+        counts[piece > 0 ? 0 : 1]++;
+        opening += SQUARE_OPENING[(piece + 6) * 64 + square];
+        endgame += SQUARE_ENDGAME[(piece + 6) * 64 + square];
+      }
+      for (let side = 0; side < 2; side++) {
+        if (position.pieceCount[side] !== counts[side]) return false;
+        for (let i = 0; i < counts[side]; i++) {
+          const piece = position.board[position.pieceSquares[side * 16 + i]];
+          if (side === 0 ? piece <= 0 : piece >= 0) return false;
+        }
+      }
+      return position.opening === opening && position.endgame === endgame;
+    };
+
+    // One expectation per game: thousands of them would stall the browser.
+    for (let game = 0; game < 30; game++) {
+      const position = new Position();
+      const played: Move[] = [];
+      let wrongAfter = '';
+      for (let ply = 0; ply < 120 && wrongAfter === ''; ply++) {
+        const moves = position.legalMoves();
+        if (moves.length === 0) break;
+        const move = moves[Math.floor(random() * moves.length)];
+        position.make(move);
+        played.push(move);
+        if (!isRight(position)) wrongAfter = played.map(moveName).join(' ');
+      }
+      expect(wrongAfter).withContext(`game ${game}`).toBe('');
+
+      while (played.length > 0) position.unmake(played.pop()!);
+      expect(isRight(position)).withContext(`game ${game} taken back`).toBeTrue();
+      expect(position.phase).toBe(24);
+    }
+  });
+
+  describe('exchanges', () => {
+    const exchange = (fen: string, name: string) => {
+      const position = Position.fromFen(fen);
+      const board = Array.from(position.board);
+      const result = position.exchange(position.legalMoves().find((move) => moveName(move) === name)!);
+      expect(Array.from(position.board)).toEqual(board);
+      return result;
+    };
+
+    it('count a piece nobody defends as won', () => {
+      expect(exchange('k7/8/8/3n4/8/8/8/K2R4 w - - 0 1', 'd1d5')).toBe(320);
+    });
+
+    it('see that a queen taking a defended pawn is lost for it', () => {
+      expect(exchange('k7/8/2p5/3p4/8/8/8/K2Q4 w - - 0 1', 'd1d5')).toBe(100 - 900);
+    });
+
+    it('count the pieces lined up behind the one that takes', () => {
+      // Rook takes pawn, rook takes back, the second rook takes that one.
+      expect(exchange('k2r4/8/8/3p4/8/8/3R4/K2R4 w - - 0 1', 'd2d5')).toBe(100);
+      // With one rook only, taking the pawn costs the rook.
+      expect(exchange('k2r4/8/8/3p4/8/8/3R4/K7 w - - 0 1', 'd2d5')).toBe(100 - 500);
+    });
+
+    it('know the rival stops taking back when it would lose by it', () => {
+      // The knight takes a pawn the queen defends: taking back costs her to the rook behind.
+      expect(exchange('k2q4/8/8/3p4/8/2N5/8/K2R4 w - - 0 1', 'c3d5')).toBe(100);
+    });
+  });
+
+  it('tells a check from the piece that moves, and never calls one that is not', () => {
+    const knight = Position.fromFen('4k3/8/8/8/8/8/5N2/4K3 w - - 0 1');
+    const checking = knight.legalMoves().filter((move) => knight.checks(move)).map(moveName);
+    expect(checking.sort()).toEqual([]);
+
+    const pieces = Position.fromFen('4k3/8/8/3N4/8/8/4P3/R2BK3 w - - 0 1');
+    const called = pieces.legalMoves().filter((move) => pieces.checks(move)).map(moveName).sort();
+    // The knight from c7 and f6, the rook from a8, the bishop from a4.
+    expect(called).toEqual(['a1a8', 'd1a4', 'd5c7', 'd5f6']);
+
+    let seed = 11;
+    const random = () => {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      return seed / 0x7fffffff;
+    };
+    const wronglyCalled: string[] = [];
+    for (let game = 0; game < 20; game++) {
+      const position = new Position();
+      for (let ply = 0; ply < 100; ply++) {
+        const moves = position.legalMoves();
+        if (moves.length === 0) break;
+        for (const move of moves) {
+          if (!position.checks(move)) continue;
+          position.make(move);
+          if (!position.inCheck()) wronglyCalled.push(moveName(move));
+          position.unmake(move);
+        }
+        position.make(moves[Math.floor(random() * moves.length)]);
+      }
+    }
+    expect(wronglyCalled).toEqual([]);
   });
 
   it('finds a move by its squares, promoting to a queen unless told', () => {

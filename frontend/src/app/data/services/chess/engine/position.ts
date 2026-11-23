@@ -8,6 +8,8 @@
  * column 0 the a-file. White pawns move towards row 0.
  */
 
+import { PHASE_WEIGHT, SQUARE_ENDGAME, SQUARE_OPENING } from './piece-squares';
+
 export const WHITE = 1;
 export const BLACK = -1;
 export type Color = typeof WHITE | typeof BLACK;
@@ -96,13 +98,27 @@ function rayFrom(square: number, [dr, dc]: number[]): number[] {
 }
 
 const SQUARES = Array.from({ length: 64 }, (_, square) => square);
-const KNIGHT_TARGETS = SQUARES.map((square) => stepsFrom(square, KNIGHT_STEPS));
-const KING_TARGETS = SQUARES.map((square) => stepsFrom(square, DIRECTIONS));
+export const KNIGHT_TARGETS = SQUARES.map((square) => stepsFrom(square, KNIGHT_STEPS));
+export const KING_TARGETS = SQUARES.map((square) => stepsFrom(square, DIRECTIONS));
 /** RAYS[square][direction]: the squares in that direction, nearest first. */
-const RAYS = SQUARES.map((square) => DIRECTIONS.map((dir) => rayFrom(square, dir)));
+export const RAYS = SQUARES.map((square) => DIRECTIONS.map((dir) => rayFrom(square, dir)));
 /** Squares a white pawn standing on `square` attacks. */
-const WHITE_PAWN_ATTACKS = SQUARES.map((square) => stepsFrom(square, [[-1, -1], [-1, 1]]));
-const BLACK_PAWN_ATTACKS = SQUARES.map((square) => stepsFrom(square, [[1, -1], [1, 1]]));
+export const WHITE_PAWN_ATTACKS = SQUARES.map((square) => stepsFrom(square, [[-1, -1], [-1, 1]]));
+export const BLACK_PAWN_ATTACKS = SQUARES.map((square) => stepsFrom(square, [[1, -1], [1, 1]]));
+
+/**
+ * The direction (as in `RAYS`) that leads from one square to another on
+ * its lines, or -1. Found by `from * 64 + to`.
+ */
+const DIRECTION_TO = new Int8Array(64 * 64).fill(-1);
+/** Whether a knight on one square attacks another. Found by `from * 64 + to`. */
+const KNIGHT_REACHES = new Uint8Array(64 * 64);
+for (const square of SQUARES) {
+  RAYS[square].forEach((ray, direction) => {
+    for (const target of ray) DIRECTION_TO[square * 64 + target] = direction;
+  });
+  for (const target of KNIGHT_TARGETS[square]) KNIGHT_REACHES[square * 64 + target] = 1;
+}
 
 // ---- Position keys ------------------------------------------------------
 // Each position gets a 64-bit key, kept as two 32-bit halves: XOR of one
@@ -144,6 +160,12 @@ const START_ROWS = [
 
 const FEN_PIECES = 'PNBRQK';
 
+/** What each piece is worth in an exchange. A king taken ends it: nothing pays for that. */
+const EXCHANGE_VALUE = [0, 100, 320, 330, 500, 900, 20000];
+const EXCHANGE_GAINS = new Int32Array(34);
+const LIFTED_SQUARES = new Int8Array(34);
+const LIFTED_PIECES = new Int8Array(34);
+
 /** The most moves a position can offer is 218; a list never needs more room. */
 export const MAX_MOVES = 256;
 
@@ -164,12 +186,32 @@ export class Position {
   public readonly kings = new Int8Array(2);
   /** Knights, bishops, rooks and queens of each side: white's first. */
   public readonly officers = new Int8Array(2);
+  /**
+   * The squares each side has a piece on: white's in the first sixteen
+   * places, black's in the next. In no order: a piece taken leaves its
+   * place to the last of the list.
+   */
+  public readonly pieceSquares = new Int8Array(32);
+  /** How many pieces each side has: white's first. */
+  public readonly pieceCount = new Int8Array(2);
+  /** Where in its side's list the piece on each square is. */
+  private readonly pieceSlot = new Int8Array(64);
+  /**
+   * Material and placement of every piece, added up for white, for a full
+   * board and for an endgame, and how full the board still is. Kept up
+   * to date move by move: see `piece-squares`.
+   */
+  public opening = 0;
+  public endgame = 0;
+  public phase = 0;
 
   // What each move changed that the move itself cannot tell, to take it back.
   private undoCaptured: Int8Array;
   private undoCastling: Int8Array;
   private undoEnPassant: Int8Array;
   private undoHalfmoves: Int16Array;
+  private undoOpening: Int16Array;
+  private undoEndgame: Int16Array;
   /** The key before each move: also the list of positions the game went through. */
   private undoKeyLo: Int32Array;
   private undoKeyHi: Int32Array;
@@ -183,6 +225,8 @@ export class Position {
     this.undoCastling = new Int8Array(capacity);
     this.undoEnPassant = new Int8Array(capacity);
     this.undoHalfmoves = new Int16Array(capacity);
+    this.undoOpening = new Int16Array(capacity);
+    this.undoEndgame = new Int16Array(capacity);
     this.undoKeyLo = new Int32Array(capacity);
     this.undoKeyHi = new Int32Array(capacity);
     this.set(START_ROWS.flat(), WHITE, 15, -1, 0);
@@ -203,6 +247,8 @@ export class Position {
     this.undoCastling = longer(this.undoCastling, Int8Array);
     this.undoEnPassant = longer(this.undoEnPassant, Int8Array);
     this.undoHalfmoves = longer(this.undoHalfmoves, Int16Array);
+    this.undoOpening = longer(this.undoOpening, Int16Array);
+    this.undoEndgame = longer(this.undoEndgame, Int16Array);
     this.undoKeyLo = longer(this.undoKeyLo, Int32Array);
     this.undoKeyHi = longer(this.undoKeyHi, Int32Array);
     this.capacity = capacity;
@@ -248,6 +294,10 @@ export class Position {
     this.halfmoves = halfmoves;
     this.ply = 0;
     this.officers.fill(0);
+    this.pieceCount.fill(0);
+    this.opening = 0;
+    this.endgame = 0;
+    this.phase = 0;
     this.keyLo = CASTLING_KEYS_LO[castling];
     this.keyHi = CASTLING_KEYS_HI[castling];
     if (side === BLACK) {
@@ -267,7 +317,31 @@ export class Position {
       const owner = piece > 0 ? 0 : 1;
       if (kind === KING) this.kings[owner] = square;
       else if (kind !== PAWN) this.officers[owner]++;
+      this.addPiece(owner, square);
+      this.opening += SQUARE_OPENING[(piece + 6) * 64 + square];
+      this.endgame += SQUARE_ENDGAME[(piece + 6) * 64 + square];
+      this.phase += PHASE_WEIGHT[kind];
     }
+  }
+
+  private addPiece(owner: number, square: number): void {
+    const slot = this.pieceCount[owner]++;
+    this.pieceSlot[square] = slot;
+    this.pieceSquares[owner * 16 + slot] = square;
+  }
+
+  /** The last piece of the list takes the place of the one that leaves. */
+  private removePiece(owner: number, square: number): void {
+    const slot = this.pieceSlot[square];
+    const last = this.pieceSquares[owner * 16 + --this.pieceCount[owner]];
+    this.pieceSquares[owner * 16 + slot] = last;
+    this.pieceSlot[last] = slot;
+  }
+
+  private movePiece(owner: number, from: number, to: number): void {
+    const slot = this.pieceSlot[from];
+    this.pieceSlot[to] = slot;
+    this.pieceSquares[owner * 16 + slot] = to;
   }
 
   /** Puts a piece in the key, or takes it out: XOR does both. */
@@ -295,28 +369,46 @@ export class Position {
     this.undoCastling[ply] = this.castling;
     this.undoEnPassant[ply] = this.enPassant;
     this.undoHalfmoves[ply] = this.halfmoves;
+    this.undoOpening[ply] = this.opening;
+    this.undoEndgame[ply] = this.endgame;
     this.undoKeyLo[ply] = this.keyLo;
     this.undoKeyHi[ply] = this.keyHi;
 
+    let opening = this.opening - SQUARE_OPENING[(piece + 6) * 64 + from];
+    let endgame = this.endgame - SQUARE_ENDGAME[(piece + 6) * 64 + from];
     board[from] = 0;
     this.toggle(piece, from);
     if (captured !== 0) {
       this.toggle(captured, to);
-      if (captured !== PAWN && captured !== -PAWN) this.officers[1 - mover]--;
+      this.removePiece(1 - mover, to);
+      opening -= SQUARE_OPENING[(captured + 6) * 64 + to];
+      endgame -= SQUARE_ENDGAME[(captured + 6) * 64 + to];
+      if (captured !== PAWN && captured !== -PAWN) {
+        this.officers[1 - mover]--;
+        this.phase -= PHASE_WEIGHT[captured > 0 ? captured : -captured];
+      }
     }
+    this.movePiece(mover, from, to);
 
     let placed = piece;
     if (promotion !== 0) {
       placed = promotion * side;
       this.officers[mover]++;
+      this.phase += PHASE_WEIGHT[promotion];
     }
     board[to] = placed;
     this.toggle(placed, to);
+    opening += SQUARE_OPENING[(placed + 6) * 64 + to];
+    endgame += SQUARE_ENDGAME[(placed + 6) * 64 + to];
 
     if (flag === FLAG_EN_PASSANT) {
       // The pawn taken is beside the one that takes, not where it lands.
       const taken = to + (side === WHITE ? 8 : -8);
-      this.toggle(board[taken], taken);
+      const pawn = board[taken];
+      this.toggle(pawn, taken);
+      this.removePiece(1 - mover, taken);
+      opening -= SQUARE_OPENING[(pawn + 6) * 64 + taken];
+      endgame -= SQUARE_ENDGAME[(pawn + 6) * 64 + taken];
       board[taken] = 0;
     } else if (flag === FLAG_CASTLE) {
       const rookFrom = to > from ? from + 3 : from - 4;
@@ -326,7 +418,12 @@ export class Position {
       board[rookTo] = rook;
       this.toggle(rook, rookFrom);
       this.toggle(rook, rookTo);
+      this.movePiece(mover, rookFrom, rookTo);
+      opening += SQUARE_OPENING[(rook + 6) * 64 + rookTo] - SQUARE_OPENING[(rook + 6) * 64 + rookFrom];
+      endgame += SQUARE_ENDGAME[(rook + 6) * 64 + rookTo] - SQUARE_ENDGAME[(rook + 6) * 64 + rookFrom];
     }
+    this.opening = opening;
+    this.endgame = endgame;
 
     if (piece === KING || piece === -KING) this.kings[mover] = to;
 
@@ -373,6 +470,8 @@ export class Position {
     this.castling = this.undoCastling[ply];
     this.enPassant = this.undoEnPassant[ply];
     this.halfmoves = this.undoHalfmoves[ply];
+    this.opening = this.undoOpening[ply];
+    this.endgame = this.undoEndgame[ply];
     this.keyLo = this.undoKeyLo[ply];
     this.keyHi = this.undoKeyHi[ply];
 
@@ -380,20 +479,29 @@ export class Position {
     if (promotion !== 0) {
       piece = PAWN * side;
       this.officers[mover]--;
+      this.phase -= PHASE_WEIGHT[promotion];
     }
     board[from] = piece;
     board[to] = captured;
-    if (captured !== 0 && captured !== PAWN && captured !== -PAWN) {
-      this.officers[1 - mover]++;
+    this.movePiece(mover, to, from);
+    if (captured !== 0) {
+      this.addPiece(1 - mover, to);
+      if (captured !== PAWN && captured !== -PAWN) {
+        this.officers[1 - mover]++;
+        this.phase += PHASE_WEIGHT[captured > 0 ? captured : -captured];
+      }
     }
 
     if (flag === FLAG_EN_PASSANT) {
-      board[to + (side === WHITE ? 8 : -8)] = -PAWN * side;
+      const taken = to + (side === WHITE ? 8 : -8);
+      board[taken] = -PAWN * side;
+      this.addPiece(1 - mover, taken);
     } else if (flag === FLAG_CASTLE) {
       const rookFrom = to > from ? from + 3 : from - 4;
       const rookTo = to > from ? from + 1 : from - 1;
       board[rookFrom] = board[rookTo];
       board[rookTo] = 0;
+      this.movePiece(mover, rookTo, rookFrom);
     }
 
     if (piece === KING || piece === -KING) this.kings[mover] = from;
@@ -470,6 +578,146 @@ export class Position {
     return false;
   }
 
+  /**
+   * The square of the least valuable piece of `by` that attacks `square`,
+   * or -1. It reads the board as it stands, so with a piece lifted off it
+   * the ones lined up behind come into view.
+   */
+  private leastAttacker(square: number, by: Color): number {
+    const board = this.board;
+
+    const pawnOrigins = by === WHITE ? BLACK_PAWN_ATTACKS[square] : WHITE_PAWN_ATTACKS[square];
+    const pawn = PAWN * by;
+    for (let i = 0; i < pawnOrigins.length; i++) {
+      if (board[pawnOrigins[i]] === pawn) return pawnOrigins[i];
+    }
+
+    const knight = KNIGHT * by;
+    const knights = KNIGHT_TARGETS[square];
+    for (let i = 0; i < knights.length; i++) {
+      if (board[knights[i]] === knight) return knights[i];
+    }
+
+    const queen = QUEEN * by;
+    const rays = RAYS[square];
+    let queenSquare = -1;
+    const bishop = BISHOP * by;
+    for (let direction = 4; direction < 8; direction++) {
+      const ray = rays[direction];
+      for (let i = 0; i < ray.length; i++) {
+        const piece = board[ray[i]];
+        if (piece === 0) continue;
+        if (piece === bishop) return ray[i];
+        if (piece === queen) queenSquare = ray[i];
+        break;
+      }
+    }
+    const rook = ROOK * by;
+    for (let direction = 0; direction < 4; direction++) {
+      const ray = rays[direction];
+      for (let i = 0; i < ray.length; i++) {
+        const piece = board[ray[i]];
+        if (piece === 0) continue;
+        if (piece === rook) return ray[i];
+        if (piece === queen) queenSquare = ray[i];
+        break;
+      }
+    }
+    if (queenSquare !== -1) return queenSquare;
+
+    const king = KING * by;
+    const around = KING_TARGETS[square];
+    for (let i = 0; i < around.length; i++) {
+      if (board[around[i]] === king) return around[i];
+    }
+    return -1;
+  }
+
+  /**
+   * What a capture wins or loses once every recapture on its square has
+   * been played out, each side taking with its cheapest piece and
+   * stopping when it pays to. A queen taking a defended pawn loses eight
+   * pawns here, without looking a single move ahead.
+   */
+  public exchange(move: Move): number {
+    const board = this.board;
+    const from = move & 63;
+    const to = (move >> 6) & 63;
+    let side = this.side;
+    let lifted = 0;
+    let depth = 0;
+
+    EXCHANGE_GAINS[0] =
+      move >> 15 === FLAG_EN_PASSANT ? EXCHANGE_VALUE[PAWN] : EXCHANGE_VALUE[Math.abs(board[to])];
+    /** The piece standing on the square, the next to be taken. */
+    let standing = board[from] * side;
+    LIFTED_SQUARES[lifted] = from;
+    LIFTED_PIECES[lifted++] = board[from];
+    board[from] = 0;
+    side = -side as Color;
+
+    for (;;) {
+      const attacker = this.leastAttacker(to, side);
+      if (attacker === -1) break;
+      depth++;
+      EXCHANGE_GAINS[depth] = EXCHANGE_VALUE[standing] - EXCHANGE_GAINS[depth - 1];
+      standing = board[attacker] * side;
+      LIFTED_SQUARES[lifted] = attacker;
+      LIFTED_PIECES[lifted++] = board[attacker];
+      board[attacker] = 0;
+      side = -side as Color;
+    }
+    while (lifted > 0) {
+      lifted--;
+      board[LIFTED_SQUARES[lifted]] = LIFTED_PIECES[lifted];
+    }
+
+    // From the last capture back: each side takes only if it comes out ahead.
+    while (depth > 0) {
+      EXCHANGE_GAINS[depth - 1] = -Math.max(-EXCHANGE_GAINS[depth - 1], EXCHANGE_GAINS[depth]);
+      depth--;
+    }
+    return EXCHANGE_GAINS[0];
+  }
+
+  /**
+   * Whether a move, not yet played, attacks the rival king with the piece
+   * it moves. It misses the checks a move uncovers from another piece and
+   * a rook's when castling: enough for the search not to skip the checks
+   * that matter, not to know every one.
+   */
+  public checks(move: Move): boolean {
+    const board = this.board;
+    const from = move & 63;
+    const to = (move >> 6) & 63;
+    const promotion = (move >> 12) & 7;
+    const side = this.side;
+    const king = this.kings[side === WHITE ? 1 : 0];
+    const kind = promotion !== 0 ? promotion : board[from] * side;
+
+    if (kind === PAWN) {
+      const attacked = side === WHITE ? WHITE_PAWN_ATTACKS[to] : BLACK_PAWN_ATTACKS[to];
+      for (let i = 0; i < attacked.length; i++) {
+        if (attacked[i] === king) return true;
+      }
+      return false;
+    }
+    if (kind === KNIGHT) return KNIGHT_REACHES[to * 64 + king] === 1;
+    if (kind === KING) return false;
+
+    const direction = DIRECTION_TO[to * 64 + king];
+    if (direction === -1) return false;
+    if (kind === BISHOP ? direction < 4 : kind === ROOK && direction >= 4) return false;
+    const ray = RAYS[to][direction];
+    for (let i = 0; i < ray.length; i++) {
+      const square = ray[i];
+      if (square === king) return true;
+      // The square it leaves no longer stands in the way.
+      if (board[square] !== 0 && square !== from) return false;
+    }
+    return false;
+  }
+
   /** Whether the side to move is in check. */
   public inCheck(): boolean {
     return this.isAttacked(this.kings[this.side === WHITE ? 0 : 1], -this.side as Color);
@@ -504,11 +752,14 @@ export class Position {
   public generate(moves: Int32Array, capturesOnly = false): number {
     const board = this.board;
     const side = this.side;
+    const squares = this.pieceSquares;
+    const first = side === WHITE ? 0 : 16;
+    const end = first + this.pieceCount[side === WHITE ? 0 : 1];
     let count = 0;
 
-    for (let from = 0; from < 64; from++) {
+    for (let index = first; index < end; index++) {
+      const from = squares[index];
       const piece = board[from] * side;
-      if (piece <= 0) continue;
 
       if (piece === PAWN) {
         const row = from >> 3;
@@ -566,10 +817,10 @@ export class Position {
         continue;
       }
 
-      const first = piece === BISHOP ? 4 : 0;
+      const start = piece === BISHOP ? 4 : 0;
       const last = piece === ROOK ? 4 : 8;
       const rays = RAYS[from];
-      for (let direction = first; direction < last; direction++) {
+      for (let direction = start; direction < last; direction++) {
         const ray = rays[direction];
         for (let i = 0; i < ray.length; i++) {
           const to = ray[i];

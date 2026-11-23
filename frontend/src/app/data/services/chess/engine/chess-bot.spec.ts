@@ -7,6 +7,7 @@ import {
   chooseBotMove,
   positionAfter,
 } from './chess-bot';
+import { BOOK_PLIES, BROKEN_BOOK_LINES, bookMove } from './opening-book';
 import { Position, moveName } from './position';
 import { Search } from './search';
 
@@ -88,6 +89,68 @@ describe('chess bot', () => {
       expect(CHESS_BOT_PROFILES.hard.slipChance).toBe(0);
       expect(CHESS_BOT_PROFILES.master.slipChance).toBe(0);
     });
+
+    it('look at every move when they look a set number of moves ahead', () => {
+      // Leaving moves out is for a search that makes up for it in depth.
+      for (const level of order) {
+        const { depth, everyMove } = CHESS_BOT_PROFILES[level];
+
+        expect(everyMove).withContext(level).toBe(depth < 10);
+      }
+    });
+
+    it('know more of the book the higher they are', () => {
+      for (let i = 1; i < order.length; i++) {
+        expect(CHESS_BOT_PROFILES[order[i]].bookPlies).toBeGreaterThan(
+          CHESS_BOT_PROFILES[order[i - 1]].bookPlies
+        );
+      }
+      expect(CHESS_BOT_PROFILES.master.bookPlies).toBeLessThanOrEqual(BOOK_PLIES);
+    });
+  });
+
+  describe('the opening book', () => {
+    /** A search that must not be asked: the book has the answer. */
+    const unused = { run: () => fail('the book move needs no search') } as unknown as Search;
+
+    it('has no line that cannot be played', () => {
+      bookMove(new Position(), () => 0);
+
+      expect(BROKEN_BOOK_LINES).toEqual([]);
+    });
+
+    it('opens the game without thinking, and not always the same way', () => {
+      const opened = new Set<string>();
+      for (let pick = 0; pick < 1; pick += 0.05) {
+        opened.add(name(chooseBotMove(new Position(), CHESS_BOT_PROFILES.master, unused, rolls(0.9, pick))));
+      }
+
+      expect(opened.size).toBeGreaterThan(2);
+      for (const move of opened) expect(['e2e4', 'd2d4', 'c2c4', 'g1f3']).toContain(move);
+    });
+
+    it('answers a known position reached by another order of moves', () => {
+      // The queen's gambit declined, with the knights out before the pawns.
+      const position = positionAfter(['g1f3', 'g8f6', 'd2d4', 'd7d5', 'c2c4', 'e7e6'].map(botMove))!;
+
+      expect(bookMove(position, () => 0)).not.toBe(0);
+    });
+
+    it('is left sooner by the lower levels', () => {
+      const position = positionAfter(['e2e4', 'e7e5', 'g1f3', 'b8c6'].map(botMove))!;
+      const asked = { run: jasmine.createSpy('run').and.callFake(() => search.run(position, { depth: 1 })) };
+
+      chooseBotMove(position, CHESS_BOT_PROFILES.rookie, asked as unknown as Search, rolls(0.9, 0));
+      expect(asked.run).toHaveBeenCalled();
+
+      expect(chooseBotMove(position, CHESS_BOT_PROFILES.master, unused, rolls(0.9, 0))).not.toBeNull();
+    });
+
+    it('has nothing to say once the game has left it', () => {
+      const position = positionAfter(['a2a4', 'h7h5'].map(botMove))!;
+
+      expect(bookMove(position, () => 0)).toBe(0);
+    });
   });
 
   describe('choosing a move', () => {
@@ -98,7 +161,9 @@ describe('chess bot', () => {
       position.ply = 20;
       return position;
     };
-    const careful: ChessBotProfile = { depth: 2, timeMs: 5000, margin: 0, slipChance: 0.5, slipMargin: 2000 };
+    const careful: ChessBotProfile = {
+      depth: 2, everyMove: true, timeMs: 5000, margin: 0, slipChance: 0.5, slipMargin: 2000, bookPlies: 0,
+    };
 
     it('plays the best move it sees when it does not slip', () => {
       const move = chooseBotMove(afterOpening(HANGING_QUEEN), careful, search, rolls(0.9, 0));
@@ -128,16 +193,25 @@ describe('chess bot', () => {
       }
     });
 
-    it('opens in more than one way, at the level that never slips', () => {
+    it('varies its first moves without its book, at the level that never slips', () => {
+      // A search that says three moves are as good as each other.
+      const start = new Position();
+      const close = start.legalMoves().slice(0, 3).map((move) => ({ move, score: 20 }));
+      const asked = { run: jasmine.createSpy('run').and.returnValue({ moves: close, depth: 1, nodes: 1 }) };
+      const bookless = { ...CHESS_BOT_PROFILES.master, bookPlies: 0 };
+
       const opened = new Set<string>();
-      for (let pick = 0; pick < 1; pick += 0.05) {
-        const move = chooseBotMove(new Position(), CHESS_BOT_PROFILES.master, search, rolls(0.9, pick), {
-          depth: 4,
-        });
-        opened.add(name(move));
+      for (const pick of [0, 0.5, 0.99]) {
+        opened.add(name(chooseBotMove(start, bookless, asked as unknown as Search, rolls(0.9, pick))));
       }
 
-      expect(opened.size).toBeGreaterThan(1);
+      // It asks for every move near the best one, and plays any of them.
+      expect(asked.run.calls.mostRecent().args[1].margin).toBeGreaterThan(0);
+      expect(opened.size).toBe(3);
+
+      // Later in the game it only wants the best.
+      chooseBotMove(afterOpening(HANGING_QUEEN), bookless, asked as unknown as Search, rolls(0.9, 0));
+      expect(asked.run.calls.mostRecent().args[1].margin).toBe(0);
     });
 
     it('has no move when the game is over', () => {
