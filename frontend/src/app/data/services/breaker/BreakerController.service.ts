@@ -3,6 +3,7 @@ import { BreakerBridgeEvents } from '@app/data/models/breaker/BreakerBridge';
 import type { RunSummary } from '@app/data/services/breaker/engine/types';
 import { recordRun, type BreakerRecords } from '@app/data/services/breaker/engine/records';
 import { breakerRecords, breakerSettings } from '@app/data/services/breaker/breaker-saves';
+import type { BreakerPageAction } from '@app/data/services/breaker/breaker-controls';
 import { EventBus } from '@app/data/services/phaser/EventBus';
 import { persisted } from '@app-persistence';
 
@@ -142,15 +143,17 @@ export class BreakerControllerService {
     this.pause();
   }
 
-  /** The page owns P, Esc (pause), M (mute) and L (mouse lock); the scene reads the rest. */
-  handleKey(event: KeyboardEvent): void {
-    // Ctrl+P (print), Ctrl+L (address bar), Cmd+M (minimize), Alt combos: the browser's, not ours.
-    if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
-    const key = event.key.toLowerCase();
-    if (key === 'escape' && event.timeStamp - this.lockLostAt < ESC_ECHO_MS) return;
-    if (key === 'p' || key === 'escape') this.togglePause();
-    else if (key === 'm') this.toggleMute();
-    else if (key === 'l') this.toggleCaptureMouse();
+  /**
+   * The page owns P, Esc (pause), M (mute) and L (mouse lock); the scene
+   * reads the rest. Which keys, and that Ctrl+P (print), Ctrl+L (address
+   * bar), Cmd+M (minimize) and Alt combos are the browser's, is in
+   * BREAKER_PAGE_KEYS. `at` is the key's timeStamp.
+   */
+  handleAction(action: BreakerPageAction, at: number): void {
+    if (action === 'escape' && at - this.lockLostAt < ESC_ECHO_MS) return;
+    if (action === 'pause' || action === 'escape') this.togglePause();
+    else if (action === 'mute') this.toggleMute();
+    else if (action === 'mouse-lock') this.toggleCaptureMouse();
   }
 
   private readonly onReady = (): void => {

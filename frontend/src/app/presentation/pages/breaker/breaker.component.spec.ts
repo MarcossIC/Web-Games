@@ -28,7 +28,7 @@ describe('BreakerComponent', () => {
       connect: jasmine.createSpy('connect'),
       togglePause: jasmine.createSpy('togglePause'),
       toggleMute: jasmine.createSpy('toggleMute'),
-      handleKey: jasmine.createSpy('handleKey'),
+      handleAction: jasmine.createSpy('handleAction'),
       play: jasmine.createSpy('play'),
       restart: jasmine.createSpy('restart'),
     };
@@ -99,7 +99,7 @@ describe('BreakerComponent', () => {
 
   it('forwards document keys to the controller', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'p' }));
-    expect(controller['handleKey']).toHaveBeenCalled();
+    expect(controller['handleAction']).toHaveBeenCalledWith('pause', jasmine.any(Number));
   });
 
   it('the mute button toggles mute', () => {

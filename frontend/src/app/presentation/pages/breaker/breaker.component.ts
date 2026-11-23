@@ -1,6 +1,8 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { keyActions } from '@app-input';
 import { BreakerControllerService } from '@app/data/services/breaker/BreakerController.service';
+import { BREAKER_PAGE_KEYS } from '@app/data/services/breaker/breaker-controls';
 import { BreakerGameComponent } from '@app/presentation/components/breaker-game/breaker-game.component';
 import { EndgameModalBreakerComponent } from '@app/presentation/components/endgame-modal-breaker/endgame-modal-breaker.component';
 import { WelcomeBreakerModalComponent } from '@app/presentation/components/welcome-breaker-modal/welcome-breaker-modal.component';
@@ -22,7 +24,6 @@ import { GameBarComponent } from '@app-components/game-bar/game-bar.component';
   // controller dies with the page.
   providers: [BreakerControllerService],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown)': 'onKeyDown($event)' },
 })
 export class BreakerComponent {
   protected controller = inject(BreakerControllerService);
@@ -30,10 +31,9 @@ export class BreakerComponent {
   constructor() {
     // Before the host component boots Phaser, so READY is never missed.
     this.controller.connect(inject(DestroyRef));
-  }
-
-  protected onKeyDown(event: KeyboardEvent): void {
-    this.controller.handleKey(event);
+    keyActions(BREAKER_PAGE_KEYS, { on: 'keydown' }).subscribe(({ action, timeStamp }) =>
+      this.controller.handleAction(action, timeStamp)
+    );
   }
 }
 

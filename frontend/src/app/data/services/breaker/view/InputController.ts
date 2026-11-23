@@ -2,20 +2,10 @@ import * as Phaser from 'phaser';
 import { WORLD } from '../engine/config';
 import type { BreakerInput, Paddle } from '../engine/types';
 import { type HudZone, hudZoneAt } from './board-layout';
-import { startsAsTouch } from '@app-input';
+import { type KeyLike, startsAsTouch } from '@app-input';
+import { keyPresses } from '@app-input/phaser-input';
+import { BREAKER_GAME_KEYS } from '../breaker-controls';
 import { type InputAction, InputState, lockedTargetX } from './input-state';
-
-/** KeyboardEvent.code -> action. Codes, not keys: the same places on any layout. */
-const KEY_ACTIONS: Readonly<Record<string, InputAction>> = {
-  KeyA: 'left',
-  ArrowLeft: 'left',
-  KeyD: 'right',
-  ArrowRight: 'right',
-  Space: 'fire',
-  ShiftLeft: 'overdrive',
-  ShiftRight: 'overdrive',
-  KeyE: 'overdrive',
-};
 
 /** Space and the arrows would scroll the page; they are only captured while the run is on. */
 const CAPTURED = [
@@ -34,9 +24,10 @@ export interface TouchHud {
 }
 
 /**
- * Phaser pointer and keyboard events -> InputState. P, Esc and M are the
- * page's (BreakerControllerService.handleKey): this never reads them, so
- * mute has exactly one owner. Handlers are named and removed in destroy().
+ * Phaser pointer and keyboard events -> InputState. The keys are
+ * BREAKER_GAME_KEYS; P, Esc and M are the page's (BREAKER_PAGE_KEYS): this
+ * never reads them, so mute has exactly one owner. Handlers are named and
+ * removed in destroy().
  */
 export class InputController {
   /** Finger touch is relative to the paddle: it asks for where the paddle is and how wide. */
@@ -52,6 +43,8 @@ export class InputController {
    * Null until the first locked move, which starts from the paddle.
    */
   private lockedX: number | null = null;
+  /** Stops hearing the keys (keyPresses). */
+  private readonly stopKeys: () => void;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -69,8 +62,12 @@ export class InputController {
     input.on(Phaser.Input.Events.POINTER_DOWN, this.onPointerDown, this);
     input.on(Phaser.Input.Events.POINTER_UP, this.onPointerUp, this);
     input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, this.onPointerUp, this);
-    input.keyboard?.on(Phaser.Input.Keyboard.Events.ANY_KEY_DOWN, this.onKeyDown, this);
-    input.keyboard?.on(Phaser.Input.Keyboard.Events.ANY_KEY_UP, this.onKeyUp, this);
+    this.stopKeys = keyPresses(
+      input.keyboard,
+      BREAKER_GAME_KEYS,
+      (action, event) => this.onKeyDown(action, event),
+      (action) => this.onKeyUp(action)
+    );
   }
 
   sample(): BreakerInput {
@@ -100,8 +97,7 @@ export class InputController {
     input.off(Phaser.Input.Events.POINTER_DOWN, this.onPointerDown, this);
     input.off(Phaser.Input.Events.POINTER_UP, this.onPointerUp, this);
     input.off(Phaser.Input.Events.POINTER_UP_OUTSIDE, this.onPointerUp, this);
-    input.keyboard?.off(Phaser.Input.Keyboard.Events.ANY_KEY_DOWN, this.onKeyDown, this);
-    input.keyboard?.off(Phaser.Input.Keyboard.Events.ANY_KEY_UP, this.onKeyUp, this);
+    this.stopKeys();
   }
 
   // pointer.x is in game pixels (960x720), the engine's world: it does not
@@ -158,9 +154,7 @@ export class InputController {
     return pointer.locked ? (this.lockedX ?? this.paddle().x) : pointer.x;
   }
 
-  private onKeyDown(event: KeyboardEvent): void {
-    const action = KEY_ACTIONS[event.code];
-    if (!action) return;
+  private onKeyDown(action: InputAction, event: KeyLike): void {
     this.onGesture();
     // A keyboard on a touch screen (a tablet with a cover): speak of keys from now on.
     this.touch = false;
@@ -168,8 +162,7 @@ export class InputController {
     this.state.keyDown(action);
   }
 
-  private onKeyUp(event: KeyboardEvent): void {
-    const action = KEY_ACTIONS[event.code];
-    if (action) this.state.keyUp(action);
+  private onKeyUp(action: InputAction): void {
+    this.state.keyUp(action);
   }
 }
