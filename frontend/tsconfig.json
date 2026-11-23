@@ -28,6 +28,8 @@
       "@app-models/*": ["./src/app/data/models/*"],
       "@app-persistence": ["./src/app/data/persistence/index.ts"],
       "@app-persistence/*": ["./src/app/data/persistence/*"],
+      "@app-input": ["./src/app/data/input/index.ts"],
+      "@app-input/*": ["./src/app/data/input/*"],
       "assets/*": ["./src/assets/*"]
     }
   },
