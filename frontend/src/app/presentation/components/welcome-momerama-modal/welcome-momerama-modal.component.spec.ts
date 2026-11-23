@@ -1,28 +1,23 @@
-/* tslint:disable:no-unused-variable */
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
-
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { MemoramaControllerService } from '@app/data/services/memorama/memoramaController.service';
 import { WelcomeMomeramaModalComponent } from './welcome-momerama-modal.component';
 
 describe('WelcomeMomeramaModalComponent', () => {
-  let component: WelcomeMomeramaModalComponent;
   let fixture: ComponentFixture<WelcomeMomeramaModalComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ WelcomeMomeramaModalComponent ]
-    })
-    .compileComponents();
-  }));
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [WelcomeMomeramaModalComponent],
+      // The same provider the Memorama route declares in app.routing.ts.
+      providers: [provideRouter([]), MemoramaControllerService],
+    }).compileComponents();
 
-  beforeEach(() => {
     fixture = TestBed.createComponent(WelcomeMomeramaModalComponent);
-    component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

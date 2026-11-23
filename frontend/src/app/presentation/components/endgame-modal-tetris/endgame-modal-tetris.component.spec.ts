@@ -1,28 +1,38 @@
-/* tslint:disable:no-unused-variable */
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
-
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { GAME_STORE, memoryStore } from '@app-persistence';
+import { BagOfPiecesService } from '@app/data/services/tetris/BagOfPieces.service';
+import { BoardService } from '@app/data/services/tetris/Board.service';
+import { NextPieceBoardService } from '@app/data/services/tetris/NextPieceBoard.service';
+import { PieceService } from '@app/data/services/tetris/Piece.service';
+import { PointsService } from '@app/data/services/tetris/Points.service';
+import { TetrisControllerService } from '@app/data/services/tetris/TetrisController.service';
 import { EndgameModalTetrisComponent } from './endgame-modal-tetris.component';
 
 describe('EndgameModalTetrisComponent', () => {
-  let component: EndgameModalTetrisComponent;
   let fixture: ComponentFixture<EndgameModalTetrisComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ EndgameModalTetrisComponent ]
-    })
-    .compileComponents();
-  }));
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [EndgameModalTetrisComponent],
+      // The same providers the Tetris route declares in app.routing.ts.
+      providers: [
+        provideRouter([]),
+        { provide: GAME_STORE, useValue: memoryStore() },
+        TetrisControllerService,
+        PointsService,
+        PieceService,
+        NextPieceBoardService,
+        BoardService,
+        BagOfPiecesService,
+      ],
+    }).compileComponents();
 
-  beforeEach(() => {
     fixture = TestBed.createComponent(EndgameModalTetrisComponent);
-    component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

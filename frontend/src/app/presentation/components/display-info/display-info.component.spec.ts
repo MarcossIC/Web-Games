@@ -1,28 +1,24 @@
-/* tslint:disable:no-unused-variable */
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
-
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DisplayInfoComponent } from './display-info.component';
 
 describe('DisplayInfoComponent', () => {
-  let component: DisplayInfoComponent;
   let fixture: ComponentFixture<DisplayInfoComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ DisplayInfoComponent ]
-    })
-    .compileComponents();
-  }));
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [DisplayInfoComponent],
+    }).compileComponents();
 
-  beforeEach(() => {
     fixture = TestBed.createComponent(DisplayInfoComponent);
-    component = fixture.componentInstance;
+    // Its four required inputs, as a page would bind them.
+    fixture.componentRef.setInput('captionX', 'Player X');
+    fixture.componentRef.setInput('captionO', 'Player O');
+    fixture.componentRef.setInput('xCurrent', true);
+    fixture.componentRef.setInput('oCurrent', false);
     fixture.detectChanges();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

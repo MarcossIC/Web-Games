@@ -2,11 +2,13 @@
 
 import { TestBed, inject } from '@angular/core/testing';
 import { BagOfPiecesService } from './BagOfPieces.service';
+import { PieceService } from './Piece.service';
 
 describe('Service: BagOfPieces', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [BagOfPiecesService]
+      // The bag deals the pieces PieceService describes.
+      providers: [BagOfPiecesService, PieceService]
     });
   });
 
