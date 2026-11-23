@@ -74,6 +74,12 @@ export interface Ball {
   stuck: boolean;
   /** Where on the paddle it sits, from the paddle's center. */
   stuckOffset: number;
+  /**
+   * A stuck ball's launch angle from vertical, in radians (positive to the
+   * right). Moving the paddle turns it; the launch leaves exactly at it, so
+   * the view can draw where the ball will go. Meaningless once it flies.
+   */
+  aimRad: number;
   alive: boolean;
 }
 

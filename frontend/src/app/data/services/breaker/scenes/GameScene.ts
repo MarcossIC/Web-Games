@@ -6,6 +6,7 @@ import { BreakerEngine } from '../engine/breaker-engine';
 import { WORLD, type WorldLayout, worldLayout } from '../engine/config';
 import { type BreakerRecords, emptyRecords } from '../engine/records';
 import type { RunSummary } from '../engine/types';
+import { AimGuide } from '../view/AimGuide';
 import { BackgroundView } from '../view/BackgroundView';
 import { BallLayer } from '../view/BallLayer';
 import { Banners } from '../view/Banners';
@@ -85,6 +86,7 @@ export class GameScene extends Phaser.Scene implements BridgeHost, ReactorHost {
   private lasers!: LaserLayer;
   private barrier!: BarrierView;
   private balls!: BallLayer;
+  private aim!: AimGuide;
   private paddle!: PaddleView;
   private fx!: FxLayer;
   private boss!: BossView;
@@ -137,6 +139,7 @@ export class GameScene extends Phaser.Scene implements BridgeHost, ReactorHost {
     this.capsules = new CapsuleLayer(this, world, layout.capsuleScale);
     this.lasers = new LaserLayer(this, world);
     this.barrier = new BarrierView(this, world, layout.barrierY);
+    this.aim = new AimGuide(this, world, layout);
     this.balls = new BallLayer(this, world, layout.ballR);
     this.paddle = new PaddleView(this, world);
     this.fx = new FxLayer(this, world, ui, board);
@@ -329,7 +332,9 @@ export class GameScene extends Phaser.Scene implements BridgeHost, ReactorHost {
     this.lasers.sync(state);
     this.barrier.sync(state, dtMs);
     this.paddle.sync(state, dtMs);
-    this.balls.sync(state, ballLook(fire, nova));
+    const look = ballLook(fire, nova);
+    this.aim.sync(state, look, dtMs);
+    this.balls.sync(state, look);
     this.fx.update(dtMs);
     this.hud.sync(state, dtMs, this.time.now);
     this.hud.setTouch(this.controls.touch);

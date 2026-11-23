@@ -76,6 +76,13 @@ export const BALL = {
   MAX_CONTACTS_PER_STEP: 12,
   /** A serve straight up is dull: the launch tilts at least this much. */
   MIN_LAUNCH_RAD: 0.16,
+  /** Where the aim of a new serve starts, from vertical (tilted towards the middle of the field). */
+  SERVE_AIM_RAD: 0.3,
+  /**
+   * How much a held ball's aim turns per px the paddle moves (towards the
+   * movement): ~250 px sweep it from straight up to the steepest edge angle.
+   */
+  AIM_RAD_PER_PX: 0.0025,
   /** Multi splits each ball into three at these angles. */
   MULTI_SPREAD_DEG: 20,
   /** Prism splits along the mirror angle; a ball too vertical to mirror tilts by this. */

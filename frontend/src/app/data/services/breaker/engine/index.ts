@@ -6,6 +6,7 @@
 export * from './types';
 export { BreakerEngine, IDLE_INPUT } from './breaker-engine';
 export * from './config';
+export { traceAim, type AimObstacles } from './aim';
 export { sectorParams, isSpecialSector, type SectorParams, type BrickMix } from './difficulty';
 export { THEME_COUNT, TONE_COUNT, themeForSector, buildLevel, type Level, type LevelCell } from './levels';
 export { comboMultiplier, SCORE } from './scoring';

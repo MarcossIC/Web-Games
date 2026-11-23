@@ -153,6 +153,16 @@ const DEG = Math.PI / 180;
 const MAX_BOUNCE_RAD = PADDLE.MAX_BOUNCE_DEG * DEG;
 
 /**
+ * A launch angle kept between the steepest edge bounce and the least tilt a
+ * launch may have. One inside that dead zone jumps to its `side` of it (the
+ * sign of `side`), so steering through straight up flips the tilt.
+ */
+function clampAim(angle: number, side: number): number {
+  if (Math.abs(angle) < BALL.MIN_LAUNCH_RAD) return (side < 0 ? -1 : 1) * BALL.MIN_LAUNCH_RAD;
+  return Math.max(-MAX_BOUNCE_RAD, Math.min(MAX_BOUNCE_RAD, angle));
+}
+
+/**
  * The Nova Breaker simulation. Pure: no clock, no DOM, no Phaser. The scene
  * calls update() every frame with the frame time and the input; the engine
  * runs fixed steps of 1/120 s, so the game plays the same at any refresh
@@ -721,6 +731,7 @@ export class BreakerEngine {
       p.x = WORLD.RIGHT_WALL_X - half;
       if (p.vx > 0) p.vx = 0;
     }
+    this.steerAim(p.x - p.prevX);
   }
 
   // ------------------------------------------------------------ formation
@@ -783,11 +794,12 @@ export class BreakerEngine {
   private newBall(): SimBall {
     const ball =
       this.ballPool.pop() ??
-      ({ id: 0, x: 0, y: 0, prevX: 0, prevY: 0, vx: 0, vy: 0, r: this.layout.ballR, stuck: false, stuckOffset: 0, alive: true, holdMs: 0 } as SimBall);
+      ({ id: 0, x: 0, y: 0, prevX: 0, prevY: 0, vx: 0, vy: 0, r: this.layout.ballR, stuck: false, stuckOffset: 0, aimRad: 0, alive: true, holdMs: 0 } as SimBall);
     ball.id = this.nextId++;
     ball.alive = true;
     ball.stuck = false;
     ball.stuckOffset = 0;
+    ball.aimRad = 0;
     ball.holdMs = 0;
     ball.vx = 0;
     ball.vy = 0;
@@ -800,6 +812,8 @@ export class BreakerEngine {
     ball.stuck = true;
     ball.x = ball.prevX = this.paddle.x;
     ball.y = ball.prevY = this.paddle.y - ball.r;
+    // Towards the middle of the field (right from the very center).
+    ball.aimRad = (this.paddle.x > WORLD.WIDTH / 2 ? -1 : 1) * BALL.SERVE_AIM_RAD;
   }
 
   private releaseBalls(): void {
@@ -828,19 +842,27 @@ export class BreakerEngine {
     for (const ball of this.balls) if (ball.stuck) this.launchBall(ball);
   }
 
-  /** Sends a stuck ball off the paddle at the angle its spot on the paddle gives. */
+  /** Sends a stuck ball off the paddle along its aim, the angle the view's guide shows. */
   private launchBall(ball: SimBall): void {
-    const p = this.paddle;
-    const offset = Math.max(-1, Math.min(1, ball.stuckOffset / (p.w / 2)));
-    let angle = this.bounceAngle(offset);
-    // Straight up is dull and can loop over the same bricks: tilt it a little.
-    if (Math.abs(angle) < BALL.MIN_LAUNCH_RAD) angle = (angle < 0 || (angle === 0 && this.rng.chance(0.5)) ? -1 : 1) * BALL.MIN_LAUNCH_RAD;
+    const angle = clampAim(ball.aimRad, ball.aimRad < 0 ? -1 : 1);
     const speed = this.ballSpeed();
     ball.stuck = false;
     ball.holdMs = 0;
     ball.vx = speed * Math.sin(angle);
     ball.vy = -speed * Math.cos(angle);
     this.emit({ type: 'ball-launched', x: ball.x, y: ball.y });
+  }
+
+  /**
+   * Turns the aim of every held ball with the paddle's move: towards where
+   * it went, so sliding right tilts the shot right. The paddle's real move
+   * counts (a wall or a jam stops it), so the aim is the same at any frame rate.
+   */
+  private steerAim(dx: number): void {
+    if (dx === 0) return;
+    for (const ball of this.balls) {
+      if (ball.stuck) ball.aimRad = clampAim(ball.aimRad + dx * BALL.AIM_RAD_PER_PX, dx);
+    }
   }
 
   /** Bounce angle from vertical for a hit at `offset` (-1..1), with a little english from the paddle's speed. */
@@ -1162,6 +1184,8 @@ export class BreakerEngine {
       ball.stuck = true;
       ball.holdMs = EFFECTS.MAGNET_HOLD_MS;
       ball.stuckOffset = Math.max(-(half - ball.r), Math.min(half - ball.r, ball.x - p.x));
+      // It aims where a bounce at that spot would have sent it (no english: the guide shows it as it is).
+      ball.aimRad = clampAim(offset * MAX_BOUNCE_RAD, offset < 0 ? -1 : 1);
       ball.vx = 0;
       ball.vy = 0;
       ball.y = p.y - ball.r;

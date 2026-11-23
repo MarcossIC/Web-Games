@@ -122,6 +122,75 @@ describe('BreakerEngine', () => {
       expect(b.vy).toBeLessThan(0);
       expect(Math.hypot(b.vx, b.vy)).toBeCloseTo(sectorParams(1).ballSpeed, 3);
     });
+
+    describe('the aim of a held ball', () => {
+      /** Launch angle from vertical of a ball in flight. */
+      const angleOf = (b: Ball): number => Math.atan2(b.vx, -b.vy);
+      const maxBounce = (PADDLE.MAX_BOUNCE_DEG * Math.PI) / 180;
+
+      it('serves tilted towards the middle of the field and launches exactly along the aim', () => {
+        const engine = BreakerEngine.forTest({ seed: 1, layout: CORNER });
+        expect(ball(engine).aimRad).toBeCloseTo(BALL.SERVE_AIM_RAD, 6);
+        const aimed = ball(engine).aimRad;
+        engine.update(STEP.MS, LAUNCH);
+        expect(angleOf(ball(engine))).toBeCloseTo(aimed, 6);
+      });
+
+      it('turns the aim towards where the paddle moves, and keeps it when the paddle stops', () => {
+        const engine = BreakerEngine.forTest({ seed: 1, layout: CORNER });
+        const start = ball(engine).aimRad;
+        run(engine, 100, input({ moveAxis: 1 }));
+        // The paddle eases to a stop after the key is let go: the aim turns with it, then holds.
+        run(engine, 300);
+        const right = ball(engine).aimRad;
+        expect(right).toBeGreaterThan(start);
+        run(engine, 500);
+        expect(ball(engine).aimRad).toBeCloseTo(right, 3);
+        run(engine, 400, input({ moveAxis: -1 }));
+        run(engine, 300);
+        expect(ball(engine).aimRad).toBeLessThan(0);
+        const aimed = ball(engine).aimRad;
+        engine.update(STEP.MS, LAUNCH);
+        // The launch step still moves the easing paddle a hair: within a thousandth of a radian.
+        expect(angleOf(ball(engine))).toBeCloseTo(aimed, 3);
+      });
+
+      it('keeps the aim between the least launch tilt and the steepest edge bounce', () => {
+        const engine = BreakerEngine.forTest({ seed: 1, layout: CORNER });
+        for (const axis of [1, -1, 1, -1]) {
+          for (let f = 0; f < 120; f++) {
+            engine.update(1000 / 60, input({ moveAxis: f % 40 < 20 ? axis : 0 }));
+            const a = ball(engine).aimRad;
+            expect(Math.abs(a)).toBeGreaterThanOrEqual(BALL.MIN_LAUNCH_RAD - 1e-9);
+            expect(Math.abs(a)).toBeLessThanOrEqual(maxBounce + 1e-9);
+          }
+        }
+      });
+
+      it('turns with the pointer by how far the paddle went, whatever the frame rate', () => {
+        const at = (frameMs: number): number => {
+          const engine = BreakerEngine.forTest({ seed: 1, layout: CORNER });
+          for (let t = 0; t < 600; t += frameMs) engine.update(frameMs, input({ pointerX: 560 }));
+          return ball(engine).aimRad;
+        };
+        expect(at(1000 / 144)).toBeCloseTo(at(1000 / 60), 3);
+        expect(at(1000 / 60)).toBeCloseTo(BALL.SERVE_AIM_RAD + 80 * BALL.AIM_RAD_PER_PX, 2);
+      });
+
+      it('aims a magnet-caught ball where a bounce at that spot would go', () => {
+        const engine = BreakerEngine.forTest({ seed: 1, layout: CORNER });
+        engine.applyPowerUp('magnet');
+        const p = engine.state.paddle;
+        aim(engine, p.x + p.w / 4, 600, 0, 1);
+        run(engine, 200);
+        const b = ball(engine);
+        expect(b.stuck).toBeTrue();
+        expect(b.aimRad).toBeCloseTo(((b.x - p.x) / (p.w / 2)) * maxBounce, 1);
+        const aimed = b.aimRad;
+        engine.update(STEP.MS, LAUNCH);
+        expect(angleOf(ball(engine))).toBeCloseTo(aimed, 6);
+      });
+    });
   });
 
   describe('the fixed step', () => {

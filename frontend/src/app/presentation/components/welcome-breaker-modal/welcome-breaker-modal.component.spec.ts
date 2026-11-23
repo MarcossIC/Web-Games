@@ -76,7 +76,7 @@ describe('WelcomeBreakerModalComponent', () => {
       .map((r) => r.textContent)
       .join(' ');
     expect(text).toContain('Drag anywhere to move the paddle');
-    expect(text).toContain('Tap to launch');
+    expect(text).toContain('Move to aim, tap to launch');
     expect(text).toContain('Tap NOVA when the meter is full');
   });
 
