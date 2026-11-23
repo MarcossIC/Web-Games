@@ -90,7 +90,11 @@ export class ChessComponent implements OnInit {
   /** A game started from the menu or the end dialog is a new board to show. */
   private readonly watchNewGame = effect(() => {
     this.controller.gameNumber;
-    untracked(() => this.syncWithLiveGame());
+    untracked(() => {
+      this.syncWithLiveGame();
+      // Loaded now, the machine answers the first move without a wait.
+      if (this.controller.mode === 'machine' && this.controller.started) this.bot.prepare();
+    });
   });
 
   /**
@@ -103,7 +107,11 @@ export class ChessComponent implements OnInit {
     this.controller.ply;
     this.controller.gameNumber;
     const request = ++this.botRequest;
-    if (!isBotTurn || isPaused || !started) return;
+    if (!isBotTurn || isPaused || !started) {
+      // Whatever it was thinking about is no longer the position on the board.
+      untracked(() => this.bot.cancel());
+      return;
+    }
 
     const level = this.controller.botLevel;
     const moves = untracked(() => [...this.controller.playedMoves]);

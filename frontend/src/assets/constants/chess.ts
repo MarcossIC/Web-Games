@@ -2,8 +2,11 @@ export const BOARD_ROW_SIZE = 8;
 
 export const columns = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const;
 
-/** How long the machine takes to answer at least: an instant reply reads as a glitch. */
-export const CHESS_BOT_MIN_THINK_MS = 650;
+/**
+ * How long the machine takes to answer at least: an instant reply reads
+ * as a glitch. Short enough that a game against it never feels slow.
+ */
+export const CHESS_BOT_MIN_THINK_MS = 400;
 
 export interface ChessModeInfo {
   id: 'practice' | 'machine';
@@ -52,7 +55,7 @@ export const CHESS_BOT_LEVELS: readonly ChessBotLevelInfo[] = [
   {
     id: 'hard',
     name: 'Hard',
-    hint: 'Looks a few moves ahead and punishes every loose piece.',
+    hint: 'Looks several moves ahead and punishes every loose piece.',
   },
   {
     id: 'master',

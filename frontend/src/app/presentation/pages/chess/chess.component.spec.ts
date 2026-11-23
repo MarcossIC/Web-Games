@@ -14,6 +14,17 @@ import { ChessComponent } from './chess.component';
 class ScriptedBot {
   public readonly asked: { moves: PlayedMove[]; level: ChessBotLevel }[] = [];
   private readonly answers: ((move: PlayedMove | null) => void)[] = [];
+  /** How many times it was told to get ready, and to drop what it was thinking. */
+  public prepared = 0;
+  public cancelled = 0;
+
+  public prepare(): void {
+    this.prepared++;
+  }
+
+  public cancel(): void {
+    this.cancelled++;
+  }
 
   public think(moves: readonly PlayedMove[], level: ChessBotLevel): Promise<PlayedMove | null> {
     this.asked.push({ moves: [...moves], level });
@@ -122,6 +133,7 @@ describe('ChessComponent', () => {
 
       expect(moves()).toEqual(['e4', 'e5']);
       expect(bot.asked.length).toBe(0);
+      expect(bot.prepared).toBe(0);
     });
 
     it('shows the board from white\'s side and names the sides', () => {
@@ -236,6 +248,21 @@ describe('ChessComponent', () => {
       expect(bot.asked.length).toBe(2);
       await answer('c7c5');
       expect(moves()).toEqual(['e4', 'c5']);
+    });
+
+    it('gets the machine ready as the game starts, before it owes a move', () => {
+      expect(bot.prepared).toBe(1);
+      expect(bot.asked.length).toBe(0);
+    });
+
+    it('tells the machine to drop what it was thinking when the game is paused', async () => {
+      await play('e2e4');
+      const before = bot.cancelled;
+
+      controller.isPaused = true;
+      await settle();
+
+      expect(bot.cancelled).toBeGreaterThan(before);
     });
 
     it('plays a move of its own if the machine gives none or one that is not allowed', async () => {

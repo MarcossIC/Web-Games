@@ -72,9 +72,9 @@ export class ChessBot implements OnDestroy {
   private pageSearch: Search | null = null;
 
   /**
-   * The machine's answer to the game so far, or null when it has none.
-   * An answer always comes, even to a question nobody is waiting on any
-   * more: who asks tells whether it still applies.
+   * The machine's answer to the game so far, or null when it has none:
+   * the game is over, or the question was dropped (`cancel`, or a newer
+   * question). Who asks tells whether the answer still applies.
    */
   public async think(
     moves: readonly PlayedMove[],
@@ -85,7 +85,36 @@ export class ChessBot implements OnDestroy {
     return move ? toPlayedMove(move) : null;
   }
 
+  /**
+   * Gets the machine ready before it is asked anything: the worker takes
+   * a moment to load, better spent while the player looks at the board
+   * than after their first move.
+   */
+  public prepare(): void {
+    this.startWorker();
+  }
+
+  /**
+   * Drops what the machine is thinking about: the position changed under
+   * it (an undo, a pause, a new game). Whoever was waiting is told there
+   * is no move.
+   */
+  public cancel(): void {
+    if (this.waiting.size === 0) return;
+    // A worker cannot be interrupted, only stopped: left alone it would
+    // finish a search nobody wants before starting the next one.
+    this.worker?.terminate();
+    this.worker = null;
+    const unanswered = [...this.waiting.values()];
+    this.waiting.clear();
+    for (const { resolve } of unanswered) resolve(null);
+    this.startWorker();
+  }
+
   private ask(request: BotRequest): Promise<BotMove | null> {
+    // Only the last question matters to who asks: an older one still
+    // being thought about would only make this one wait.
+    this.cancel();
     const worker = this.startWorker();
     if (!worker) return this.thinkOnPage(request);
     return new Promise((resolve) => {

@@ -82,14 +82,29 @@ describe('ChessBot', () => {
       expect(await bot.think(game, 'hard')).toBeNull();
     });
 
-    it('answers each question with its own answer', async () => {
+    it('answers only the last question when another comes before the answer', async () => {
       const afterE4 = [played(6, 4, 4, 4)];
 
       const [first, second] = await Promise.all([bot.think([], 'rookie'), bot.think(afterE4, 'rookie')]);
 
-      // White moves a piece from its own half, black from the other.
-      expect(first!.prevX).toBeGreaterThanOrEqual(6);
+      // The first was dropped for the second, which black answers from its own half.
+      expect(first).toBeNull();
       expect(second!.prevX).toBeLessThanOrEqual(1);
+    });
+
+    it('has no answer to a question that was dropped, and answers the next one', async () => {
+      const dropped = bot.think([], 'master');
+      bot.cancel();
+
+      expect(await dropped).toBeNull();
+      expect(await bot.think([], 'rookie')).not.toBeNull();
+    });
+
+    it('can be made ready before it is asked anything', async () => {
+      bot.prepare();
+      bot.prepare();
+
+      expect(await bot.think([], 'rookie')).not.toBeNull();
     });
 
     it('takes at least the time it is told to answer', async () => {
