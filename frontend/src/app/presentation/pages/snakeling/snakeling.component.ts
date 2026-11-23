@@ -6,17 +6,22 @@ import {
   ElementRef,
   NgZone,
   OnInit,
-  PLATFORM_ID,
   Renderer2,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
 import { SnakelingControllerService } from '@app/data/services/snakeling/SnakelingController.service';
-import { fromEvent, interval, throttleTime } from 'rxjs';
+import { interval } from 'rxjs';
 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { keyActions, listenSwipes } from '@app-input';
+import {
+  KEY_THROTTLE_MS,
+  SNAKELING_KEYS,
+  type SnakelingAction,
+} from '@app/data/services/snakeling/snakeling-controls';
 import { WelcomeSnakelingModalComponent } from '@app/presentation/components/welcome-snakeling-modal/welcome-snakeling-modal.component';
 import { EndgameModalSnakelingComponent } from '@app/presentation/components/endgame-modal-snakeling/endgame-modal-snakeling.component';
 import { GameBarComponent } from '@app-components/game-bar/game-bar.component';
@@ -25,9 +30,8 @@ import { FoodService } from '@app/data/services/snakeling/Food.service';
 import { SnakeService } from '@app/data/services/snakeling/Snake.service';
 import { Board, Cell, interpolateBody, settleBody } from './snake-motion';
 import { SnakelingCanvas } from './snakeling-canvas';
-import { Turn, TurnQueue, headingTurn, swipeTurn } from './steering';
-import { ACTIONS, SNAKE_FRAME_PX, SNAKE_FRAME_PX_MOBILE } from 'assets/constants/snakeling';
-import { ACTION } from '@app/data/models/snakeling/Actions';
+import { Turn, TurnQueue, headingTurn } from './steering';
+import { SNAKE_FRAME_PX, SNAKE_FRAME_PX_MOBILE } from 'assets/constants/snakeling';
 import { hasWalls, isTimed } from '@app/data/models/snakeling/Mode';
 
 /** Time between two steps of the game. */
@@ -39,14 +43,6 @@ const MIN_CELL_PX = 8;
 const HURRY_SECONDS = 10;
 /** The width at which the stylesheet switches to the phone layout. */
 const PHONE_QUERY = '(max-width: 600px)';
-
-/** The key that steers each way, whichever key was pressed for it. */
-const TURN_KEYS: Partial<Record<ACTION, Turn>> = {
-  [ACTION.UP]: 'w',
-  [ACTION.LEFT]: 'a',
-  [ACTION.DOWN]: 's',
-  [ACTION.RIGHT]: 'd',
-};
 
 @Component({
   standalone: true,
@@ -75,8 +71,6 @@ export class SnakelingComponent implements OnInit {
   private host: ElementRef<HTMLElement> = inject(ElementRef);
   private zone = inject(NgZone);
   private destroy = inject(DestroyRef);
-  private PLATFORM = inject(PLATFORM_ID);
-  private document = inject(DOCUMENT);
 
   /** Number of segments of the snake, for the readout. */
   protected readonly length = signal(0);
@@ -92,12 +86,9 @@ export class SnakelingComponent implements OnInit {
   private readonly turns = new TurnQueue();
 
   constructor() {
-    if (isPlatformBrowser(this.PLATFORM)) {
-      const throttleDuration = 90;
-      fromEvent<KeyboardEvent>(this.document, 'keydown')
-        .pipe(throttleTime(throttleDuration), takeUntilDestroyed(this.destroy))
-        .subscribe((event: KeyboardEvent) => this.onPress(event.key));
-    }
+    keyActions(SNAKELING_KEYS, { on: 'keydown', throttleMs: KEY_THROTTLE_MS }).subscribe(({ action }) =>
+      this.onPress(action)
+    );
     // The drawing loop runs outside Angular: a frame changes pixels only,
     // so there is nothing for change detection to do 60 times a second.
     // Swipes too: a finger moving fires many events, and only a turn
@@ -246,35 +237,9 @@ export class SnakelingComponent implements OnInit {
    * whole path (right, then down, then left...).
    */
   private listenToSwipes(): void {
-    const area = this.play().nativeElement;
-    let from: { x: number; y: number; id: number } | null = null;
-
-    const down = (event: PointerEvent) => {
-      // A mouse is steered with the keyboard; clicks stay clicks.
-      if (event.pointerType === 'mouse') return;
-      from = { x: event.clientX, y: event.clientY, id: event.pointerId };
-    };
-    const move = (event: PointerEvent) => {
-      if (!from || event.pointerId !== from.id) return;
-      const turn = swipeTurn(event.clientX - from.x, event.clientY - from.y);
-      if (!turn) return;
-      this.steer(turn);
-      from = { x: event.clientX, y: event.clientY, id: from.id };
-    };
-    const up = (event: PointerEvent) => {
-      if (from && event.pointerId === from.id) from = null;
-    };
-
-    area.addEventListener('pointerdown', down);
-    area.addEventListener('pointermove', move);
-    area.addEventListener('pointerup', up);
-    area.addEventListener('pointercancel', up);
-    this.destroy.onDestroy(() => {
-      area.removeEventListener('pointerdown', down);
-      area.removeEventListener('pointermove', move);
-      area.removeEventListener('pointerup', up);
-      area.removeEventListener('pointercancel', up);
-    });
+    // A mouse is steered with the keyboard; clicks stay clicks.
+    const stop = listenSwipes(this.play().nativeElement, (turn) => this.steer(turn));
+    this.destroy.onDestroy(stop);
   }
 
   /** Keeps a turn for the next step, while the game is running. */
@@ -309,10 +274,9 @@ export class SnakelingComponent implements OnInit {
     return seconds <= HURRY_SECONDS && !this.controller.isGameOver;
   }
 
-  onPress(key: string) {
-    const turn = TURN_KEYS[ACTIONS[key]];
-    if (turn) this.steer(turn);
-    else this.controller.executeAction(key);
+  onPress(action: SnakelingAction) {
+    if (action === 'pause') this.controller.executeAction(action);
+    else this.steer(action);
   }
 }
 

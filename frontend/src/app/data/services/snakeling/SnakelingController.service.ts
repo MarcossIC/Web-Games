@@ -1,9 +1,8 @@
 import { Injectable, Renderer2, inject, signal } from '@angular/core';
 import { BoardServiceService } from './BoardService.service';
-import { ACTIONS } from 'assets/constants/snakeling';
 import { SnakeService } from './Snake.service';
 import { FoodService } from './Food.service';
-import { ACTION } from '@app/data/models/snakeling/Actions';
+import type { SnakelingAction } from './snakeling-controls';
 import { ScoreService } from './Score.service';
 import { BoardSizeService } from '@app/data/services/BoardSize.service';
 import { Axis } from '@app/data/models/Axis';
@@ -223,13 +222,12 @@ export class SnakelingControllerService {
     }
   }
 
-  public executeAction(key: string): void {
-    const action = ACTIONS[key];
-    if (action === ACTION.UP) this.snakeService.moveUp();
-    if (action === ACTION.DOWN) this.snakeService.moveDown();
-    if (action === ACTION.LEFT) this.snakeService.moveLeft();
-    if (action === ACTION.RIGHT) this.snakeService.moveRight();
-    if (action === ACTION.PAUSE) this.changePause();
+  public executeAction(action: SnakelingAction): void {
+    if (action === 'up') this.snakeService.moveUp();
+    if (action === 'down') this.snakeService.moveDown();
+    if (action === 'left') this.snakeService.moveLeft();
+    if (action === 'right') this.snakeService.moveRight();
+    if (action === 'pause') this.changePause();
   }
 
   public reset(): void {

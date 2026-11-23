@@ -1,4 +1,3 @@
-import { ACTION } from '@app/data/models/snakeling/Actions';
 import { SnakelingMode } from '@app/data/models/snakeling/Mode';
 
 export const BOARD_WIDTH_MOBILE: number = 14;
@@ -31,19 +30,6 @@ export const PREVIOUS_POSITION: number = -1;
 export const FOOD: number = 1;
 export const EMPTY_CELL: number = 0;
 export const SNAKE: number = 2;
-
-export const ACTIONS: Record<string, ACTION> = {
-  ArrowLeft: ACTION.LEFT,
-  a: ACTION.LEFT,
-  ArrowRight: ACTION.RIGHT,
-  d: ACTION.RIGHT,
-  ArrowDown: ACTION.DOWN,
-  s: ACTION.DOWN,
-  p: ACTION.PAUSE,
-  Escape: ACTION.PAUSE,
-  ArrowUp: ACTION.UP,
-  w: ACTION.UP,
-};
 
 export interface SnakelingModeInfo {
   id: SnakelingMode;
