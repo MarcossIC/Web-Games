@@ -6,19 +6,22 @@
   />
   <chess-game-board>
     <chess-card-player
-      black
-      [player]="2"
-      [active]="controller.playerTurn === 2"
+      top
+      [player]="topPlayer"
+      [label]="playerLabel(topPlayer)"
+      [tag]="turnTag(topPlayer)"
+      [active]="controller.playerTurn === topPlayer"
     ></chess-card-player>
     <ng-container>
-      @for(ROW of chessBoardView; track "x-"+x; let x = $index){ @for(PIECE of
-      ROW; track "y-"+y; let y = $index){
+      @for (x of drawOrder; track x) { @for (y of drawOrder; track y) {
       <chess-square
         (clickSquare)="move($event)"
         (dragPiece)="dragMove($event)"
         [row]="x"
         [column]="y"
-        [piece]="PIECE"
+        [flipped]="flipped"
+        [locked]="controller.isBotTurn"
+        [piece]="chessBoardView[x][y]"
         [player]="controller.playerTurn"
         [isSquarePromotionSquare]="isSquarePromotionSquare(x, y)"
         [isSquareChecked]="isSquareChecked(x, y)"
@@ -35,9 +38,11 @@
       }
     </ng-container>
     <chess-card-player
-      white
-      [player]="1"
-      [active]="controller.playerTurn === 1"
+      bottom
+      [player]="bottomPlayer"
+      [label]="playerLabel(bottomPlayer)"
+      [tag]="turnTag(bottomPlayer)"
+      [active]="controller.playerTurn === bottomPlayer"
     ></chess-card-player>
   </chess-game-board>
   <chess-side-controller
@@ -56,8 +61,8 @@
   </chess-side-controller>
 </section>
 
-@if(controller.isPaused){
-<welcome-chess-modal [resuming]="started()"></welcome-chess-modal>
+@if(!controller.started || controller.isPaused){
+<welcome-chess-modal></welcome-chess-modal>
 } @if(controller.isGameOver){
 <endgame-modal-chess (undo)="undoMove()"></endgame-modal-chess>
 }

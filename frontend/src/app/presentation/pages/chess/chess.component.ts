@@ -10,7 +10,7 @@ import {
   OnInit,
   effect,
   inject,
-  signal,
+  untracked,
 } from '@angular/core';
 import { PieceSymbol } from '@app/data/models/chess/piece-symbols';
 import { ChessController } from '@app/data/services/chess/ChessController.service';
@@ -37,6 +37,12 @@ import { ChessPromotionDialog } from '@app/presentation/components/chess-promoti
 import { ChessSideController } from '@app/presentation/components/chess-side-controller/chess-side-controller.component';
 import { WelcomeChessModal } from '@app/presentation/components/welcome-chess-modal/welcome-chessmodal.component';
 import { EndGameModalChess } from '@app/presentation/components/endgame-modal-chess/endgame-modal-chess.component';
+import { ChessBot } from '@app/data/services/chess/ChessBot.service';
+import { PlayedMove } from '@app/data/models/chess/chess-mode';
+import { CHESS_BOT_LEVELS } from 'assets/constants/chess';
+
+const ROWS_FROM_WHITE = [0, 1, 2, 3, 4, 5, 6, 7];
+const ROWS_FROM_BLACK = [7, 6, 5, 4, 3, 2, 1, 0];
 
 export type SelectedSquare = {
   symbol: PieceSymbol;
@@ -69,20 +75,44 @@ import { GameBarComponent } from '@app-components/game-bar/game-bar.component';
     WelcomeChessModal,
     EndGameModalChess,
   ],
+  // The machine lives as long as the page: leaving it stops the worker.
+  providers: [ChessBot],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChessComponent implements OnInit {
   protected controller = inject(ChessController);
-  /** False until the first Play: tells the opening dialog from a pause. */
-  protected readonly started = signal(false);
-  private readonly watchStart = effect(
-    () => {
-      if (!this.controller.isPaused) this.started.set(true);
-    },
-    { allowSignalWrites: true }
-  );
+  private bot = inject(ChessBot);
   private destroy$ = inject(DestroyRef);
   private cdr = inject(ChangeDetectorRef);
+  /** The last question put to the machine: an answer to an older one is dropped. */
+  private botRequest = 0;
+
+  /** A game started from the menu or the end dialog is a new board to show. */
+  private readonly watchNewGame = effect(() => {
+    this.controller.gameNumber;
+    untracked(() => this.syncWithLiveGame());
+  });
+
+  /**
+   * Asks the machine for its move whenever it owes one. Anything that
+   * changes the position or stops the game (a move, an undo, a pause, a
+   * new game) makes the question moot, and it is asked again if needed.
+   */
+  private readonly watchBotTurn = effect(() => {
+    const { isBotTurn, isPaused, started } = this.controller;
+    this.controller.ply;
+    this.controller.gameNumber;
+    const request = ++this.botRequest;
+    if (!isBotTurn || isPaused || !started) return;
+
+    const level = this.controller.botLevel;
+    const moves = untracked(() => [...this.controller.playedMoves]);
+    this.bot.think(moves, level).then((move) => {
+      if (request !== this.botRequest) return;
+      this.playBotMove(move);
+      this.cdr.markForCheck();
+    });
+  });
   protected selectedSquare: SelectedSquare;
   private pieceSafeCoords: Coords[];
   public isPromotionActive: boolean;
@@ -91,6 +121,8 @@ export class ChessComponent implements OnInit {
   public chessBoardView: PieceSymbol[][];
 
   constructor() {
+    // An answer still on its way when the page is left is for nobody.
+    this.destroy$.onDestroy(() => this.botRequest++);
     this.controller.restartActive
       .pipe(takeUntilDestroyed(this.destroy$))
       .subscribe((reason) => {
@@ -129,8 +161,10 @@ export class ChessComponent implements OnInit {
       .subscribe();
   }
 
+  /** The route keeps its controller between visits: each one starts on the menu. */
   public ngOnInit(): void {
-    this.restartGame();
+    this.controller.backToMenu();
+    this.syncWithLiveGame();
   }
 
   public restartGame() {
@@ -324,6 +358,7 @@ export class ChessComponent implements OnInit {
       this.showPreviousPosition(this.livePointer);
       return;
     }
+    if (this.controller.isBotTurn) return;
     this.selectingPiece(x, y);
     this.placingPiece(x, y);
   }
@@ -339,6 +374,84 @@ export class ChessComponent implements OnInit {
     this.chessBoardView = board;
     this.markLastMoveAndCheckState(lastMove, checkState);
     this.controller.gameHistory.moveHistoryPointerTo(moveIndex);
+  }
+
+  /**
+   * Plays the machine's answer. It is checked against the moves the game
+   * allows, and any of those is played instead if it is not one of them:
+   * the game must go on even if the machine and the board ever disagreed.
+   */
+  private playBotMove(answer: PlayedMove | null): void {
+    const move = answer && this.isAllowed(answer) ? answer : this.anyAllowedMove();
+    if (!move) return;
+    if (this.isViewingHistory) {
+      this.controller.gameHistory.moveHistoryPointerTo(this.livePointer);
+    }
+    this.updateBoard(
+      move.prevX, move.prevY, move.newX, move.newY, move.promotedPieceType
+    );
+  }
+
+  private isAllowed({ prevX, prevY, newX, newY }: PlayedMove): boolean {
+    const targets = this.safeCoords.get(prevX + ',' + prevY) ?? [];
+    return targets.some((coords) => coords.x === newX && coords.y === newY);
+  }
+
+  private anyAllowedMove(): PlayedMove | null {
+    for (const [from, targets] of this.safeCoords) {
+      const [prevX, prevY] = from.split(',').map(Number);
+      const { x: newX, y: newY } = targets[0];
+      const isPawn =
+        this.chessBoardLive[prevX][prevY].toLowerCase() === PieceSymbol.BLACK_PAWN;
+      const promotes = isPawn && (newX === 0 || newX === 7);
+      const queen = newX === 0 ? PieceSymbol.WHITE_QUEEN : PieceSymbol.BLACK_QUEEN;
+      return {
+        prevX, prevY, newX, newY,
+        promotedPieceType: promotes ? queen : PieceSymbol.UNKNOWN,
+      };
+    }
+    return null;
+  }
+
+  private get chessBoardLive(): PieceSymbol[][] {
+    return this.controller.currentChessBoardView;
+  }
+
+  /** True when the player has black: the board is shown from that side. */
+  protected get flipped(): boolean {
+    return (
+      this.controller.mode === 'machine' &&
+      this.controller.humanColor === ChessPlayers.BLACK
+    );
+  }
+
+  /** Rows and columns in the order they are drawn, top to bottom and left to right. */
+  protected get drawOrder(): number[] {
+    return this.flipped ? ROWS_FROM_BLACK : ROWS_FROM_WHITE;
+  }
+
+  /** The side at the top of the board: the rival's. */
+  protected get topPlayer(): ChessPlayers {
+    return this.flipped ? ChessPlayers.WHITE : ChessPlayers.BLACK;
+  }
+
+  protected get bottomPlayer(): ChessPlayers {
+    return this.flipped ? ChessPlayers.BLACK : ChessPlayers.WHITE;
+  }
+
+  /** Who moves a side: nobody in particular in practice, the player or the machine otherwise. */
+  protected playerLabel(player: ChessPlayers): string | undefined {
+    if (this.controller.mode !== 'machine') return undefined;
+    if (player === this.controller.humanColor) return 'You';
+    const level = CHESS_BOT_LEVELS.find(({ id }) => id === this.controller.botLevel);
+    return `Machine · ${level?.name}`;
+  }
+
+  /** What the lit card says: the machine is not waiting, it is thinking. */
+  protected turnTag(player: ChessPlayers): string {
+    const machines =
+      this.controller.mode === 'machine' && player !== this.controller.humanColor;
+    return machines ? 'Thinking' : 'Turn';
   }
 
   /** Index of the position being played in the history. */

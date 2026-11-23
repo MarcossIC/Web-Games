@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { ChessGameOverType } from '@app/data/models/chess/chess-gameOverType';
+import { ChessPlayers } from '@app/data/models/chess/chess-players';
 import { ChessController } from '@app/data/services/chess/ChessController.service';
 
 @Component({
@@ -56,9 +57,13 @@ export class EndGameModalChess {
   };
 
   protected close(): void {
-    this.controller.restartGame();
-    this.controller.isPaused = true;
+    this.controller.backToMenu();
     this.router.navigate(['/games']);
+  }
+
+  /** Back to the menu, to pick another mode or another level. */
+  protected changeMode(): void {
+    this.controller.backToMenu();
   }
 
   protected playAgain(): void {
@@ -82,8 +87,19 @@ export class EndGameModalChess {
     );
   }
 
+  /** Against the machine the verdict is about the player, not about a color. */
+  private playerWon(): boolean {
+    const white = this.controller.humanColor === ChessPlayers.WHITE;
+    const whiteWon =
+      this.controller.gameOverType === ChessGameOverType.CHECK_MATE_WHITE;
+    return white === whiteWon;
+  }
+
   public getGameOverTypeMessage() {
     const type = this.controller.gameOverType;
+    if (this.controller.mode === 'machine' && this.isWinner()) {
+      return this.playerWon() ? 'You win!' : 'The machine wins!';
+    }
     return (
       this.GAME_OVER_MESSAGE[type as keyof typeof this.GAME_OVER_MESSAGE] || ''
     );

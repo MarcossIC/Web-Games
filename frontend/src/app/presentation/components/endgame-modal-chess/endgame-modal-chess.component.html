@@ -14,9 +14,14 @@
     <p class="reason">{{ getGameOverTypeMessage() }}</p>
     }
 
-    <button class="undo-link" type="button" (click)="undo.emit()">
-      Undo last move
-    </button>
+    <div class="links">
+      <button class="undo-link" type="button" (click)="undo.emit()">
+        Undo last move
+      </button>
+      <button class="undo-link" type="button" (click)="changeMode()">
+        Change mode
+      </button>
+    </div>
 
     <div class="sheet-actions">
       <button class="abstract-button exit-button" type="button" (click)="close()">

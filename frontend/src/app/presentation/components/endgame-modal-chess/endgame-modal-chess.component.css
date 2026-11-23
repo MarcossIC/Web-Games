@@ -31,9 +31,16 @@
   }
 }
 
-/* A slip that ended the game can be taken back. */
+/* A slip that ended the game can be taken back, and the next game can
+   be another mode or another level. */
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 1.5rem;
+}
+
 .undo-link {
-  align-self: flex-start;
   min-height: 44px;
   font-family: var(--gg-font-pixel);
   font-size: 0.8125rem;

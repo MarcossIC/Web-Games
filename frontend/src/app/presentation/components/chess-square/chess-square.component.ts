@@ -42,17 +42,18 @@ function verifyLastmove(is: boolean): string {
         isSquareSelected(),
         isSquareLastMove()
       ]"
-      [style.--wave]="row() + column()"
+      [style.--wave]="wave()"
       [draggable]="isDraggable()"
       (click)="move()"
       (dragstart)="moveDragPiece()"
       (dragover)="moveDragOver($event)"
       (drop)="moveDragPiece()"
     >
-      <!-- Board coordinates, on the left and bottom edges only. -->
-      @if (column() === 0) {
+      <!-- Board coordinates, on the left and bottom edges only, whichever
+           side the board is seen from. -->
+      @if (column() === (flipped() ? 7 : 0)) {
       <span class="coord coord-rank" aria-hidden="true">{{ 8 - row() }}</span>
-      } @if (row() === 7) {
+      } @if (row() === (flipped() ? 0 : 7)) {
       <span class="coord coord-file" aria-hidden="true">{{
         FILES[column()]
       }}</span>
@@ -92,6 +93,16 @@ export class ChessSquare {
     transform: verifyLastmove,
   });
   public isSquareSafeForSelectedPiece = input.required<boolean>();
+  /** True when the board is seen from black's side. */
+  public flipped = input(false);
+  /** True while nobody can move by hand: the machine is to play. */
+  public locked = input(false);
+
+  /** How far the square is from the top left corner, as it is drawn. */
+  protected wave(): number {
+    const distance = this.row() + this.column();
+    return this.flipped() ? 14 - distance : distance;
+  }
 
   @Output() clickSquare = new EventEmitter<CoordsInARow>();
   @Output() dragPiece = new EventEmitter<CoordsInARow>();
@@ -113,7 +124,7 @@ export class ChessSquare {
     const playerPiece = isCurrentPlayerWhite
       ? currentPieceIsWhite
       : !currentPieceIsWhite;
-    return this.piece() !== PieceSymbol.UNKNOWN && playerPiece;
+    return !this.locked() && this.piece() !== PieceSymbol.UNKNOWN && playerPiece;
   }
 
   public getPiece(): Type<any> | null {

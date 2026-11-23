@@ -1,4 +1,338 @@
-/* The dialog frame and the key legend come from modal.css. */
+/* The dialog frame and the key legend come from modal.css, which loads
+   after this file: rules that change its classes use two classes. */
+
+.modal.chess-sheet {
+  width: min(100%, 26rem);
+}
+
+/* How to play can be taller than a small screen: centered, its top would
+   be out of reach. `safe` starts it from the top when it does not fit. */
+.modal-scrim.chess-scrim {
+  align-items: safe center;
+}
+
+/* ---- Menu ---------------------------------------------------------- */
+
+.best {
+  margin: -0.25rem 0 0;
+  text-align: center;
+  font-family: var(--gg-font-pixel);
+  font-size: 0.875rem;
+  letter-spacing: 1px;
+  color: var(--gg-muted);
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.chess-sheet .menu-button {
+  flex: none;
+  width: 100%;
+  min-height: 56px;
+  font-size: 1.125rem;
+  background-color: transparent;
+  border: 2px solid var(--gg-line);
+  color: var(--gg-text);
+  transition: border-color 0.15s linear, color 0.15s linear,
+    background-color 0.15s linear;
+}
+
+.chess-sheet .menu-button:hover {
+  border-color: var(--gg-cyan);
+  color: var(--gg-cyan);
+}
+
+.chess-sheet .menu-play {
+  margin-block-end: 0.25rem;
+  background-color: var(--gg-magenta);
+  border-color: var(--gg-magenta);
+  color: var(--gg-ink);
+  box-shadow: 4px 4px 0 var(--gg-cyan);
+}
+
+.chess-sheet .menu-play:hover {
+  background-color: var(--gg-yellow);
+  border-color: var(--gg-yellow);
+  color: var(--gg-ink);
+}
+
+.chess-sheet .menu-exit:hover {
+  border-color: var(--gg-magenta);
+  color: var(--gg-magenta);
+}
+
+.chess-sheet .menu-button:active {
+  transform: translateY(2px);
+}
+
+/* How to play and Exit, side by side under the modes. */
+.menu-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.menu-row .menu-button {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: 1rem;
+}
+
+/* ---- Mode cards ----------------------------------------------------
+   One wide card per mode: icon, name and what it is, and for the
+   machine the level it was last played at. Each mode has its color. */
+.is-practice {
+  --tone: var(--gg-cyan);
+}
+
+.is-machine {
+  --tone: var(--gg-magenta);
+}
+
+.modes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mode-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.875rem;
+  min-height: 72px;
+  padding: 0.75rem 1rem 0.75rem 0.875rem;
+  background: var(--gg-ink);
+  border: 2px solid var(--tone);
+  box-shadow: 4px 4px 0 var(--tone);
+  color: var(--gg-text);
+  text-align: start;
+  cursor: pointer;
+  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out,
+    background-color 0.15s linear;
+}
+
+.mode-card:hover {
+  background: color-mix(in srgb, var(--tone) 12%, var(--gg-ink));
+}
+
+.mode-card:active {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0 var(--tone);
+}
+
+.mode-card:focus-visible {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 3px;
+}
+
+.mode-icon {
+  display: block;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--tone);
+}
+
+.mode-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.icon-head {
+  fill: var(--gg-yellow);
+}
+
+.mode-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.mode-name {
+  font-family: var(--gg-font-display);
+  font-size: 1.1875rem;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.mode-tagline {
+  font-family: var(--gg-font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  color: var(--gg-soft);
+}
+
+.mode-best {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  font-family: var(--gg-font-pixel);
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--gg-yellow);
+}
+
+.mode-best-label {
+  font-size: 0.625rem;
+  letter-spacing: 1px;
+  color: var(--gg-muted);
+  text-transform: uppercase;
+}
+
+/* ---- Against the machine: its level and the player's side ---------- */
+
+.group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.group legend {
+  margin-block-end: 0.625rem;
+  font-family: var(--gg-font-pixel);
+  font-size: 0.8125rem;
+  letter-spacing: 1px;
+  color: var(--gg-muted);
+}
+
+/* Every option is a real radio button, hidden but still focusable, with
+   the visible part drawn by the elements right after it. */
+.group input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.group label {
+  cursor: pointer;
+}
+
+/* Four bars of growing height, like a signal meter. Its color follows
+   the level: calm, alert, hot, dangerous. */
+.meter {
+  --power: #5dfc9a;
+
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--gg-ink);
+  border: 2px solid var(--gg-line);
+}
+
+.meter[data-level="2"] {
+  --power: var(--gg-yellow);
+}
+
+.meter[data-level="3"] {
+  --power: #ff9a3c;
+}
+
+.meter[data-level="4"] {
+  --power: #ff5c5c;
+}
+
+.meter label {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-height: 44px;
+}
+
+.bar {
+  height: calc(0.75rem + var(--rank) * 0.5rem);
+  background: var(--gg-line);
+  transition: background-color 0.2s linear;
+}
+
+.bar.is-lit {
+  background: var(--power);
+}
+
+.meter label:hover .bar:not(.is-lit) {
+  background: #3a3360;
+}
+
+.bar-name {
+  font-family: var(--gg-font-mono);
+  font-size: 0.875rem;
+  text-align: center;
+  color: var(--gg-soft);
+}
+
+.meter input:checked ~ .bar-name {
+  color: var(--power);
+  font-weight: 700;
+}
+
+.meter input:focus-visible ~ .bar {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 2px;
+}
+
+.modal .hint {
+  min-height: 2.6em;
+  margin-block-start: -0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  text-align: start;
+  color: var(--gg-soft);
+}
+
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 4px;
+  background: var(--gg-ink);
+  border: 2px solid var(--gg-line);
+}
+
+.segmented label > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  font-family: var(--gg-font-mono);
+  font-size: 0.9375rem;
+  color: var(--gg-soft);
+  transition: background-color 0.15s linear, color 0.15s linear;
+}
+
+.segmented label:hover > span {
+  color: #fff;
+}
+
+/* The chosen side takes the color of that side of the board. */
+.segmented input:checked + span {
+  background: var(--gg-yellow);
+  color: var(--gg-ink);
+  font-weight: 700;
+}
+
+.segmented input:checked + .side-white {
+  background: var(--gg-cyan);
+}
+
+.segmented input:checked + .side-black {
+  background: var(--gg-magenta);
+}
+
+.segmented input:focus-visible + span {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 2px;
+}
+
+/* ---- How to play --------------------------------------------------- */
 
 .rule {
   font-size: 0.9375rem;
@@ -13,6 +347,37 @@
 
 .touch-hint strong {
   color: var(--gg-yellow);
+}
+
+/* One line per mode, named in its color. */
+.mode-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem 0.875rem;
+  border: 2px dashed var(--gg-line);
+}
+
+.mode-rule {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.mode-rule dt {
+  font-family: var(--gg-font-display);
+  font-size: 0.9375rem;
+  color: var(--tone);
+}
+
+.mode-rule dd {
+  margin: 0;
+  font-family: var(--gg-font-mono);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--gg-soft);
 }
 
 /* A phone has no keyboard: the key legend would only take room. */

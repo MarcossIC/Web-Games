@@ -1,0 +1,11 @@
+/* Web workers run without a page: no DOM, and nothing from Angular. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/worker",
+    "lib": ["ES2022", "WebWorker"],
+    "types": [],
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.worker.ts"]
+}

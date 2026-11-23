@@ -1,13 +1,13 @@
-<div class="modal-scrim">
+<div class="modal-scrim chess-scrim">
   <div
-    class="modal modal-bg sheet"
+    class="modal modal-bg sheet chess-sheet"
+    trapFocus
     role="dialog"
     aria-modal="true"
     aria-labelledby="chess-dialog-title"
   >
-    <h2 id="chess-dialog-title" class="modal-title-with-bar">
-      {{ resuming() ? "Paused" : "How to play" }}
-    </h2>
+    @if (view() === "help") {
+    <h2 id="chess-dialog-title" class="modal-title-with-bar">How to play</h2>
 
     <p class="rule">
       Chess is played on a 64-square board with 16 pieces per player, each with
@@ -15,9 +15,19 @@
       no legal moves to escape the attack.
     </p>
 
+    <dl class="mode-rules">
+      @for (mode of modes; track mode.id) {
+      <div class="mode-rule" [class]="'is-' + mode.id">
+        <dt>{{ mode.name }}</dt>
+        <dd>{{ mode.rule }}</dd>
+      </div>
+      }
+    </dl>
+
     <p class="rule touch-hint">
       Under the board: tap a move to see that position, use the arrows to step
       through the game and <strong>Undo</strong> to take the last move back.
+      Against the machine, Undo takes back its answer too.
     </p>
 
     <dl class="keys">
@@ -44,17 +54,158 @@
     </dl>
 
     <div class="sheet-actions">
-      <button class="abstract-button exit-button" type="button" (click)="close()">
-        Exit Game
-      </button>
       <button
-        #play
+        data-autofocus
         class="abstract-button play-button"
         type="button"
-        (click)="playGame()"
+        (click)="showMenu()"
       >
-        {{ resuming() ? "Resume Game" : "Play Game" }}
+        &larr; Back
       </button>
     </div>
+    } @else if (view() === "machine") {
+    <!-- Against the machine: how strong it is and which side is yours. -->
+    <h2 id="chess-dialog-title" class="modal-title-with-bar">Machine</h2>
+
+    <fieldset class="group">
+      <legend>Level</legend>
+      <div class="meter" [attr.data-level]="levelRank()">
+        @for (option of levels; track option.id; let rank = $index) {
+        <label>
+          <input
+            type="radio"
+            name="chess-level"
+            [attr.data-autofocus]="option.id === level() ? '' : null"
+            [checked]="option.id === level()"
+            (change)="level.set(option.id)"
+          />
+          <span
+            class="bar"
+            [style.--rank]="rank"
+            [class.is-lit]="levelRank() > rank"
+          ></span>
+          <span class="bar-name">{{ option.name }}</span>
+        </label>
+        }
+      </div>
+    </fieldset>
+    <p class="hint" aria-live="polite">{{ levelHint() }}</p>
+
+    <fieldset class="group">
+      <legend>You play</legend>
+      <div class="segmented">
+        @for (option of sides; track option.id) {
+        <label>
+          <input
+            type="radio"
+            name="chess-side"
+            [checked]="option.id === side()"
+            (change)="side.set(option.id)"
+          />
+          <span [class]="'side-' + option.id">{{ option.name }}</span>
+        </label>
+        }
+      </div>
+    </fieldset>
+
+    <div class="sheet-actions">
+      <button class="abstract-button exit-button" type="button" (click)="showMenu()">
+        &larr; Back
+      </button>
+      <button
+        class="abstract-button play-button"
+        type="button"
+        (click)="playMachine()"
+      >
+        Play
+      </button>
+    </div>
+    } @else if (controller.started) {
+    <!-- A game is going: it is paused. -->
+    <h2 id="chess-dialog-title" class="modal-title-with-bar">Paused</h2>
+
+    <p class="best">{{ currentGame() }}</p>
+
+    <nav class="menu" aria-label="Pause menu">
+      <button
+        data-autofocus
+        class="abstract-button menu-button menu-play"
+        type="button"
+        (click)="resume()"
+      >
+        Resume
+      </button>
+      <button class="abstract-button menu-button" type="button" (click)="showHelp()">
+        How to play
+      </button>
+      <button class="abstract-button menu-button" type="button" (click)="changeMode()">
+        Change mode
+      </button>
+      <button class="abstract-button menu-button menu-exit" type="button" (click)="close()">
+        Exit
+      </button>
+    </nav>
+    } @else {
+    <!-- The opening menu: pick a mode to play. -->
+    <h2 id="chess-dialog-title" class="modal-title-with-bar">Chess</h2>
+
+    <p class="best">Pick a mode</p>
+
+    <nav class="modes" aria-label="Game modes">
+      @for (mode of modes; track mode.id) {
+      <button
+        class="mode-card"
+        [class]="'is-' + mode.id"
+        type="button"
+        [attr.data-autofocus]="$first ? '' : null"
+        (click)="pick(mode.id)"
+      >
+        <span class="mode-icon" aria-hidden="true">
+          @if (mode.id === "practice") {
+          <!-- Two pawns, one of each side: both are yours to move. -->
+          <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <path
+              fill="currentColor"
+              d="M3 3h3v3H3zM4 6h1v2H4zM3 8h3v3H3zM2 11h5v2H2z"
+            />
+            <path
+              class="icon-head"
+              d="M10 3h3v3h-3zM11 6h1v2h-1zM10 8h3v3h-3zM9 11h5v2H9z"
+            />
+          </svg>
+          } @else {
+          <!-- The machine: a head with an antenna and two lit eyes. -->
+          <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <path
+              fill="currentColor"
+              d="M7 0h2v2H7zM7 2h2v1H7zM3 3h10v2H3zM3 5h2v3H3zM7 5h2v3H7zM11 5h2v3h-2zM3 8h10v2H3zM3 10h2v1H3zM11 10h2v1h-2zM3 11h10v2H3zM1 6h1v4H1zM14 6h1v4h-1zM5 14h6v1H5z"
+            />
+            <path class="icon-head" d="M5 5h2v3H5zM9 5h2v3H9z" />
+          </svg>
+          }
+        </span>
+        <span class="mode-text">
+          <span class="mode-name">{{ mode.name }}</span>
+          <span class="mode-tagline">{{ mode.tagline }}</span>
+        </span>
+        @if (mode.id === "machine") {
+        <span class="mode-best">
+          <span class="mode-best-label">Level</span>
+          {{ lastLevelName() }}
+        </span>
+        }
+      </button>
+      }
+    </nav>
+
+    <div class="menu-row">
+      <button class="abstract-button menu-button" type="button" (click)="showHelp()">
+        How to play
+      </button>
+      <button class="abstract-button menu-button menu-exit" type="button" (click)="close()">
+        Exit
+      </button>
+    </div>
+    }
   </div>
 </div>

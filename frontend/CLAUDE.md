@@ -69,6 +69,16 @@ Everything kept between visits (records, settings, the install prompt's snooze) 
 - Record arithmetic shared by every game: `keepBest` and `bestPerKey`. What counts as a record (Breaker's practice runs do not) stays in the game.
 - Tests use `memoryStore()`, through `{ provide: GAME_STORE, useValue: store }` or passed directly.
 
+### Chess: modes and the machine
+
+Chess opens on a menu (`welcome-chess-modal`, the same shape as Snakeling's): **Practice** (both sides moved on one screen) or **Machine** (a level and a side are picked first). `ChessController` owns the mode (`start`, `backToMenu`, `isBotTurn`, `machineSetup`); the level and side last picked are kept in `chess-saves.ts`.
+
+- The machine is a chess engine of its own in `data/services/chess/engine/`, plain TypeScript like Nova Breaker's: `position` (board, legal moves, position keys), `evaluate`, `search` (alpha-beta, one move deeper each round) and `chess-bot` (the levels). It never imports Angular or the game's services.
+- Every level runs the same search. `CHESS_BOT_PROFILES` sets what tells them apart: how far ahead it looks, how long it thinks, and how often it settles for a move that is not the best it saw (`margin`, `slipChance`, `slipMargin`). A new level is a new profile.
+- It thinks in a web worker (`engine/chess-bot.worker.ts`, built through `webWorkerTsConfig` and `tsconfig.worker.json`) behind the `ChessBot` service, which the chess page provides itself so the worker stops with the page. Without workers it thinks on the page. The service is asked with the whole list of moves played, so the engine knows castling rights, en passant and repetitions without being told.
+- The page asks from an effect whenever the machine owes a move, and drops an answer to a position that is no longer the one on the board (an undo, a pause, a new game). Undo against the machine takes back its answer together with the player's move.
+- The engine's rules and the game's are two implementations: `chess-engine-agreement.spec.ts` plays random games through both and fails where they allow different moves. Run it after touching either.
+
 ### Key Patterns
 
 - **Standalone components only** — every component uses `standalone: true` with explicit imports.

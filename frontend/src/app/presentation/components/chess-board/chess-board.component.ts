@@ -5,11 +5,11 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   selector: 'chess-game-board',
   template: `
     <div class="chess-game-container">
-      <ng-content select="[black]"></ng-content>
+      <ng-content select="[top]"></ng-content>
       <div class="chess-board">
         <ng-content></ng-content>
       </div>
-      <ng-content select="[white]"></ng-content>
+      <ng-content select="[bottom]"></ng-content>
     </div>
   `,
   styleUrl: './chess-board.component.css',
