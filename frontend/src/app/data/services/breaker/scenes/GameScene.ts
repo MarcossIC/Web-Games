@@ -49,8 +49,8 @@ export interface GameSceneData {
   autoplay?: boolean;
 }
 
-/** How long the paddle powers down before the page is told the run is over. */
-export const GAME_OVER_DELAY_MS = 900;
+/** How long the paddle overloads and bursts (and its pieces fall) before the page is told the run is over. */
+export const GAME_OVER_DELAY_MS = 1700;
 
 type Mode = 'ready' | 'running' | 'paused' | 'over';
 

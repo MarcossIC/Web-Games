@@ -1,5 +1,6 @@
 import type { BreakerEvent, BreakerState } from '../engine/types';
 import { EventReactor, type ReactorHost, type ReactorViews } from './EventReactor';
+import type { PaddleDeathFx } from './PaddleView';
 
 describe('EventReactor', () => {
   function reactor() {
@@ -105,6 +106,49 @@ describe('EventReactor', () => {
 
       expect(audio.brickHard).toHaveBeenCalledWith(1, 200);
       expect(audio.brick).toHaveBeenCalledWith(2, 'prism', 640);
+    });
+  });
+
+  describe('game over: the paddle overloads, then bursts', () => {
+    function deathReactor() {
+      const audio = jasmine.createSpyObj('audio', ['paddleOverload', 'paddleBlast', 'gameOver']);
+      const fx = jasmine.createSpyObj('fx', ['spark', 'shatter', 'flare', 'ring', 'shake', 'edgeFlash', 'debris', 'flash']);
+      const paddle = jasmine.createSpyObj('paddle', ['overload'], { x: 420, y: 690 });
+      const host = jasmine.createSpyObj<ReactorHost>('host', ['sectorCleared', 'gameOver']);
+      const react = new EventReactor({ audio, fx, paddle } as unknown as ReactorViews, host);
+      const summary = { sector: 1 } as unknown as Extract<BreakerEvent, { type: 'game-over' }>['summary'];
+      react.handle([{ type: 'game-over', summary }], {} as BreakerState);
+      const death = paddle.overload.calls.mostRecent().args[0] as PaddleDeathFx;
+      return { audio, fx, paddle, host, death, summary };
+    }
+
+    it('starts the overload at once and tells the scene the run ended', () => {
+      const { audio, fx, paddle, host, summary } = deathReactor();
+      expect(audio.paddleOverload).toHaveBeenCalledWith(420);
+      expect(paddle.overload).toHaveBeenCalledTimes(1);
+      expect(host.gameOver).toHaveBeenCalledWith(summary);
+      // The boom waits for the paddle.
+      expect(audio.paddleBlast).not.toHaveBeenCalled();
+      expect(fx.debris).not.toHaveBeenCalled();
+    });
+
+    it('crackles along the paddle while it overloads', () => {
+      const { fx, death } = deathReactor();
+      death.crackle(420, 690, 120, 0.2);
+      expect(fx.spark).toHaveBeenCalled();
+      const [x] = fx.spark.calls.mostRecent().args as number[];
+      expect(Math.abs(x - 420)).toBeLessThanOrEqual(60);
+    });
+
+    it('bursts where the paddle was: the boom, the tune, its pieces and a shake', () => {
+      const { audio, fx, death } = deathReactor();
+      death.blast(300, 690, 120);
+      expect(audio.paddleBlast).toHaveBeenCalledWith(300);
+      expect(audio.gameOver).toHaveBeenCalledTimes(1);
+      expect(fx.flash).toHaveBeenCalled();
+      expect(fx.debris).toHaveBeenCalledWith(300, 690, 120, jasmine.any(Number), jasmine.any(Number));
+      expect(fx.ring).toHaveBeenCalled();
+      expect(fx.shake).toHaveBeenCalled();
     });
   });
 });

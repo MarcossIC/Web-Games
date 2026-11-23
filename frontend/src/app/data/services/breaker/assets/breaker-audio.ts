@@ -192,6 +192,8 @@ export class BreakerAudio {
       lastBrick: 500,
       sectorClear: 500,
       gameOver: 500,
+      paddleOverload: 500,
+      paddleBlast: 500,
       bossHit: 60,
       bossShot: 150,
       bossDown: 1500,
@@ -534,6 +536,33 @@ export class BreakerAudio {
         ...notes.map((f) => tone('triangle', f, 0.7, 0.08, { at: 0.36, attack: 0.01 })),
       ],
       { priority: true, space: 0.45 },
+    );
+  }
+
+  /** Game over, first beat: the paddle overloads, a rising electric whine. */
+  paddleOverload(x?: number): void {
+    this.play(
+      'paddleOverload',
+      [
+        tone('sawtooth', 110, 0.42, 0.1, { to: 880, filter: { type: 'lowpass', freq: 2400 } }),
+        tone('square', 112, 0.42, 0.05, { to: 900, detune: 14, filter: { type: 'lowpass', freq: 1600 } }),
+        noise({ type: 'bandpass', freq: 3200, q: 2 }, 0.4, 0.06),
+      ],
+      { priority: true, x, space: 0.2 },
+    );
+  }
+
+  /** Game over, second beat: the paddle bursts. A deep, long boom with a crackling tail. */
+  paddleBlast(x?: number): void {
+    this.play(
+      'paddleBlast',
+      [
+        noise({ type: 'lowpass', freq: 3200, to: 120, q: 0.8 }, 1.1, 0.7, { attack: 0.003, color: 'brown' }),
+        tone('sine', 90, 0.8, 0.6, { to: 28 }),
+        tone('triangle', 180, 0.3, 0.22, { to: 50 }),
+        noise({ type: 'highpass', freq: 2600 }, 0.5, 0.1, { at: 0.08 }),
+      ],
+      { priority: true, x, space: 0.6, duck: 0.8 },
     );
   }
 

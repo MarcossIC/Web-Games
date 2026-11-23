@@ -1,4 +1,5 @@
 import { BREAKER_POWER_UP_INFO } from '@app/data/models/breaker/BreakerPowerUpInfo';
+import { vibrate } from '@app/data/input/haptics';
 import type { BreakerAudio } from '../assets/breaker-audio';
 import { hexToNumber } from '../assets/color';
 import { EFFECTS } from '../engine/config';
@@ -12,7 +13,7 @@ import type { FxLayer } from './FxLayer';
 import type { Hud } from './Hud';
 import { pointsLabel } from './hud-format';
 import { shardColor } from './looks';
-import type { PaddleView } from './PaddleView';
+import type { PaddleDeathFx, PaddleView } from './PaddleView';
 import { COLOR } from './scene-kit';
 import type { ClearedSector } from './sector-card';
 
@@ -44,6 +45,8 @@ const POWER_UP_COLOR = Object.fromEntries(
 const HIT_SHARD = 0xd8d0ff;
 const STEEL_SPARK = 0xc9d1e6;
 const WALL_SPARK = 0x8cf0ff;
+/** A warm white: the blast's flash over the whole screen. */
+const PADDLE_BLAST_FLASH = 0xffe2c0;
 
 /** Where the reactor puts what depends on the world's height; the defaults are the desktop 960x720. */
 export interface ReactorPlacement {
@@ -67,8 +70,43 @@ export class EventReactor {
     private readonly place: ReactorPlacement = DESKTOP_PLACEMENT
   ) {}
 
+  /** The paddle's death, built once: the paddle calls it while it overloads and when it bursts. */
+  private readonly paddleDeath: PaddleDeathFx = {
+    crackle: (x, y, w, t) => {
+      const { fx } = this.views;
+      // Arcs jump along the body, hotter and denser as the blast nears.
+      fx.spark(x + (Math.random() - 0.5) * w, y, 3 + Math.round(5 * t), t > 0.6 ? COLOR.WHITE : COLOR.CYAN);
+      if (t > 0.3) fx.flare(x, y, w * (0.5 + t), 140, COLOR.ORANGE);
+    },
+    blast: (x, y, w) => this.paddleBlast(x, y, w),
+  };
+
   handle(events: readonly BreakerEvent[], state: BreakerState): void {
     for (let i = 0; i < events.length; i++) this.react(events[i], state);
+  }
+
+  /** Game over, the paddle bursts: a flash, shockwaves, its pieces thrown up, a hard shake. */
+  private paddleBlast(x: number, y: number, w: number): void {
+    const { audio, fx } = this.views;
+    audio.paddleBlast(x);
+    audio.gameOver();
+    vibrate([60, 40, 140]);
+
+    fx.flash(130, PADDLE_BLAST_FLASH);
+    fx.flare(x, y, 320, 900, COLOR.WHITE);
+    fx.flare(x, y, 200, 650, COLOR.ORANGE);
+    fx.ring(x, y, 16, w * 1.6 + 80, 480, COLOR.WHITE, 0.9);
+    fx.ring(x, y, 24, w * 2.6 + 160, 720, COLOR.ORANGE, 0.85);
+    fx.ring(x, y, 30, w * 3.6 + 260, 1000, COLOR.MAGENTA, 0.5);
+
+    fx.debris(x, y, w, 30, COLOR.CYAN);
+    fx.debris(x, y, w, 15, COLOR.VIOLET);
+    fx.shatter(x, y, 24, COLOR.CYAN);
+    fx.spark(x, y, 40, COLOR.YELLOW);
+    fx.spark(x, y, 24, COLOR.ORANGE);
+
+    fx.shake(560, 0.014);
+    fx.edgeFlash(COLOR.ORANGE, 1);
   }
 
   private react(e: BreakerEvent, state: BreakerState): void {
@@ -193,8 +231,9 @@ export class EventReactor {
         this.host.sectorCleared(e);
         break;
       case 'game-over':
-        audio.gameOver();
-        paddle.powerDown();
+        // The paddle overloads, then bursts (paddleBlast); the sad tune plays with the blast.
+        audio.paddleOverload(paddle.x);
+        paddle.overload(this.paddleDeath);
         fx.edgeFlash(COLOR.RED, 0.6);
         this.host.gameOver(e.summary);
         break;

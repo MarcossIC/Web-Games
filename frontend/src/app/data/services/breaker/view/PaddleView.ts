@@ -3,13 +3,24 @@ import { BreakerTexture, PaddleArt, TEXTURE_SCALE } from '@app/data/models/break
 import type { BreakerState } from '../engine/types';
 import { paddleTextureKey } from './looks';
 import { DEPTH } from './scene-kit';
-import { clamp01, lerp, squash } from './view-math';
+import { lerp, squash } from './view-math';
 
 const PAD = PaddleArt.GLOW_PAD;
 const CAP = PaddleArt.CAP_WIDTH;
 const KEYS = [BreakerTexture.PADDLE, BreakerTexture.PADDLE_LASER, BreakerTexture.PADDLE_MAGNET] as const;
 const SQUASH_MS = 180;
-const POWER_DOWN_MS = 900;
+/** Game over: how long the paddle shakes and swells before it bursts. */
+export const PADDLE_OVERLOAD_MS = 460;
+/** Time between two crackles while it overloads. */
+const CRACKLE_EVERY_MS = 55;
+
+/** What the paddle's death sets off around it (the reactor's effects and sounds). */
+export interface PaddleDeathFx {
+  /** Every few frames while it overloads: `t` goes 0 -> 1. */
+  crackle(x: number, y: number, w: number, t: number): void;
+  /** Once, the moment it bursts. */
+  blast(x: number, y: number, w: number): void;
+}
 
 /** How the paddle is drawn: a NineSlice on WebGL, three images on Canvas. */
 interface PaddleSkin {
@@ -111,14 +122,19 @@ class ThreeImageSkin implements PaddleSkin {
   }
 }
 
-/** The paddle: interpolated x, width eased by the engine, squash on hits, a power-down at game over. */
+/** The paddle: interpolated x, width eased by the engine, squash on hits, an overload and a blast at game over. */
 export class PaddleView {
   private readonly skin: PaddleSkin;
   private squashMs = SQUASH_MS;
   private downMs = -1;
+  private nextCrackleMs = 0;
+  private death: PaddleDeathFx | null = null;
+  private blown = false;
   /** Drawn center, for effects that start on the paddle. */
   x = 0;
   y = 0;
+  /** Drawn body width. */
+  w = 0;
 
   constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer) {
     const canvas = scene.sys.renderer.type === Phaser.CANVAS;
@@ -130,9 +146,21 @@ export class PaddleView {
     this.squashMs = 0;
   }
 
-  /** Game over: the paddle flickers out and sinks. */
-  powerDown(): void {
-    if (this.downMs < 0) this.downMs = 0;
+  /**
+   * Game over: the paddle overloads (it shakes harder and harder, swells and
+   * flickers while it crackles), then bursts and is gone. `fx` hears both.
+   */
+  overload(fx: PaddleDeathFx): void {
+    if (this.downMs >= 0) return;
+    this.downMs = 0;
+    this.nextCrackleMs = 0;
+    this.death = fx;
+    this.blown = false;
+  }
+
+  /** It burst: nothing left to draw. */
+  get destroyed(): boolean {
+    return this.blown;
   }
 
   sync(state: BreakerState, dtMs: number): void {
@@ -140,24 +168,44 @@ export class PaddleView {
     this.skin.setKey(paddleTextureKey(state.effects));
     this.x = lerp(p.prevX, p.x, state.alpha);
     this.y = p.y + p.h / 2;
+    this.w = p.w;
 
     if (this.squashMs < SQUASH_MS) this.squashMs += dtMs * state.timeScale;
     const s = squash(this.squashMs / SQUASH_MS);
-
+    let sx = s.x;
+    let sy = s.y;
     let alpha = 1;
-    let drop = 0;
+    let shakeX = 0;
+    let shakeY = 0;
+
     if (this.downMs >= 0) {
       this.downMs += dtMs;
-      const t = clamp01(this.downMs / POWER_DOWN_MS);
-      // A dying flicker first, then a fade while it sinks.
-      const flicker = t < 0.45 && Math.sin(this.downMs * 0.09) > 0.2 ? 0.25 : 1;
-      alpha = flicker * (1 - Math.max(0, t - 0.35) / 0.65);
-      drop = t * t * 46;
+      if (this.downMs < PADDLE_OVERLOAD_MS) {
+        const t = this.downMs / PADDLE_OVERLOAD_MS;
+        // Shakes harder and harder, swells, and flickers faster as it nears the blast.
+        const amp = 1 + 5 * t * t;
+        shakeX = (Math.random() * 2 - 1) * amp;
+        shakeY = (Math.random() * 2 - 1) * amp * 0.5;
+        sx *= 1 + 0.1 * t;
+        sy *= 1 + 0.55 * t;
+        alpha = Math.sin(this.downMs * (0.04 + 0.22 * t)) > -0.3 ? 1 : 0.35;
+        if (this.downMs >= this.nextCrackleMs) {
+          this.nextCrackleMs = this.downMs + CRACKLE_EVERY_MS;
+          this.death?.crackle(this.x, this.y, p.w, t);
+        }
+      } else {
+        alpha = 0;
+        if (!this.blown) {
+          this.blown = true;
+          this.death?.blast(this.x, this.y, p.w);
+          this.death = null;
+        }
+      }
     }
     // The art is painted for an 18 px body; a taller paddle (a phone held
     // upright) scales it evenly, caps and glow included, and slices k times
     // fewer texture px so the body still comes out p.w wide.
     const k = p.h / PaddleArt.BODY_HEIGHT;
-    this.skin.draw(this.x, this.y + drop, p.w / k, s.x * k, s.y * k, alpha);
+    this.skin.draw(this.x + shakeX, this.y + shakeY, p.w / k, sx * k, sy * k, alpha);
   }
 }

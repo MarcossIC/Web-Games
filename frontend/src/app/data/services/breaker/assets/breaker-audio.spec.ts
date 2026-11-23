@@ -34,6 +34,8 @@ function playEverything(audio: BreakerAudio): void {
   audio.comboLost();
   audio.lastBrick();
   audio.sectorClear();
+  audio.paddleOverload();
+  audio.paddleBlast(480);
   audio.gameOver();
   audio.bossHit(0, false);
   audio.bossHit(1, false);

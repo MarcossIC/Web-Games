@@ -65,6 +65,8 @@ function ensureEdgeGlow(scene: Phaser.Scene): void {
 export class FxLayer {
   private readonly shards: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly sparks: Phaser.GameObjects.Particles.ParticleEmitter;
+  /** Big chunks thrown up when the paddle bursts; they tumble and fall. */
+  private readonly debrisChunks: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly rings: Pool<Sprite>;
   private readonly flares: Pool<Sprite>;
   private readonly floaters: Pool<Floater>;
@@ -111,10 +113,26 @@ export class FxLayer {
       maxAliveParticles: 160,
       reserve: 160,
     });
+    this.debrisChunks = scene.add.particles(0, 0, BreakerTexture.SHARD, {
+      emitting: false,
+      lifespan: { min: 900, max: 1500 },
+      speed: { min: 240, max: 620 },
+      // Upwards, in a wide fan (0 is right, 270 is straight up).
+      angle: { min: 200, max: 340 },
+      gravityY: 980,
+      rotate: { start: 0, end: 720 },
+      scale: { start: 2.8 * s, end: 0.8 * s },
+      alpha: { start: 1, end: 0 },
+      tint: 0xffffff,
+      maxAliveParticles: 96,
+      reserve: 96,
+    });
     this.shards.setDepth(DEPTH.PARTICLES);
     this.sparks.setDepth(DEPTH.PARTICLES);
+    this.debrisChunks.setDepth(DEPTH.PARTICLES);
     world.add(this.shards);
     world.add(this.sparks);
+    world.add(this.debrisChunks);
 
     const sprite = (key: string) => (): Sprite => {
       const image = scene.add.image(0, 0, key).setDepth(DEPTH.RINGS).setVisible(false);
@@ -158,6 +176,22 @@ export class FxLayer {
     this.timeScale = timeScale;
     this.shards.timeScale = timeScale;
     this.sparks.timeScale = timeScale;
+    this.debrisChunks.timeScale = timeScale;
+  }
+
+  /** Chunks thrown up from along a `width` px wide body centered on x. */
+  debris(x: number, y: number, width: number, count: number, tint: number): void {
+    const spots = 5;
+    const each = Math.max(1, Math.round(count / spots));
+    this.debrisChunks.particleTint = tint;
+    for (let i = 0; i < spots; i++) {
+      this.debrisChunks.explode(each, x - width / 2 + (width * (i + 0.5)) / spots, y);
+    }
+  }
+
+  /** The whole screen flashes (a camera effect: it covers the HUD too). */
+  flash(durationMs: number, color: number): void {
+    this.scene.cameras.main.flash(durationMs, (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff, true);
   }
 
   shatter(x: number, y: number, count: number, tint: number): void {
