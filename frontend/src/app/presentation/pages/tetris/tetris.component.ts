@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   ElementRef,
   OnDestroy,
   OnInit,
@@ -18,10 +17,11 @@ import { PointsService } from '@app/data/services/tetris/Points.service';
 import { WelcomeTetrisModalComponent } from '@app/presentation/components/welcome-tetris-modal/welcome-tetris-modal.component';
 import { ChronometerComponent } from '@app/presentation/components/chronometer/chronometer.component';
 import { EndgameModalTetrisComponent } from '@app/presentation/components/endgame-modal-tetris/endgame-modal-tetris.component';
-import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { GameBarComponent } from '@app-components/game-bar/game-bar.component';
-import { fromEvent } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { keyActions } from '@app-input';
+import { ACTION } from '@app/data/models/tetris/MoveDirections.enum';
+import { screenButtonsOn, TETRIS_KEYS } from '@app/data/services/tetris/tetris-controls';
 
 @Component({
   standalone: true,
@@ -48,16 +48,15 @@ export class TetrisComponent implements OnInit, OnDestroy {
 
   protected controller = inject(TetrisControllerService);
   protected point = inject(PointsService);
-  private destroy = inject(DestroyRef);
   private PLATFORM = inject(PLATFORM_ID);
-  private document = inject(DOCUMENT);
+  /** For the buttons under the board. */
+  protected readonly ACTION = ACTION;
 
   constructor() {
-    if (isPlatformBrowser(this.PLATFORM)) {
-      fromEvent<KeyboardEvent>(this.document, 'keydown')
-        .pipe(takeUntilDestroyed(this.destroy))
-        .subscribe((event: any) => this.controller.executeAction(event.key));
-    }
+    // Every key goes to the game: one with no action still settles a resting piece.
+    keyActions(TETRIS_KEYS, { on: 'keydown', otherwise: null }).subscribe(({ action }) =>
+      this.controller.executeAction(action)
+    );
   }
 
   ngOnInit(): void {
@@ -96,8 +95,8 @@ export class TetrisComponent implements OnInit, OnDestroy {
     cancelAnimationFrame(this.controller.animationFrameId);
   }
 
-  onPress(key: string) {
-    this.isMobile() && this.controller.executeAction(key);
+  onPress(action: ACTION) {
+    this.isMobile() && this.controller.executeAction(action);
   }
 
   get boardWidth() {
@@ -112,7 +111,7 @@ export class TetrisComponent implements OnInit, OnDestroy {
   }
 
   isMobile(): boolean {
-    if (isPlatformBrowser(this.PLATFORM)) return window.innerWidth <= 500;
+    if (isPlatformBrowser(this.PLATFORM)) return screenButtonsOn(window.innerWidth);
     else return false;
   }
 }
