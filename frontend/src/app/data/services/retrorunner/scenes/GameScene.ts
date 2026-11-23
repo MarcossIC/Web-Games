@@ -25,7 +25,7 @@ import { followScroll, lerpForDelta } from '@app/data/services/retrorunner/utils
 import PlayerView from '@app/data/services/retrorunner/utils/PlayerView';
 import WorldBuilder from '@app/data/services/retrorunner/utils/WorldBuilder';
 import HoldBar from '@app/data/services/retrorunner/utils/HoldBar';
-import { HoldToConfirm, isFreshPress } from '@app/data/services/retrorunner/utils/hold-to-confirm';
+import { HoldToConfirm, isFreshPress } from '@app-input';
 import {
   hudLayout,
   LAYOUT_CHANGED,

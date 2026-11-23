@@ -2,10 +2,9 @@ import * as Phaser from 'phaser';
 import { EventBus } from '@app/data/services/phaser/EventBus';
 import { RESTART_HOLD_MS, RunnerEvents, SceneKeys } from '@app/data/services/retrorunner/main';
 import HoldBar from '@app/data/services/retrorunner/utils/HoldBar';
-import { HoldToConfirm, isFreshPress } from '@app/data/services/retrorunner/utils/hold-to-confirm';
+import { HoldToConfirm, isFreshPress, TapTracker } from '@app-input';
 import PixelKey, { KEY_LOOKS } from '@app/data/services/retrorunner/utils/PixelKey';
 import { contains, LAYOUT_CHANGED, layoutOf, Rect } from '@app/data/services/retrorunner/utils/runner-layout';
-import { TapTracker } from '@app/data/services/retrorunner/utils/touch-pad';
 import { GameObjects, Scene } from 'phaser';
 
 const TITLE_FONT = 'Audiowide, sans-serif';

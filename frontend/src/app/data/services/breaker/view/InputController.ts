@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import { WORLD } from '../engine/config';
 import type { BreakerInput, Paddle } from '../engine/types';
 import { type HudZone, hudZoneAt } from './board-layout';
-import { startsAsTouch } from './input-device';
+import { startsAsTouch } from '@app-input';
 import { type InputAction, InputState, lockedTargetX } from './input-state';
 
 /** KeyboardEvent.code -> action. Codes, not keys: the same places on any layout. */

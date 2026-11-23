@@ -10,7 +10,7 @@ import { formatRunTime, RunSummary } from '@app/data/services/retrorunner/utils/
 import { runnerRecords } from '@app/data/services/retrorunner/runner-saves';
 import { browserStore, keepBest, type KeyValueStore } from '@app-persistence';
 import { contains, LAYOUT_CHANGED, layoutOf, Rect } from '@app/data/services/retrorunner/utils/runner-layout';
-import { TapTracker } from '@app/data/services/retrorunner/utils/touch-pad';
+import { TapTracker } from '@app-input';
 import { GameObjects, Scene } from 'phaser';
 
 // The typefaces of the site. Silkscreen is a pixel face with a 8px grid:
