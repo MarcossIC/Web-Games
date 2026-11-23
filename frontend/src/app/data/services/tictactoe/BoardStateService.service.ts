@@ -1,6 +1,5 @@
 import { Injectable, signal } from '@angular/core';
 import { GameStatus } from '@app/data/models/tictactoe/GameStatus.enum';
-import { Player } from '@app/data/models/tictactoe/Player.enum';
 
 @Injectable()
 export class BoardStateService {
@@ -143,44 +142,6 @@ export class BoardStateService {
     );
   }
 
-  /**
-   * Evalúa el estado actual del tablero para determinar la puntuación según la perspectiva del jugador.
-   *
-   * Se considera si el juego se ha ganado, se ha perdido o si es un empate.
-   * Por defecto da una puntuacion si ninguna condición se cumple.
-   *
-   * @param board El tablero de juego representado como una matriz de cadenas.
-   * @param player El jugador para quien se evalúa la puntuación (Player.X o Player.O).
-   * @returns La puntuación basada en el estado actual del tablero:
-   *          - 10 si el jugador gana.
-   *          - -10 si el jugador pierde.
-   *          - 0 si el juego es un empate.
-   *          - 1000 si el juego aún no está decidido.
-   */
-  public evaluate(board: string[][], player: Player): number {
-    let score = 0;
-    const emptyCellCount = this.countEmptyCell(board);
-    const isAWinner = this.checkBoardForWinner(board);
-
-    if (isAWinner) {
-      const isCurrentPlayerWinner =
-        (player === Player.X && this._gameStatus() === GameStatus.X_WON) ||
-        (player === Player.O && this._gameStatus() === GameStatus.O_WON);
-
-      // Asignar puntuación basado en el estado del ganador
-      score = isCurrentPlayerWinner ? 10 : -10;
-      return score;
-    }
-
-    //Empate
-    if (emptyCellCount === 0) {
-      this.gameResult = GameStatus.DRAW;
-      return 0;
-    }
-
-    // Puntuación por defecto si el juego aún está en curso
-    return 1000;
-  }
   public get gameResult() {
     return this._gameStatus();
   }

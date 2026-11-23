@@ -1,6 +1,5 @@
 import { DestroyRef, Injectable, inject } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
-import { Axis } from '../models/Axis';
 
 @Injectable({
   providedIn: 'root',
@@ -23,45 +22,12 @@ export function fillMatrix(
     .map(() => Array(matrixWidth).fill(fillValue));
 }
 
-export function findEmptyBoardCells(board: string[][]): number[] {
-  let emptyCellPositions: number[] = [];
-  board
-    .flat()
-    .forEach(
-      (cell, cellIndex) => cell === '0' && emptyCellPositions.push(cellIndex)
-    );
-  return emptyCellPositions;
-}
-
 export function findEmptyBoardCellsForArray(board: string[]): number[] {
   let emptyCellPositions: number[] = [];
   board
     .filter((cell) => cell === '0')
     .forEach((cell, cellIndex) => emptyCellPositions.push(cellIndex));
   return emptyCellPositions;
-}
-
-export function arrayToMatrix(
-  array: string[],
-  rows: number,
-  columns: number
-): string[][] {
-  let matrix: string[][] = [];
-  for (let i = 0; i < rows; i++) {
-    matrix[i] = array.slice(i * columns, (i + 1) * columns);
-  }
-  return matrix;
-}
-
-export function calcArrayPositionToMatrixCords(
-  position: number,
-  matrixXLenght: number,
-  matrixYLenght: number
-): Axis {
-  const x = position % matrixXLenght;
-  const y = Math.floor(position / matrixYLenght);
-
-  return { x, y };
 }
 
 export function ramdomNumber(includeZero: boolean, maxNumber: number) {

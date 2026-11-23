@@ -6,11 +6,6 @@ import { Player } from '@app/data/models/tictactoe/Player.enum';
 import { GameStatus } from '@app/data/models/tictactoe/GameStatus.enum';
 import { PartyStatus } from '@app/data/models/tictactoe/PartyStatus.enum';
 import { BotLevel } from '@app/data/models/tictactoe/BotLevel.enum';
-import {
-  arrayToMatrix,
-  calcArrayPositionToMatrixCords,
-  findEmptyBoardCells,
-} from '../util.service';
 import { Subject } from 'rxjs';
 
 @Injectable()
@@ -75,64 +70,19 @@ export class TicTacToeControllerService {
   }
 
   /**
-   * Realiza un movimiento para el jugador bot (IA) según su nivel de dificultad.
-   * Esta función determina la mejor jugada para el bot basándose en su nivel (ROCKIE, NOVICE o MASTER)
-   * y luego ejecuta el movimiento en el tablero.
+   * Realiza el movimiento del bot (IA) según su nivel de dificultad.
+   *
+   * El aviso al bot llega con retraso: si en ese tiempo la partida se
+   * reinició o terminó, ya no es su turno y no juega.
    *
    * @public
    * @returns {void}
    */
   public playBot(): void {
-    // Obtener el estado actual del tablero y convertirlo a una matriz 3x3
-    const currentBoard = arrayToMatrix(this.gameState.getBoard().flat(), 3, 3);
-    // Obtener las posiciones vacías actuales en el tablero
-    const currentPositions = findEmptyBoardCells(this.gameState.getBoard());
-    // Obtener el turno actual
-    const currentTurn = this.gameState.turn;
+    if (!this.partyIsRunning() || this.isTurnForUserPlayer()) return;
 
-    // Mapeo de niveles de bot a sus respectivas funciones
-    const botMoves = {
-      [BotLevel.ROCKIE]: this.secondPlayer.takeABlindMove,
-      [BotLevel.NOVICE]: this.secondPlayer.takeANoviceMove,
-      [BotLevel.MASTER]: this.secondPlayer.takeAMasterMove,
-    };
-
-    // Obtener la función de movimiento correspondiente al nivel del bot
-    const moveFunction = botMoves[this.secondPlayer.botAI];
-    // Calcular la posición del movimiento
-    const { x, y } = this.calculateBotMove(
-      moveFunction,
-      currentBoard,
-      currentPositions,
-      currentTurn
-    );
-    let rowX = y;
-    let cellY = x;
-
-    this.play(rowX, cellY);
-  }
-
-  /**
-   * Calcula la posición del movimiento del bot.
-   * @private
-   * @param {Function} moveFunction - La función de movimiento correspondiente al nivel del bot.
-   * @param {string[][]} board - El tablero actual.
-   * @param {number[]} emptyPositions - Las posiciones vacías en el tablero.
-   * @param {Player} turn - El turno actual.
-   * @returns {{x: number, y: number}} - Las coordenadas del movimiento.
-   */
-  private calculateBotMove(
-    moveFunction: Function,
-    board: string[][],
-    emptyPositions: number[],
-    turn: Player
-  ): { x: number; y: number } {
-    const positionSelected = moveFunction.call(this.secondPlayer, {
-      boardScreen: board,
-      emptyCells: emptyPositions,
-      turn: turn,
-    });
-    return calcArrayPositionToMatrixCords(positionSelected, 3, 3);
+    const position = this.secondPlayer.chooseMove(this.gameState.getBoard());
+    this.play(Math.floor(position / 3), position % 3);
   }
 
   /**
