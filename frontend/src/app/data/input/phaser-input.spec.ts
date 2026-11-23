@@ -55,7 +55,14 @@ describe('Phaser input adapter', () => {
     await stop(game);
   });
 
-  /** Sends a key to window the way a browser does, keyCode included. */
+  /** Each event a later timeStamp, as a real keyboard gives. */
+  let clock = 0;
+
+  /**
+   * Sends a key to window the way a browser does, keyCode included. Phaser
+   * drops an event with the same key, type and timeStamp as the one before
+   * (a duplicate), and two events sent in a row can share a timeStamp.
+   */
   function press(
     type: 'keydown' | 'keyup',
     key: string,
@@ -65,6 +72,7 @@ describe('Phaser input adapter', () => {
   ): void {
     const event = new KeyboardEvent(type, { key, code, ...init });
     Object.defineProperty(event, 'keyCode', { value: keyCode });
+    Object.defineProperty(event, 'timeStamp', { value: ++clock });
     window.dispatchEvent(event);
     game.events.emit(Phaser.Core.Events.POST_STEP);
   }
