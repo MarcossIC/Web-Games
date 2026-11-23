@@ -25,7 +25,9 @@ import { followScroll, lerpForDelta } from '@app/data/services/retrorunner/utils
 import PlayerView from '@app/data/services/retrorunner/utils/PlayerView';
 import WorldBuilder from '@app/data/services/retrorunner/utils/WorldBuilder';
 import HoldBar from '@app/data/services/retrorunner/utils/HoldBar';
-import { HoldToConfirm, isFreshPress } from '@app-input';
+import { type ActionSource, anyDown, HoldToConfirm, isFreshPress } from '@app-input';
+import { type HeldKeys, heldKeys, keyPresses } from '@app-input/phaser-input';
+import { RUN_HELD_KEYS, RUN_PAUSE_KEYS, type RunnerHeldAction } from '@app/data/services/retrorunner/runner-controls';
 import {
   hudLayout,
   LAYOUT_CHANGED,
@@ -100,7 +102,9 @@ const AMBIENT_OFF: AmbientConfig = {
 
 export class GameScene extends Scene {
   public player!: PhaserPlayerWithBody;
-  private keys!: Record<string, Phaser.Input.Keyboard.Key>;
+  private keys!: HeldKeys<RunnerHeldAction>;
+  /** The keys and the touch pad as one: what the capybara is asked for on this frame. */
+  private controls!: ActionSource<RunnerHeldAction>;
   public background!: GameObjects.TileSprite;
   public jumpSound!: PhaserSound;
 
@@ -273,31 +277,20 @@ export class GameScene extends Scene {
     });
 
     // Input
-    this.keys = this.input.keyboard?.addKeys({
-      up: Phaser.Input.Keyboard.KeyCodes.UP,
-      down: Phaser.Input.Keyboard.KeyCodes.DOWN,
-      left: Phaser.Input.Keyboard.KeyCodes.LEFT,
-      right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
-      w: Phaser.Input.Keyboard.KeyCodes.W,
-      a: Phaser.Input.Keyboard.KeyCodes.A,
-      s: Phaser.Input.Keyboard.KeyCodes.S,
-      d: Phaser.Input.Keyboard.KeyCodes.D,
-      space: Phaser.Input.Keyboard.KeyCodes.SPACE,
-      r: Phaser.Input.Keyboard.KeyCodes.R,
-    }) as Record<string, Phaser.Input.Keyboard.Key>;
-
-    // Pause: Esc or P here; while paused this scene hears nothing, so the
-    // pause screen reads them. A key held down repeats: only a new press
-    // counts, or holding P would pause and resume over and over.
-    const onPauseKey = (event: KeyboardEvent) => {
-      if (!event.repeat) this.togglePause();
+    this.keys = heldKeys(this.input.keyboard, RUN_HELD_KEYS);
+    // The keys on a touch screen, read from where the fingers are (update()).
+    const pad: ActionSource<RunnerHeldAction> = {
+      isDown: (action) => action !== 'restart' && this.pad[action],
     };
-    this.input.keyboard?.on('keydown-ESC', onPauseKey);
-    this.input.keyboard?.on('keydown-P', onPauseKey);
+    this.controls = anyDown(this.keys, pad);
+
+    // Pause: Esc or P here, once per press (see RUN_PAUSE_KEYS); while
+    // paused this scene hears nothing, so the pause screen reads them.
+    keyPresses(this.input.keyboard, RUN_PAUSE_KEYS, () => this.togglePause());
     this.restartHold = new HoldToConfirm(RESTART_HOLD_MS);
     this.restartBar = new HoldBar(this, this.layout.width / 2, 30, 'Restart');
     this.restartPressFresh = false;
-    this.keys['r'].on(Phaser.Input.Keyboard.Events.DOWN, (_key: unknown, event: KeyboardEvent) => {
+    this.keys.onPress('restart', (event) => {
       this.restartPressFresh = isFreshPress(event);
     });
 
@@ -567,22 +560,21 @@ export class GameScene extends Scene {
     if (this.player.state === RetroRunnerStates.RUNNER_STATE_DEAD) return;
 
     const now = this.time.now;
-    const keys = this.keys;
 
-    if (this.restartHold.update(keys['r'].isDown && this.restartPressFresh, delta)) {
+    if (this.restartHold.update(this.keys.isDown('restart') && this.restartPressFresh, delta)) {
       this.restartWithNewSeed();
       return;
     }
     this.restartBar.setProgress(this.restartHold.progress);
 
     // The keys on a touch screen, from where the fingers are on this frame.
-    const pad = readPad(this.layout.controls, this.input.manager.pointers, this.pad);
+    readPad(this.layout.controls, this.input.manager.pointers, this.pad);
 
-    const isMovingLeft = keys['left'].isDown || keys['a'].isDown || pad.left;
-    const isMovingRight = keys['right'].isDown || keys['d'].isDown || pad.right;
-    const isJumpPressed =
-      keys['up'].isDown || keys['w'].isDown || keys['space'].isDown || pad.jump;
-    const isCrouching = keys['down'].isDown || keys['s'].isDown || pad.crouch;
+    const controls = this.controls;
+    const isMovingLeft = controls.isDown('left');
+    const isMovingRight = controls.isDown('right');
+    const isJumpPressed = controls.isDown('jump');
+    const isCrouching = controls.isDown('crouch');
 
     const isOnFloor = this.player.body.onFloor() || this.player.body.touching.down;
 
