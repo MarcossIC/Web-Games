@@ -1,18 +1,19 @@
-import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
   ElementRef,
-  PLATFORM_ID,
   ViewChild,
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { keyActions } from '@app-input';
 import { TicTacToeControllerService } from '@app/data/services/tictactoe/TicTacToeController.service';
+import { TICTACTOE_KEYS } from '@app/data/services/tictactoe/tictactoe-controls';
 import { EndgameModalTttComponent } from '@app/presentation/components/endgame-modal-ttt/endgame-modal-ttt.component';
 import { SelectModalTttComponent } from '@app/presentation/components/select-modal-ttt/select-modal-ttt.component';
-import { delay, filter, fromEvent } from 'rxjs';
+import { delay } from 'rxjs';
 import { GameBarComponent } from '@app-components/game-bar/game-bar.component';
 import { TttMarkComponent } from '@app-components/ttt-mark/ttt-mark.component';
 
@@ -35,18 +36,9 @@ export class TictactoeComponent {
 
   protected controller = inject(TicTacToeControllerService);
   private destroy = inject(DestroyRef);
-  private PLATFORM = inject(PLATFORM_ID);
-  private document = inject(DOCUMENT);
 
   constructor() {
-    if (isPlatformBrowser(this.PLATFORM)) {
-      fromEvent<KeyboardEvent>(this.document, 'keyup')
-        .pipe(
-          takeUntilDestroyed(this.destroy),
-          filter(({ key }) => key === 'p' || key === 'Escape')
-        )
-        .subscribe((_) => this.controller.reset());
-    }
+    keyActions(TICTACTOE_KEYS, { on: 'keyup' }).subscribe(() => this.controller.reset());
     this.controller._notifyBot
       .pipe(delay(500), takeUntilDestroyed(this.destroy))
       .subscribe(() => this.controller.playBot());
