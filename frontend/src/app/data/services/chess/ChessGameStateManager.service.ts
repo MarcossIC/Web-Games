@@ -26,18 +26,20 @@ export class ChessGameStateManager {
     playerTurn: ChessPlayers,
     moveType: Set<MoveType>
   ): SafeCoords {
-    const updatedSafeCoords = this.pieceMover.findSafeCoords(
-      this.chessBoard.board,
-      {
-        isInCheck: this.chessHistory.checkState.isInCheck,
-        lastMove: this.chessHistory.lastMove,
-        currentPlayer: playerTurn,
-      }
-    );
-
+    // The check comes first: whether the king is in check now is what
+    // decides if it may castle. The check kept in the history is still
+    // the one from before this move.
     const checkState = this.pieceMover.validator.isInCheck(
       this.chessBoard.board,
       playerTurn
+    );
+    const updatedSafeCoords = this.pieceMover.findSafeCoords(
+      this.chessBoard.board,
+      {
+        isInCheck: checkState.isInCheck,
+        lastMove: this.chessHistory.lastMove,
+        currentPlayer: playerTurn,
+      }
     );
     this.chessHistory.setCheckState(checkState);
 
