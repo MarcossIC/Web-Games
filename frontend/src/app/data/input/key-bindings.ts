@@ -40,6 +40,25 @@ export interface KeyBinding<A> {
   readonly ignoreModifiers?: boolean;
 }
 
+/**
+ * KeyboardEvent.keyCode of the keys the games use, the numbers Phaser's
+ * KeyCodes also hold. Named here so a game's bindings need no Phaser.
+ */
+export const KEY_CODES = {
+  SPACE: 32,
+  ESC: 27,
+  LEFT: 37,
+  UP: 38,
+  RIGHT: 39,
+  DOWN: 40,
+  A: 65,
+  D: 68,
+  P: 80,
+  R: 82,
+  S: 83,
+  W: 87,
+} as const;
+
 export interface BindOptions<A> {
   /** The action of a key no binding takes. Without it such a key gives undefined. */
   readonly otherwise?: A;
