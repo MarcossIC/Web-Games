@@ -4,21 +4,31 @@ import { BALL } from '../engine/config';
 import type { BreakerState } from '../engine/types';
 import { BALL_TEXTURES, type BallLook, TRAIL_TINTS } from './looks';
 import { DEPTH } from './scene-kit';
+import { buildStreak, STREAK_STRIDE, streakFade } from './streak';
 import { TrailRing } from './trail-ring';
 import { lerp } from './view-math';
 
 type Image = Phaser.GameObjects.Image;
 
-const TRAIL_LENGTH = 8;
-/** A trail sample every few px of travel, so the trail is as long at 60 Hz as at 144 Hz. */
-const TRAIL_SPACING = 5;
+/** Samples kept per ball: with the spacing below, a streak about 9 radii long. */
+const TRAIL_LENGTH = 13;
+/** A trail sample every 0.75 radius of travel, so the streak is as long at 60 Hz as at 144 Hz. */
+const TRAIL_SPACING_R = 0.75;
+/** A jump of more than this many radii between frames (a serve, a split) starts the streak over. */
+const TRAIL_JUMP_R = 7.5;
+/** The glow around the streak: half width (in radii) and opacity at the ball. */
+const GLOW_HALF_R = 0.95;
+const GLOW_ALPHA = 0.42;
+/** The bright core inside it. */
+const CORE_HALF_R = 0.42;
+const CORE_ALPHA = 0.55;
+const CORE_COLOR = 0xffffff;
 
 interface BallSlot {
   /** Engine ball id, -1 when free. */
   id: number;
   seen: boolean;
   ball: Image;
-  trail: Image[];
   ring: TrailRing;
   look: BallLook | -1;
 }
@@ -32,26 +42,29 @@ export class BallLayer {
   private readonly slots: BallSlot[] = [];
   /** Art size: the texture is painted for a CORE_RADIUS ball, scaled to the engine's radius. */
   private readonly size: number;
-  private readonly trailSize: number;
+  private readonly radius: number;
+  private readonly spacing: number;
+  /** Every ball's streak, redrawn each frame: one draw call for all of them. */
+  private readonly streaks: Phaser.GameObjects.Graphics;
+  /** Outline scratch of one streak (see buildStreak). */
+  private readonly edges = new Float32Array((TRAIL_LENGTH + 1) * STREAK_STRIDE);
+  private tint: number = TRAIL_TINTS[0];
 
   constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, radius: number = BallArt.CORE_RADIUS) {
     const k = radius / BallArt.CORE_RADIUS;
     this.size = BallArt.SIZE * k;
-    this.trailSize = BallArt.TRAIL_SIZE * k;
+    this.radius = radius;
+    this.spacing = TRAIL_SPACING_R * radius;
+    this.streaks = scene.add.graphics().setDepth(DEPTH.TRAILS).setBlendMode(Phaser.BlendModes.ADD);
+    layer.add(this.streaks);
     for (let i = 0; i < BALL.CAP; i++) {
-      const trail: Image[] = [];
-      for (let t = 0; t < TRAIL_LENGTH; t++) {
-        const dot = scene.add.image(0, 0, BreakerTexture.TRAIL).setDepth(DEPTH.TRAILS).setVisible(false);
-        layer.add(dot);
-        trail.push(dot);
-      }
       const ball = scene.add
         .image(0, 0, BreakerTexture.BALL)
         .setDisplaySize(this.size, this.size)
         .setDepth(DEPTH.BALLS)
         .setVisible(false);
       layer.add(ball);
-      this.slots.push({ id: -1, seen: false, ball, trail, ring: new TrailRing(TRAIL_LENGTH, 60), look: -1 });
+      this.slots.push({ id: -1, seen: false, ball, ring: new TrailRing(TRAIL_LENGTH, TRAIL_JUMP_R * radius), look: -1 });
     }
   }
 
@@ -59,6 +72,8 @@ export class BallLayer {
     const slots = this.slots;
     for (let i = 0; i < slots.length; i++) slots[i].seen = false;
 
+    this.streaks.clear();
+    this.tint = TRAIL_TINTS[look];
     const alpha = state.alpha;
     const balls = state.balls;
     for (let i = 0; i < balls.length; i++) {
@@ -73,7 +88,6 @@ export class BallLayer {
       if (slot.look !== look) {
         slot.look = look;
         slot.ball.setTexture(BALL_TEXTURES[look]).setDisplaySize(this.size, this.size);
-        for (const dot of slot.trail) dot.setTint(TRAIL_TINTS[look]);
       }
       this.drawTrail(slot, x, y, b.stuck);
     }
@@ -88,27 +102,35 @@ export class BallLayer {
     const ring = slot.ring;
     if (stuck) {
       ring.clear();
-    } else if (ring.count === 0) {
+      return;
+    }
+    if (ring.count === 0) {
       ring.push(x, y);
     } else {
       const dx = x - ring.xAt(0);
       const dy = y - ring.yAt(0);
-      if (dx * dx + dy * dy >= TRAIL_SPACING * TRAIL_SPACING) ring.push(x, y);
+      if (dx * dx + dy * dy >= this.spacing * this.spacing) ring.push(x, y);
     }
-    const trail = slot.trail;
-    for (let i = 0; i < trail.length; i++) {
-      const dot = trail[i];
-      if (i >= ring.count) {
-        if (dot.visible) dot.setVisible(false);
-        continue;
-      }
-      const k = 1 - i / TRAIL_LENGTH;
-      const size = this.trailSize * (0.45 + 0.75 * k);
-      dot
-        .setVisible(true)
-        .setPosition(ring.xAt(i), ring.yAt(i))
-        .setDisplaySize(size, size)
-        .setAlpha(0.6 * k * k);
+    this.fillStreak(ring, x, y, GLOW_HALF_R * this.radius, this.tint, GLOW_ALPHA);
+    this.fillStreak(ring, x, y, CORE_HALF_R * this.radius, CORE_COLOR, CORE_ALPHA);
+  }
+
+  /** One band of the streak, a quad per segment, fading from the ball to the tail. */
+  private fillStreak(ring: TrailRing, x: number, y: number, halfWidth: number, color: number, alpha: number): void {
+    const e = this.edges;
+    const n = buildStreak(ring, x, y, halfWidth, e);
+    const g = this.streaks;
+    for (let k = 0; k < n - 1; k++) {
+      const a = k * STREAK_STRIDE;
+      const b = a + STREAK_STRIDE;
+      g.fillStyle(color, alpha * streakFade((k + 0.5) / (n - 1)));
+      g.beginPath();
+      g.moveTo(e[a], e[a + 1]);
+      g.lineTo(e[b], e[b + 1]);
+      g.lineTo(e[b + 2], e[b + 3]);
+      g.lineTo(e[a + 2], e[a + 3]);
+      g.closePath();
+      g.fillPath();
     }
   }
 
@@ -131,6 +153,5 @@ export class BallLayer {
     slot.id = -1;
     slot.ring.clear();
     slot.ball.setVisible(false);
-    for (const dot of slot.trail) dot.setVisible(false);
   }
 }
