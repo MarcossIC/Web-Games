@@ -1,4 +1,5 @@
 export { type ActionSource, anyDown } from './action-source';
+export { type ActionEvent, type KeyActionOptions, keyActions, listenSwipes } from './angular-input';
 export { vibrate, type VibrationHost } from './haptics';
 export { type BindOptions, bindKeys, type KeyBinding, type KeyLike, type KeyResolver } from './key-bindings';
 export { hasMouse, type MediaHost, startsAsTouch } from './device';
