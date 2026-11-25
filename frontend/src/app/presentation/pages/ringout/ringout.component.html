@@ -4,8 +4,13 @@
   <main class="play">
     <dl class="readouts">
       <div class="readout">
+        @if (infinite()) {
+        <dt>Stage</dt>
+        <dd>{{ controller.level() }}<span class="of" aria-label="of Infinite">/&infin;</span></dd>
+        } @else {
         <dt>Level</dt>
         <dd>{{ controller.level() }}<span class="of">/{{ total }}</span></dd>
+        }
       </div>
       <div class="readout readout-time">
         <dt>Time</dt>
@@ -24,7 +29,7 @@
         #screen
         class="screen"
         role="img"
-        [attr.aria-label]="'Ring Out, level ' + controller.level()"
+        [attr.aria-label]="'Ring Out, ' + (infinite() ? 'Infinite stage ' : 'level ') + controller.level()"
       ></canvas>
     </div>
 
@@ -57,6 +62,7 @@
 
 @switch (controller.phase()) {
   @case ('menu') { <welcome-ringout-modal /> }
+  @case ('building') { <ringout-building-stage /> }
   @case ('paused') { <welcome-ringout-modal /> }
   @case ('cleared') { <endgame-modal-ringout /> }
 }

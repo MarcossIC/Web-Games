@@ -20,6 +20,8 @@ import { WelcomeRingoutModalComponent } from '@app-components/welcome-ringout-mo
 import { RINGOUT_KEYS } from '@app/data/services/ringout/ringout-controls';
 import { formatTime } from '@app/data/services/ringout/ringout-progress';
 import { RingOutController } from '@app/data/services/ringout/RingOutController.service';
+import { RingOutStages } from '@app/data/services/ringout/ringout-stages';
+import { BuildingStageComponent } from '@app-components/building-stage-ringout/building-stage-ringout.component';
 import { RingOutTable } from './ringout-table';
 
 /** Above this the extra pixels cost a lot and are barely visible. */
@@ -32,9 +34,10 @@ const CLOCK_EVERY_MS = 100;
   selector: 'app-ringout',
   templateUrl: './ringout.component.html',
   styleUrl: './ringout.component.css',
-  imports: [GameBarComponent, WelcomeRingoutModalComponent, EndgameModalRingoutComponent],
-  // Here and not on the route, so the engine loads with the page (see app.routing.ts).
-  providers: [RingOutController],
+  imports: [GameBarComponent, WelcomeRingoutModalComponent, EndgameModalRingoutComponent, BuildingStageComponent],
+  // Here and not on the route, so the engine loads with the page (see app.routing.ts),
+  // and the worker that builds the stages of Infinite stops with it.
+  providers: [RingOutController, RingOutStages],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RingOutComponent {
@@ -48,6 +51,7 @@ export class RingOutComponent {
   private readonly browser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly total = this.controller.levels.length;
+  protected readonly infinite = computed(() => this.controller.mode() === 'infinite');
   protected readonly time = computed(() => formatTime(this.controller.elapsedMs()));
   protected readonly best = computed(() => {
     const best = this.controller.bestTime();
@@ -74,6 +78,12 @@ export class RingOutComponent {
     effect(() => {
       const playing = this.playing();
       if (this.table) this.table.enabled = playing;
+    });
+    // A stage of Infinite can finish building while the tab is hidden: its clock waits for the player.
+    effect(() => {
+      if (this.playing() && this.browser && this.document.visibilityState === 'hidden') {
+        untracked(() => this.controller.pause());
+      }
     });
 
     afterNextRender(() => this.boot());

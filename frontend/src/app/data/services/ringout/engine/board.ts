@@ -275,8 +275,23 @@ export class Board {
     if (!rod?.alive) return { free: false, distance: 0 };
     const d = rod.direction;
     const own = samplePolyline(this.rodPoints(rod), SAMPLE_STEP);
+    const left = rod.exitDistance - rod.offset;
+    // Only what lies along the way out can stop it: the box the rod sweeps
+    // on its way out, and a margin wider than any blob can reach.
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const p of own) {
+      minX = Math.min(minX, p.x, p.x + d.x * left);
+      maxX = Math.max(maxX, p.x, p.x + d.x * left);
+      minY = Math.min(minY, p.y, p.y + d.y * left);
+      maxY = Math.max(maxY, p.y, p.y + d.y * left);
+    }
+    const margin = 2 * (TUBE / 2 + CLIP_WIDTH / 2 + CLEARANCE);
     let hit = Infinity;
     for (const blob of this.blobs({ rod: rodId })) {
+      if (blob.x < minX - margin || blob.x > maxX + margin || blob.y < minY - margin || blob.y > maxY + margin) continue;
       const reach = TUBE / 2 + blob.r + CLEARANCE;
       const reach2 = reach * reach;
       for (const p of own) {
@@ -292,7 +307,6 @@ export class Board {
         if (t < hit) hit = t;
       }
     }
-    const left = rod.exitDistance - rod.offset;
     return hit >= left ? { free: true, distance: left } : { free: false, distance: Math.max(0, hit) };
   }
 

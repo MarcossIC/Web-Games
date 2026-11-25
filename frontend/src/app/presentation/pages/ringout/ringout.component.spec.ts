@@ -1,10 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { GAME_STORE, memoryStore } from '@app-persistence';
-import { playMove } from '@app/data/services/ringout/engine';
+import { LEVELS, playMove, type LevelSpec } from '@app/data/services/ringout/engine';
 import { RingOutController } from '@app/data/services/ringout/RingOutController.service';
-import { ringOutProgress } from '@app/data/services/ringout/ringout-saves';
+import { ringOutInfinite, ringOutProgress } from '@app/data/services/ringout/ringout-saves';
+import { RingOutStages } from '@app/data/services/ringout/ringout-stages';
 import { RingOutComponent } from './ringout.component';
+
+/** Infinite without its worker: stage n is level n made by hand, built at once. */
+const instantStages = {
+  peek: (stage: number): LevelSpec | null => LEVELS[stage - 1] ?? null,
+  get: (stage: number): Promise<LevelSpec> => Promise.resolve(LEVELS[stage - 1]),
+  prefetch: (): void => undefined,
+};
 
 describe('RingOutComponent', () => {
   let fixture: ComponentFixture<RingOutComponent>;
@@ -15,7 +23,12 @@ describe('RingOutComponent', () => {
     await TestBed.configureTestingModule({
       imports: [RingOutComponent],
       providers: [provideRouter([]), { provide: GAME_STORE, useValue: saved }],
-    }).compileComponents();
+    })
+      // The page provides its own services; the worker is swapped for boards at hand.
+      .overrideComponent(RingOutComponent, {
+        set: { providers: [RingOutController, { provide: RingOutStages, useValue: instantStages }] },
+      })
+      .compileComponents();
     fixture = TestBed.createComponent(RingOutComponent);
     // The page provides its own controller (see app.routing.ts).
     controller = fixture.debugElement.injector.get(RingOutController);
@@ -83,5 +96,51 @@ describe('RingOutComponent', () => {
     button('Resume')?.click();
     fixture.detectChanges();
     expect(controller.phase()).toBe('playing');
+  });
+
+  it('offers Infinite under the levels, from the stage after the furthest cleared', async () => {
+    const saved = memoryStore();
+    ringOutInfinite.write(saved, { cleared: 2, bestTimes: {}, generator: 0 });
+    await open(saved);
+    const infinite = page.querySelector<HTMLButtonElement>('button.infinite-button');
+    expect(infinite?.textContent).toContain('Infinite');
+    expect(infinite?.textContent).toContain('Stage 3');
+
+    infinite?.click();
+    fixture.detectChanges();
+    expect(controller.mode()).toBe('infinite');
+    expect(controller.phase()).toBe('playing');
+    expect(page.querySelector('.readout dt')?.textContent).toContain('Stage');
+    expect(page.querySelector('.readout dd')?.textContent).toContain('3');
+    expect(page.querySelector('.tip')?.textContent?.trim()).toBe('');
+  });
+
+  it('names the stage cleared and leads on to the next one', async () => {
+    await open();
+    controller.startInfinite();
+    for (const move of LEVELS[0].solution) playMove(controller.board, move);
+    controller.finish();
+    fixture.detectChanges();
+    expect(page.querySelector('#ringout-result-title')?.textContent).toContain('Stage 1 Clear');
+    expect(page.querySelector('.record')?.textContent).toContain('Stage 2 is next');
+
+    button('Next stage')?.click();
+    fixture.detectChanges();
+    expect(controller.level()).toBe(2);
+    expect(controller.phase()).toBe('playing');
+  });
+
+  it('shows that a stage is being built, and leads back to the menu', async () => {
+    await open();
+    const slow = new Promise<LevelSpec>(() => undefined);
+    spyOn(instantStages, 'peek').and.returnValue(null);
+    spyOn(instantStages, 'get').and.returnValue(slow);
+    controller.startInfinite();
+    fixture.detectChanges();
+    expect(page.querySelector('#ringout-building-title')?.textContent).toContain('Stage 1');
+
+    button('\u2190 Menu')?.click();
+    fixture.detectChanges();
+    expect(controller.phase()).toBe('menu');
   });
 });

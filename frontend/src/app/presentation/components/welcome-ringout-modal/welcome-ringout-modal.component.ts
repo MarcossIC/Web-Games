@@ -2,6 +2,7 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  computed,
   ElementRef,
   inject,
   Injector,
@@ -17,8 +18,8 @@ export type RingOutMenuView = 'menu' | 'help';
 
 /**
  * The menu of Ring Out. On opening it shows the levels, the ones not yet
- * reached locked; during a level it is the pause menu. Both lead to a page
- * that explains the game.
+ * reached locked, and the way into Infinite; during a level or a stage it
+ * is the pause menu. Both lead to a page that explains the game.
  */
 @Component({
   standalone: true,
@@ -36,10 +37,15 @@ export class WelcomeRingoutModalComponent {
 
   protected readonly view = signal<RingOutMenuView>('menu');
   protected readonly numbers = this.controller.levels.map((_, i) => i + 1);
+  protected readonly infinite = computed(() => this.controller.mode() === 'infinite');
 
   constructor() {
-    // Enter plays the next level, or resumes, without reaching for the mouse.
-    afterNextRender(() => this.focusFirst());
+    afterNextRender(() => {
+      // Enter plays the next level, or resumes, without reaching for the mouse.
+      this.focusFirst();
+      // The stage Infinite goes on from is built while the player looks at the menu.
+      if (this.controller.phase() === 'menu') this.controller.prepareInfinite();
+    });
   }
 
   protected time(level: number): string {
@@ -55,6 +61,10 @@ export class WelcomeRingoutModalComponent {
 
   protected play(level: number): void {
     this.controller.start(level);
+  }
+
+  protected playInfinite(): void {
+    this.controller.startInfinite();
   }
 
   protected resume(): void {

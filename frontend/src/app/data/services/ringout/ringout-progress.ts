@@ -46,6 +46,29 @@ export function recordClear(previous: RingOutProgress, level: number, timeMs: nu
   };
 }
 
+/**
+ * How far the player has got in Infinite. The same arithmetic as the
+ * levels, stage by stage, plus the version of the generator that built the
+ * stages: a best time only means something for the board it was made on.
+ */
+export interface InfiniteProgress extends RingOutProgress {
+  /** GENERATOR_VERSION when the times were kept. */
+  generator: number;
+}
+
+export function emptyInfinite(generator: number): InfiniteProgress {
+  return { cleared: 0, bestTimes: {}, generator };
+}
+
+/**
+ * The progress as it stands for the generator of `version`: built by
+ * another, its stages are other boards now, so their best times go. How
+ * far the player got stays.
+ */
+export function forGenerator(saved: InfiniteProgress, version: number): InfiniteProgress {
+  return saved.generator === version ? saved : { cleared: saved.cleared, bestTimes: {}, generator: version };
+}
+
 /** A time as the clock shows it: minutes, seconds and tenths, as 1:05.3. */
 export function formatTime(ms: number): string {
   const tenths = Math.floor(Math.max(0, ms) / 100);

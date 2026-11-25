@@ -1,0 +1,49 @@
+/* The dialog frame comes from modal.css, which loads after this file:
+   rules that change its classes use two classes. */
+
+/* A board built in a blink never shows this: it waits before it appears. */
+.modal-scrim.building-scrim {
+  animation-delay: 0.35s;
+}
+
+.modal.sheet.building-sheet {
+  width: min(100%, 24rem);
+  align-items: center;
+  animation-delay: 0.35s;
+}
+
+.building-sheet .modal-title-with-bar {
+  align-self: stretch;
+}
+
+.building-text {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.building-sheet .sheet-actions {
+  align-self: stretch;
+}
+
+/* An open ring turning, in the colours of the board. */
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 6px solid var(--gg-cyan);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 3s;
+  }
+}

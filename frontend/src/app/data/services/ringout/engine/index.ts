@@ -18,5 +18,15 @@ export {
 } from './board';
 export { LEVELS } from './levels';
 export { levelProblems } from './validate';
-export { autoplay, nextMove, playMove, progressMoves } from './solver';
+export { autoplay, nextMove, plan, planNext, playMove, progressMoves, type PlanOptions } from './solver';
+export { measure, type LevelStats } from './difficulty';
+export {
+  GENERATOR_VERSION,
+  STAGE_OF_FULL_SIZE,
+  difficultyOf,
+  generateStage,
+  stageRecipe,
+  type GeneratedStage,
+  type StageRecipe,
+} from './generator';
 export { type Vec, TAU } from './geometry';

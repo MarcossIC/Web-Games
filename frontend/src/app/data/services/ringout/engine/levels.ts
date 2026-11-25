@@ -197,7 +197,7 @@ const FIRST: readonly LevelSpec[] = [
 ];
 
 /** Where a level is put inside a bigger one: turned, mirrored and moved. */
-interface Placement {
+export interface Placement {
   readonly x?: number;
   readonly y?: number;
   /** Degrees, clockwise. */
@@ -209,7 +209,7 @@ interface Placement {
 }
 
 /** A level turned, mirrored and moved: the same puzzle, looking different. */
-function place(level: LevelSpec, where: Placement): LevelSpec {
+export function place(level: LevelSpec, where: Placement): LevelSpec {
   const turn = where.turn ?? 0;
   const a = (turn * Math.PI) / 180;
   const point = (x: number, y: number): [number, number] => {

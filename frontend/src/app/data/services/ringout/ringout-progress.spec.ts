@@ -1,6 +1,6 @@
 import { memoryStore } from '@app-persistence';
-import { emptyProgress, formatTime, isUnlocked, recordClear } from './ringout-progress';
-import { ringOutProgress } from './ringout-saves';
+import { emptyInfinite, emptyProgress, forGenerator, formatTime, isUnlocked, recordClear } from './ringout-progress';
+import { ringOutInfinite, ringOutProgress } from './ringout-saves';
 
 describe('Ring Out progress', () => {
   it('opens only the first level at the start', () => {
@@ -62,5 +62,23 @@ describe('Ring Out progress', () => {
 
   it('starts from nothing when nothing was saved', () => {
     expect(ringOutProgress.read(memoryStore())).toEqual(emptyProgress());
+  });
+
+  it('keeps Infinite as it is for the generator that built its stages', () => {
+    const saved = { cleared: 6, bestTimes: { 1: 3000, 6: 41_000 }, generator: 2 };
+    expect(forGenerator(saved, 2)).toBe(saved);
+  });
+
+  it('drops the best times of Infinite built by another generator, not how far the player got', () => {
+    const saved = { cleared: 6, bestTimes: { 1: 3000, 6: 41_000 }, generator: 1 };
+    expect(forGenerator(saved, 2)).toEqual({ cleared: 6, bestTimes: {}, generator: 2 });
+  });
+
+  it('saves Infinite apart from the levels', () => {
+    const store = memoryStore();
+    ringOutInfinite.write(store, { cleared: 4, bestTimes: { 4: 9000 }, generator: 1 });
+    expect(ringOutInfinite.read(store)).toEqual({ cleared: 4, bestTimes: { 4: 9000 }, generator: 1 });
+    expect(ringOutProgress.read(store)).toEqual(emptyProgress());
+    expect(ringOutInfinite.read(memoryStore())).toEqual(emptyInfinite(0));
   });
 });

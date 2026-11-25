@@ -1,0 +1,22 @@
+<div class="modal-scrim building-scrim">
+  <div
+    class="modal modal-bg sheet building-sheet"
+    trapFocus
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="ringout-building-title"
+    aria-describedby="ringout-building-text"
+  >
+    <h2 id="ringout-building-title" class="modal-title-with-bar">Stage {{ controller.level() }}</h2>
+
+    <div class="spinner" aria-hidden="true"></div>
+
+    <p id="ringout-building-text" class="building-text" role="status">
+      Building a new board. Every one is proven clearable before you see it.
+    </p>
+
+    <div class="sheet-actions">
+      <button #back class="abstract-button exit-button" type="button" (click)="leave()">&larr; Menu</button>
+    </div>
+  </div>
+</div>

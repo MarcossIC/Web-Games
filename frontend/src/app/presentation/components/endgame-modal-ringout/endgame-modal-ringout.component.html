@@ -7,7 +7,7 @@
     aria-labelledby="ringout-result-title"
   >
     <h2 id="ringout-result-title" class="modal-title-with-bar">
-      {{ lastLevel() ? "All Free!" : "Level " + result()?.level + " Clear" }}
+      {{ lastLevel() ? "All Free!" : unit() + " " + result()?.level + " Clear" }}
     </h2>
 
     @if (lastLevel()) {
@@ -25,6 +25,8 @@
       </div>
       @if (gain()) {
       <p class="record">New record, {{ gain() }} faster!</p>
+      } @else if (result()?.unlocked && infinite()) {
+      <p class="record is-open">Stage {{ (result()?.level ?? 0) + 1 }} is next, a little harder</p>
       } @else if (result()?.unlocked && !lastLevel()) {
       <p class="record is-open">Level {{ (result()?.level ?? 0) + 1 }} is open</p>
       }
@@ -34,13 +36,17 @@
       @if (lastLevel()) {
       <button #first class="abstract-button play-button" type="button" (click)="levels()">Levels</button>
       } @else {
-      <button #first class="abstract-button play-button" type="button" (click)="next()">Next level</button>
+      <button #first class="abstract-button play-button" type="button" (click)="next()">
+        {{ infinite() ? "Next stage" : "Next level" }}
+      </button>
       }
     </div>
     <div class="sheet-actions">
       <button class="abstract-button exit-button" type="button" (click)="retry()">Play again</button>
       @if (!lastLevel()) {
-      <button class="abstract-button exit-button" type="button" (click)="levels()">Levels</button>
+      <button class="abstract-button exit-button" type="button" (click)="levels()">
+        {{ infinite() ? "Menu" : "Levels" }}
+      </button>
       }
       <button class="abstract-button exit-button" type="button" (click)="close()">Exit</button>
     </div>

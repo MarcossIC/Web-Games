@@ -42,6 +42,13 @@
           play it again to beat your time.
         </span>
       </li>
+      <li>
+        <span class="bullet bullet-infinite" aria-hidden="true"></span>
+        <span>
+          <b>Infinite</b> builds a new board for every stage, each a little
+          harder. Every one is proven clearable before you see it.
+        </span>
+      </li>
     </ul>
 
     <dl class="keys key-legend">
@@ -72,7 +79,7 @@
     <h2 id="ringout-dialog-title" class="modal-title-with-bar">Paused</h2>
 
     <p class="status">
-      Level {{ controller.level() }} &middot; the clock is stopped
+      {{ infinite() ? "Stage" : "Level" }} {{ controller.level() }} &middot; the clock is stopped
     </p>
 
     <nav class="menu" aria-label="Pause menu">
@@ -80,7 +87,9 @@
         Resume
       </button>
       <button class="abstract-button menu-button" type="button" (click)="retry()">Start again</button>
-      <button class="abstract-button menu-button" type="button" (click)="levels()">Levels</button>
+      <button class="abstract-button menu-button" type="button" (click)="levels()">
+        {{ infinite() ? "Menu" : "Levels" }}
+      </button>
       <div class="menu-row">
         <button class="abstract-button menu-button" type="button" (click)="showHelp()">How to play</button>
         <button class="abstract-button menu-button menu-exit" type="button" (click)="close()">Exit</button>
@@ -116,6 +125,16 @@
       </button>
       }
     </nav>
+
+    <button
+      class="abstract-button infinite-button"
+      type="button"
+      [attr.aria-label]="'Infinite, stage ' + controller.nextStage()"
+      (click)="playInfinite()"
+    >
+      <span class="infinite-name">&infin; Infinite</span>
+      <span class="infinite-stage">Stage {{ controller.nextStage() }}</span>
+    </button>
 
     <div class="menu-row">
       <button class="abstract-button menu-button" type="button" (click)="showHelp()">How to play</button>

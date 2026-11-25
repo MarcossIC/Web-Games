@@ -96,6 +96,36 @@
   color: var(--gg-muted);
 }
 
+/* ---- Infinite: a wide tile under the levels ------------------------------ */
+
+.ringout-sheet .infinite-button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 1rem;
+  background: var(--gg-ink);
+  border: 2px solid var(--gg-cyan);
+  box-shadow: 4px 4px 0 var(--gg-magenta);
+  color: #fff;
+}
+
+.ringout-sheet .infinite-button:hover {
+  background: #0f2630;
+}
+
+.infinite-name {
+  font-family: var(--gg-font-display);
+  font-size: 1.125rem;
+}
+
+.infinite-stage {
+  font-family: var(--gg-font-pixel);
+  font-size: 0.8125rem;
+  color: var(--gg-yellow);
+}
+
 /* ---- Pause menu ------------------------------------------------------ */
 
 .menu {
@@ -208,6 +238,11 @@
   height: 0.375rem;
   background: #45dc84;
   transform: translateY(-0.125rem);
+}
+
+.bullet-infinite {
+  border: 3px solid var(--gg-cyan);
+  border-radius: 50%;
 }
 
 .bullet-time {
