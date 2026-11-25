@@ -80,13 +80,13 @@ const FIRST: readonly LevelSpec[] = [
     rods: [rod([L + 22, 0], [L + 170, 0], 'green')],
     solution: [{ rod: 0 }, { ring: 1, turn: 180 }],
   },
-  // 5. The rod cannot come out through the ring, and the ring only turns one way.
+  // 5. The rod points into the opening: make way for it first, then turn back the other way.
   {
     tip: 'Drag a ring around to turn it either way.',
     rings: [ring(-L, 0, 'orange', 180), ring(0, 0, 'blue', 270, { gap: 110 })],
     clips: [clip(0, 1)],
-    rods: [rod([-27, -110], [-27, 12], 'green', { clamp: 0.22 })],
-    solution: [{ ring: 1, turn: -60 }, { rod: 0 }],
+    rods: [rod([-87, -110], [25, -45], 'green', { clamp: 0.45 })],
+    solution: [{ ring: 1, turn: 30 }, { rod: 0 }, { ring: 1, turn: -85 }],
   },
   // 6. Threaded: turn the wide one to face the other and let it out.
   {
@@ -155,33 +155,54 @@ const FIRST: readonly LevelSpec[] = [
       { ring: 3, turn: 130 },
     ],
   },
-  // 11. A rod held in by a ring further down.
+  // 11. Three around a closed ring, and two rods that each hold back two of them.
   {
     rings: [
       hoop(0, 0, 'orange'),
-      ring(L, 0, 'blue', 90),
-      ring(-L, 0, 'pink', 270),
-      ring(154, 175, 'green', 90),
-      ring(154 + L, 175, 'yellow', 0),
+      ring(L, 0, 'blue', 255),
+      ring(s120x, s120y, 'pink', 75),
+      ring(s240x, s240y, 'green', 345),
     ],
-    clips: [clip(0, 1), clip(0, 2), clip(4, 3)],
-    rods: [rod([L, 20], [L, 110], 'purple')],
-    solution: [{ ring: 3, turn: -60 }, { rod: 0 }, { ring: 1, turn: 60 }, { ring: 2, turn: 60 }],
+    clips: [clip(0, 1), clip(0, 2), clip(0, 3)],
+    rods: [
+      rod([-31, -141], [56, -31], 'purple', { clamp: 0.33 }),
+      rod([-118, 196], [-24, 143], 'yellow', { clamp: 0.67 }),
+    ],
+    solution: [
+      { ring: 1, turn: -45 },
+      { rod: 0 },
+      { ring: 3, turn: 45 },
+      { ring: 2, turn: -15 },
+      { rod: 1 },
+      { ring: 2, turn: -89 },
+    ],
   },
-  // 12. Twins that turn opposite ways.
+  // 12. Four around a closed ring, and three rods between them.
   {
-    tip: 'Look closely: each ring has only one way out.',
+    tip: 'Sometimes a ring only turns partway: just enough to let something else out.',
     rings: [
       hoop(0, 0, 'teal'),
-      ring(-L, 0, 'pink', 90, { gap: 110 }),
-      ring(L, 0, 'yellow', 90, { gap: 110 }),
+      ring(L, 0, 'pink', 105),
+      ring(-L, 0, 'yellow', 225),
+      ring(0, L, 'purple', 180),
+      ring(0, -L, 'green', 210),
     ],
-    clips: [clip(0, 1), clip(0, 2)],
+    clips: [clip(0, 1), clip(0, 2), clip(0, 3), clip(0, 4)],
     rods: [
-      rod([-97.5, 160], [-97.5, -12], 'blue', { clamp: 0.25 }),
-      rod([97.5, 160], [97.5, -12], 'blue', { clamp: 0.25 }),
+      rod([-27, -207], [-78, -102], 'blue', { clamp: 0.42 }),
+      rod([-322, -4], [-182, -8], 'orange', { clamp: 0.48 }),
+      rod([220, 6], [68, 132], 'red', { clamp: 0.47 }),
     ],
-    solution: [{ ring: 1, turn: -60 }, { ring: 2, turn: 60 }, { rod: 0 }, { rod: 1 }],
+    solution: [
+      { ring: 3, turn: 60 },
+      { rod: 2 },
+      { ring: 1, turn: 45 },
+      { ring: 2, turn: -30 },
+      { rod: 1 },
+      { ring: 2, turn: 135 },
+      { rod: 0 },
+      { ring: 4, turn: -90 },
+    ],
   },
   // 13. Dominoes: each rod waits for the next one.
   {
