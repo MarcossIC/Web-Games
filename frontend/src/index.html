@@ -33,8 +33,282 @@
       href="https://fonts.googleapis.com/css2?family=Audiowide&family=Nunito:wght@300;400;500;600;700&family=Silkscreen:wght@400;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
+    <!--
+      Boot screen: shown from the first paint until Angular starts, so the
+      app opens on motion instead of a still frame. Inline and CSS only
+      because nothing else has loaded yet; main.ts takes it away
+      (shared/boot-screen.ts). Animates only opacity and transform.
+    -->
+    <style>
+      #gg-boot {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2.25rem;
+        overflow: hidden;
+        color: #ece9f7;
+        font-family: "Space Mono", ui-monospace, monospace;
+        background: radial-gradient(
+            ellipse at 50% 115%,
+            rgba(255, 46, 136, 0.3),
+            transparent 60%
+          ),
+          radial-gradient(circle at 50% 42%, #17112e 0%, #07060d 70%);
+        animation: gg-boot-on 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      #gg-boot::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image: repeating-linear-gradient(
+          0deg,
+          rgba(255, 255, 255, 0.04) 0 1px,
+          transparent 1px 3px
+        );
+      }
+      #gg-boot.is-done {
+        animation: gg-boot-off 0.5s cubic-bezier(0.5, 0, 0.9, 0.5) forwards;
+        pointer-events: none;
+      }
+      /* Background stars drifting toward us. */
+      .gg-boot__field {
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(1px 1px at 12% 22%, #fff, transparent),
+          radial-gradient(1px 1px at 78% 14%, #5ee6ff, transparent),
+          radial-gradient(1.5px 1.5px at 64% 72%, #fff, transparent),
+          radial-gradient(1px 1px at 28% 80%, #ff2e88, transparent),
+          radial-gradient(1px 1px at 88% 58%, #fff, transparent),
+          radial-gradient(1.5px 1.5px at 40% 36%, #ffe14a, transparent),
+          radial-gradient(1px 1px at 6% 62%, #fff, transparent),
+          radial-gradient(1px 1px at 52% 8%, #fff, transparent);
+        animation: gg-boot-drift 3.2s linear infinite;
+      }
+      .gg-boot__field + .gg-boot__field {
+        animation-delay: -1.6s;
+        rotate: 140deg;
+      }
+      /* The galaxy: rings of stars on a tilted disk around the mark. */
+      .gg-boot__core {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 15rem;
+        height: 15rem;
+        animation: gg-boot-emerge 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s
+          backwards;
+      }
+      .gg-boot__disk {
+        position: absolute;
+        inset: 0;
+        transform: rotateX(68deg) rotateZ(-18deg);
+      }
+      .gg-boot__ring {
+        position: absolute;
+        inset: var(--inset);
+        border-radius: 50%;
+        border: 1px dashed rgba(94, 230, 255, 0.28);
+        animation: gg-boot-spin var(--speed) linear infinite;
+      }
+      .gg-boot__ring:nth-child(2) {
+        border-color: rgba(255, 46, 136, 0.32);
+        animation-direction: reverse;
+      }
+      .gg-boot__ring::before,
+      .gg-boot__ring::after {
+        content: "";
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--star);
+        box-shadow: 0 0 10px 2px var(--star);
+      }
+      .gg-boot__ring::before {
+        top: -4px;
+        left: calc(50% - 4px);
+      }
+      .gg-boot__ring::after {
+        bottom: 12%;
+        right: 4%;
+        width: 5px;
+        height: 5px;
+        background: #fff;
+        box-shadow: 0 0 6px 1px #fff;
+      }
+      .gg-boot__mark {
+        position: relative;
+        font-family: "Audiowide", system-ui, sans-serif;
+        font-size: 4.5rem;
+        line-height: 1;
+        letter-spacing: 2px;
+        color: #fff;
+        text-shadow: -3px 0 0 #5ee6ff, 2px 2px 0 #ff2e88, 4px 4px 0 #ff2e88,
+          6px 6px 0 #b3186a, 8px 8px 0 #5a1a8c;
+        animation: gg-boot-glitch 2.4s steps(1) infinite;
+      }
+      .gg-boot__status {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.875rem;
+        animation: gg-boot-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s
+          backwards;
+      }
+      .gg-boot__label {
+        margin: 0;
+        font-family: "Silkscreen", ui-monospace, monospace;
+        font-size: 0.875rem;
+        letter-spacing: 4px;
+        color: #c9c4e3;
+      }
+      .gg-boot__caret {
+        color: #ff2e88;
+        animation: gg-boot-blink 1s steps(1) infinite;
+      }
+      .gg-boot__bar {
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+        border: 1px solid #2a2540;
+        background: #100e1c;
+        box-shadow: 4px 4px 0 #ff2e88;
+      }
+      .gg-boot__bar i {
+        width: 12px;
+        height: 14px;
+        background: #2a2540;
+        animation: gg-boot-charge 1.4s linear infinite;
+        animation-delay: calc(var(--i) * 0.1s);
+      }
+      @keyframes gg-boot-on {
+        from {
+          opacity: 0;
+          transform: scaleY(0.02);
+        }
+        60% {
+          opacity: 1;
+        }
+      }
+      @keyframes gg-boot-off {
+        to {
+          opacity: 0;
+          transform: scale(2.2);
+        }
+      }
+      @keyframes gg-boot-drift {
+        from {
+          opacity: 0;
+          transform: scale(0.6);
+        }
+        30% {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+          transform: scale(1.8);
+        }
+      }
+      @keyframes gg-boot-emerge {
+        from {
+          opacity: 0;
+          transform: translateY(24px) scale(0.6);
+        }
+      }
+      @keyframes gg-boot-rise {
+        from {
+          opacity: 0;
+          transform: translateY(18px);
+        }
+      }
+      @keyframes gg-boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes gg-boot-blink {
+        50% {
+          opacity: 0;
+        }
+      }
+      /* A CRT hiccup now and then: the mark jumps a few pixels. */
+      @keyframes gg-boot-glitch {
+        0%,
+        100% {
+          transform: none;
+        }
+        92% {
+          transform: translateX(-3px) skewX(-8deg);
+        }
+        95% {
+          transform: translateX(3px);
+        }
+      }
+      /* Each cell lights up in turn: a charge sweeping along the bar. */
+      @keyframes gg-boot-charge {
+        0%,
+        100% {
+          background: #2a2540;
+        }
+        10% {
+          background: #ff2e88;
+        }
+        30% {
+          background: #5ee6ff;
+        }
+        55% {
+          background: #2a2540;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #gg-boot,
+        #gg-boot *,
+        #gg-boot *::before,
+        #gg-boot *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+        }
+        #gg-boot.is-done {
+          animation: gg-boot-fade 0.3s ease-out forwards !important;
+        }
+        @keyframes gg-boot-fade {
+          to {
+            opacity: 0;
+          }
+        }
+      }
+    </style>
   </head>
   <body>
+    <div id="gg-boot" role="status" aria-live="polite">
+      <div class="gg-boot__field" aria-hidden="true"></div>
+      <div class="gg-boot__field" aria-hidden="true"></div>
+      <div class="gg-boot__core" aria-hidden="true">
+        <div class="gg-boot__disk">
+          <span class="gg-boot__ring" style="--inset: 0; --speed: 6s; --star: #5ee6ff"></span>
+          <span class="gg-boot__ring" style="--inset: 18%; --speed: 4s; --star: #ff2e88"></span>
+          <span class="gg-boot__ring" style="--inset: 34%; --speed: 2.6s; --star: #ffe14a"></span>
+        </div>
+        <span class="gg-boot__mark">GG</span>
+      </div>
+      <div class="gg-boot__status">
+        <p class="gg-boot__label">
+          <span class="gg-boot__caret" aria-hidden="true">&gt;</span> LOADING
+        </p>
+        <div class="gg-boot__bar" aria-hidden="true">
+          <i style="--i: 0"></i><i style="--i: 1"></i><i style="--i: 2"></i
+          ><i style="--i: 3"></i><i style="--i: 4"></i><i style="--i: 5"></i
+          ><i style="--i: 6"></i><i style="--i: 7"></i><i style="--i: 8"></i
+          ><i style="--i: 9"></i>
+        </div>
+      </div>
+    </div>
     <app-root></app-root>
   </body>
 </html>
