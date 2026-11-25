@@ -9,11 +9,11 @@ import type { Rect } from '@app-input';
  *
  * - desktop: the 550 by 330 picture of always, played with the keyboard.
  * - deck (a phone held upright, a tablet): the canvas takes the shape of
- *   the screen. The world sits over a deck that holds the keys, so no thumb
+ *   the screen. The world sits over a deck for the thumbs, so no thumb
  *   covers the run, and the rows left above it are sky.
  * - overlay (a phone on its side): there is no height to spare for a deck.
  *   The canvas takes the shape of the screen, so it shows more of the world
- *   across, and the keys are drawn over its bottom corners.
+ *   across, and the thumbs play over its bottom corners.
  */
 
 /** Rows of the world. The floor is 16 px above the last one. */
@@ -43,7 +43,7 @@ const DECK_SHARE = 0.3;
 /** Under this there is no room for a key a thumb can find. */
 const DECK_MIN_HEIGHT = 140;
 const DECK_MAX_HEIGHT = 260;
-/** Narrower than this the keys over the picture would leave too little to see. */
+/** Narrower than this the thumbs over the picture would leave too little to see. */
 const WIDE_MIN_WIDTH = 480;
 /** Wider than this the player sees so far ahead that nothing is a surprise. */
 const WIDE_MAX_WIDTH = 800;
@@ -62,19 +62,24 @@ export type LayoutMode = 'desktop' | 'deck' | 'overlay';
 
 export { contains, type Rect } from '@app-input';
 
-/** A key on the screen. */
+/** A key on the screen, or a part of it a finger acts on. */
 export interface TouchButton {
   /** Where a finger presses it: bigger than what is drawn. */
   readonly zone: Rect;
-  /** The key that is drawn. */
+  /** What is drawn: for the stick and the jump, where their hint rests. */
   readonly face: Rect;
 }
 
+/**
+ * What a touch screen is played with. There are no keys to find: the left
+ * half is a stick that floats under the thumb wherever it lands, the right
+ * half jumps wherever it is touched. Pause is the one key.
+ */
 export interface TouchControls {
   readonly pause: TouchButton;
-  readonly left: TouchButton;
-  readonly right: TouchButton;
-  readonly crouch: TouchButton;
+  /** The left half: slide sideways to run, up to jump, down to crouch. */
+  readonly stick: TouchButton;
+  /** The right half, under pause: touch to jump, hold for a higher one. */
   readonly jump: TouchButton;
 }
 
@@ -88,9 +93,9 @@ export interface RunnerLayout {
    * last row is the last of them: what is left above the world is sky.
    */
   readonly viewHeight: number;
-  /** The panel under the view that holds the keys, where there is room. */
+  /** The panel under the view the thumbs rest on, where there is room. */
   readonly deck: Rect | null;
-  /** The keys on the screen; none with a keyboard. */
+  /** How fingers play on the screen; none with a keyboard. */
   readonly controls: TouchControls | null;
   /** Where across the view the player rests: 0.5 is the middle. */
   readonly cameraAnchor: number;
@@ -118,68 +123,42 @@ function pauseKey(width: number): TouchButton {
   };
 }
 
-/**
- * The keys on the deck. The deck is split in four columns, one per key,
- * from edge to edge and from top to bottom: a thumb that lands a little off
- * its key still presses it, and sliding from one arrow to the other turns
- * around without lifting the finger.
- */
-function deckControls(width: number, deck: Rect): TouchControls {
-  // A little above the middle: the last rows hold the label of the deck.
-  const middle = deck.y + Math.round(deck.h / 2) - 6;
-  const key = (x: number, size: number): Rect => ({ x, y: middle - size / 2, w: size, h: size });
-  const column = (from: number, to: number): Rect => ({ x: from, y: deck.y, w: to - from, h: deck.h });
-
-  const left = key(12, 72);
-  const right = key(left.x + left.w + 8, 72);
-  const jump = key(width - 12 - 88, 88);
-  const crouch = key(jump.x - 8 - 56, 56);
-
-  // Each column ends half way to the next key.
-  const leftEnd = (left.x + left.w + right.x) / 2;
-  const rightEnd = (right.x + right.w + crouch.x) / 2;
-  const crouchEnd = (crouch.x + crouch.w + jump.x) / 2;
-
+/** The two halves of the canvas: the stick on the left, the jump on the right under pause. */
+function halves(width: number, height: number, stickFace: Rect, jumpFace: Rect): TouchControls {
+  const middle = Math.round(width / 2);
   return {
     pause: pauseKey(width),
-    left: { face: left, zone: column(0, leftEnd) },
-    right: { face: right, zone: column(leftEnd, rightEnd) },
-    crouch: { face: crouch, zone: column(rightEnd, crouchEnd) },
-    jump: { face: jump, zone: column(crouchEnd, width) },
+    stick: { face: stickFace, zone: { x: 0, y: 0, w: middle, h: height } },
+    jump: { face: jumpFace, zone: { x: middle, y: PAUSE_ZONE, w: width - middle, h: height - PAUSE_ZONE } },
   };
 }
 
 /**
- * The keys over the bottom corners of the picture. Each is pressed from an
- * area that reaches the edges of the canvas and well above the key.
+ * On the deck the hints rest in the middle of each half of it. A thumb can
+ * land anywhere on its half, the picture above included.
+ */
+function deckControls(width: number, height: number, deck: Rect): TouchControls {
+  // A little above the middle: the last rows hold the label of the deck.
+  const middle = deck.y + Math.round(deck.h / 2) - 6;
+  const size = 84;
+  const at = (cx: number): Rect => ({ x: Math.round(cx - size / 2), y: middle - size / 2, w: size, h: size });
+  return halves(width, height, at(width / 4), at((width * 3) / 4));
+}
+
+/**
+ * Over the picture the hints rest in the bottom corners, where the thumbs
+ * of a phone held on its side are.
  */
 function cornerControls(width: number, height: number): TouchControls {
   const bottom = height - 14;
-  const reach = 40;
-  const key = (x: number, size: number): Rect => ({ x, y: bottom - size, w: size, h: size });
-  const area = (face: Rect, from: number, to: number): Rect => ({
-    x: from,
-    y: face.y - reach,
-    w: to - from,
-    h: height - (face.y - reach),
-  });
-
-  const left = key(16, 56);
-  const right = key(left.x + left.w + 8, 56);
-  const jump = key(width - 16 - 64, 64);
-  const crouch = key(jump.x - 10 - 48, 48);
-
-  const leftEnd = (left.x + left.w + right.x) / 2;
-  const crouchEnd = (crouch.x + crouch.w + jump.x) / 2;
-
-  return {
-    pause: pauseKey(width),
-    left: { face: left, zone: area(left, 0, leftEnd) },
-    right: { face: right, zone: area(right, leftEnd, right.x + right.w + 24) },
-    crouch: { face: crouch, zone: area(crouch, crouch.x - 14, crouchEnd) },
-    jump: { face: jump, zone: area(jump, crouchEnd, width) },
-  };
+  const stick: Rect = { x: 16, y: bottom - 80, w: 80, h: 80 };
+  const jump: Rect = { x: width - 16 - 64, y: bottom - 64, w: 64, h: 64 };
+  return halves(width, height, stick, jump);
 }
+
+/** How far a resting thumb covers the picture past its hint. */
+const THUMB_COVER_LEFT = 40;
+const THUMB_COVER_RIGHT = 72;
 
 function deckLayout(width: number, height: number): RunnerLayout {
   const deckHeight = clamp(
@@ -196,7 +175,7 @@ function deckLayout(width: number, height: number): RunnerLayout {
     height,
     viewHeight,
     deck,
-    controls: deckControls(width, deck),
+    controls: deckControls(width, height, deck),
     // Nothing covers the view: the player rests as far left as it takes to
     // see the ground ahead that a desktop shows, and no further.
     cameraAnchor: clamp((width - GROUND_AHEAD - cameraDeadzone / 2) / width, 0.3, 0.42),
@@ -211,14 +190,14 @@ function overlayLayout(aspect: number, rows: number): RunnerLayout {
   const controls = cornerControls(width, height);
   const cameraDeadzone = 80;
 
-  // The keys cover the ground at both corners. The band the player rests in
-  // ends far enough from the right keys to see what a desktop shows ahead,
-  // without getting under the arrows, and never right of where it would
-  // rest with nothing in the way.
-  const arrowsEnd = controls.right.face.x + controls.right.face.w;
+  // The thumbs cover the ground at both corners. The band the player rests
+  // in ends far enough from the right thumb to see what a desktop shows
+  // ahead, without getting under the left one, and never right of where it
+  // would rest with nothing in the way.
+  const leftThumbEnd = controls.stick.face.x + controls.stick.face.w + THUMB_COVER_LEFT;
   const restsUntil = clamp(
-    controls.crouch.zone.x - GROUND_AHEAD,
-    arrowsEnd + 10 + cameraDeadzone,
+    controls.jump.face.x - THUMB_COVER_RIGHT - GROUND_AHEAD,
+    leftThumbEnd + 10 + cameraDeadzone,
     width * 0.42 + cameraDeadzone / 2
   );
 

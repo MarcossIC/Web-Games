@@ -21,7 +21,7 @@ const PHONE_SIDEWAYS = { width: 844, height: 390 };
 const upright = () => runnerLayout(PHONE_UPRIGHT.width, PHONE_UPRIGHT.height, true);
 const sideways = () => runnerLayout(PHONE_SIDEWAYS.width, PHONE_SIDEWAYS.height, true);
 
-const PAD_KEYS = ['left', 'right', 'crouch', 'jump'] as const;
+const PAD_KEYS = ['stick', 'jump'] as const;
 
 /** How far ahead of the resting player a desktop shows the ground. */
 const DESKTOP_AHEAD = DESKTOP_WIDTH - (DESKTOP_WIDTH * 0.5 + 80 / 2);
@@ -115,28 +115,25 @@ describe('runnerLayout', () => {
       expect(ahead).toBeGreaterThan(DESKTOP_AHEAD - 10);
     });
 
-    it('splits the whole deck between the four keys: any touch on it does something', () => {
+    it('splits the whole canvas between the stick and the jump: any touch does something', () => {
       const layout = upright();
-      const controls = controlsOf(layout);
-      const deck = layout.deck!;
+      const { stick, jump, pause } = controlsOf(layout);
 
-      const covered = PAD_KEYS.reduce((sum, key) => sum + controls[key].zone.w, 0);
-
-      expect(covered).toBe(deck.w);
-      for (const key of PAD_KEYS) {
-        expect(controls[key].zone.y).withContext(key).toBe(deck.y);
-        expect(controls[key].zone.h).withContext(key).toBe(deck.h);
-      }
+      expect(stick.zone.w + jump.zone.w).toBe(layout.width);
+      expect(stick.zone.h).toBe(layout.height);
+      expect(jump.zone.y).toBe(pause.zone.y + pause.zone.h);
+      expect(jump.zone.y + jump.zone.h).toBe(layout.height);
     });
 
-    it('moves with the left thumb and jumps with the right one', () => {
-      const { left, right, crouch, jump } = controlsOf(upright());
+    it('moves with the left thumb and jumps with the right one, both resting on the deck', () => {
+      const layout = upright();
+      const { stick, jump } = controlsOf(layout);
+      const deck = layout.deck!;
 
-      expect(left.zone.x).toBeLessThan(right.zone.x);
-      expect(right.zone.x).toBeLessThan(crouch.zone.x);
-      expect(crouch.zone.x).toBeLessThan(jump.zone.x);
-      // The key pressed the most is the biggest.
-      expect(jump.face.w).toBeGreaterThan(left.face.w);
+      expect(stick.zone.x + stick.zone.w).toBe(jump.zone.x);
+      for (const hint of [stick.face, jump.face]) {
+        expect(isInside(hint, deck)).toBeTrue();
+      }
     });
 
     it('leaves the last rows of the deck free under the keys, for its label', () => {
@@ -159,22 +156,19 @@ describe('runnerLayout', () => {
       expect(layout.deck).toBeNull();
     });
 
-    it('puts the keys over the bottom corners of the picture', () => {
+    it('rests the stick and the jump hints in the bottom corners of the picture', () => {
       const layout = sideways();
-      const { left, right, crouch, jump } = controlsOf(layout);
+      const { stick, jump } = controlsOf(layout);
       const middle = layout.width / 2;
 
-      for (const key of [left, right]) {
-        expect(key.zone.x + key.zone.w).toBeLessThan(middle);
-        expect(key.zone.y + key.zone.h).toBe(layout.height);
-      }
-      for (const key of [crouch, jump]) {
-        expect(key.zone.x).toBeGreaterThan(middle);
-        expect(key.zone.y + key.zone.h).toBe(layout.height);
+      expect(stick.face.x + stick.face.w).toBeLessThan(middle);
+      expect(jump.face.x).toBeGreaterThan(middle);
+      for (const hint of [stick.face, jump.face]) {
+        expect(layout.height - (hint.y + hint.h)).toBeLessThanOrEqual(20);
       }
     });
 
-    it('never rests the player under the arrows', () => {
+    it('never rests the player under the left thumb', () => {
       const screens = [
         [844, 390],
         [640, 360],
@@ -184,7 +178,7 @@ describe('runnerLayout', () => {
       ];
       for (const [width, height] of screens) {
         const layout = runnerLayout(width, height, true);
-        const arrows = controlsOf(layout).right.face;
+        const arrows = controlsOf(layout).stick.face;
 
         expect(layout.mode).withContext(`${width}x${height}`).toBe('overlay');
         expect(restBand(layout).from).withContext(`${width}x${height}`).toBeGreaterThan(arrows.x + arrows.w);
@@ -194,7 +188,7 @@ describe('runnerLayout', () => {
     it('keeps as much ground in sight ahead of the player as a desktop, clear of the keys', () => {
       const layout = sideways();
 
-      const hiddenFrom = controlsOf(layout).crouch.zone.x;
+      const hiddenFrom = controlsOf(layout).jump.face.x - 72;
 
       expect(hiddenFrom - restBand(layout).until).toBeGreaterThanOrEqual(DESKTOP_AHEAD);
     });

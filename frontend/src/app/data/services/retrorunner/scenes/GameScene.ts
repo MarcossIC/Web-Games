@@ -278,7 +278,7 @@ export class GameScene extends Scene {
 
     // Input
     this.keys = heldKeys(this.input.keyboard, RUN_HELD_KEYS);
-    // The keys on a touch screen, read from where the fingers are (update()).
+    // The stick and the jump of a touch screen, read from where the fingers are (update()).
     const pad: ActionSource<RunnerHeldAction> = {
       isDown: (action) => action !== 'restart' && this.pad[action],
     };
@@ -313,7 +313,7 @@ export class GameScene extends Scene {
 
     this.applyLayout();
 
-    // The touch keys live in a scene of their own, beside this one: it keeps
+    // The touch controls are drawn in a scene of their own, beside this one: it keeps
     // running through a pause and through every new run.
     if (!this.scene.isActive(SceneKeys.TOUCH_UI)) this.scene.launch(SceneKeys.TOUCH_UI);
 

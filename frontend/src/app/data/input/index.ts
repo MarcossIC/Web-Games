@@ -8,5 +8,6 @@ export { HoldToConfirm } from './hold';
 export { CanvasPointerLock, type PointerLockHost } from './pointer-lock';
 export { isFreshPress } from './repeat';
 export { type Direction, SWIPE_MIN_PX, type SwipePointer, SwipeTracker, swipeDirection } from './swipe';
+export { idleStickPush, type StickFinger, type StickPush, stickPush } from './stick';
 export { TapTracker } from './tap';
 export { contains, type Finger, heldZones, type Rect, type Zone } from './zones';
