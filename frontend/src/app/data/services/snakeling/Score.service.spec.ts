@@ -25,7 +25,7 @@ describe('Service: Score', () => {
   });
 
   it('keeps the best score when the run did worse', () => {
-    snakelingRecords.write(store, { bestScore: 40, bestClassic: 0, bestTimeAttack: 0 });
+    snakelingRecords.write(store, { bestScore: 40, bestClassic: 0, bestTimeAttack: 0, bestHard: 0 });
     const service = newService();
     service.eatApple();
     service.updateMaxScore('portal');
@@ -61,6 +61,7 @@ describe('Service: Score', () => {
       bestScore: 18,
       bestClassic: 8,
       bestTimeAttack: 0,
+      bestHard: 0,
     });
   });
 

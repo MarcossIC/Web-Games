@@ -217,6 +217,7 @@ export class SnakelingComponent implements OnInit {
           : null,
         dead: this.controller.isGameOver,
         walls: hasWalls(this.controller.mode),
+        obstacles: this.controller.obstacles.obstacles,
         time: now,
       });
       frame = requestAnimationFrame(paint);

@@ -51,8 +51,8 @@ describe('WelcomeSnakelingModalComponent', () => {
 
   it('opens on the modes to pick from, with how to play and exit', () => {
     expect(title()).toBe('Snakeling');
-    expect(cards()).toEqual(['Classic', 'Portal', 'Time Attack']);
-    expect(buttons().slice(3)).toEqual(['How to play', 'Exit']);
+    expect(cards()).toEqual(['Classic', 'Portal', 'Time Attack', 'Hard']);
+    expect(buttons().slice(4)).toEqual(['How to play', 'Exit']);
   });
 
   it('starts the game in the mode picked', () => {
@@ -71,12 +71,14 @@ describe('WelcomeSnakelingModalComponent', () => {
     score.updateMaxScore('portal');
     score.score = 40;
     score.updateMaxScore('time');
+    score.score = 12;
+    score.updateMaxScore('hard');
     fixture.detectChanges();
 
     const best = Array.from(root.querySelectorAll('.mode-best')).map((b) =>
       b.textContent!.replace(/\s+/g, ' ').trim()
     );
-    expect(best).toEqual(['Best 24', 'Best 96', 'Best 40']);
+    expect(best).toEqual(['Best 24', 'Best 96', 'Best 40', 'Best 12']);
   });
 
   it('is a pause menu while a game is going', () => {
@@ -101,12 +103,12 @@ describe('WelcomeSnakelingModalComponent', () => {
     const modes = Array.from(root.querySelectorAll('.mode-rule dt')).map((d) =>
       d.textContent!.trim()
     );
-    expect(modes).toEqual(['Classic', 'Portal', 'Time Attack']);
+    expect(modes).toEqual(['Classic', 'Portal', 'Time Attack', 'Hard']);
     expect(buttons()).toEqual(['← Back']);
 
     click('← Back');
 
-    expect(cards()).toEqual(['Classic', 'Portal', 'Time Attack']);
+    expect(cards()).toEqual(['Classic', 'Portal', 'Time Attack', 'Hard']);
   });
 
   it('leaves for the game list from Exit', () => {

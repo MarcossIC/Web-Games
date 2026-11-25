@@ -60,4 +60,10 @@ export const SNAKELING_MODES: readonly SnakelingModeInfo[] = [
     tagline: 'One minute, top score',
     rule: 'You have one minute to score as much as you can. Walls are deadly, like Classic.',
   },
+  {
+    id: 'hard',
+    name: 'Hard',
+    tagline: 'Rocks rise and sink',
+    rule: 'Walls are deadly, like Classic, and rocks rise around the board. A rock shows faint first, then turns solid: hit a solid one and the game is over. After a while it sinks and rises somewhere else. More apples, more rocks.',
+  },
 ];

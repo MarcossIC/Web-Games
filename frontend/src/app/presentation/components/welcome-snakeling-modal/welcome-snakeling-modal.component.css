@@ -94,6 +94,10 @@
   --tone: var(--gg-yellow);
 }
 
+.is-hard {
+  --tone: #ff5a4a;
+}
+
 .modes {
   display: flex;
   flex-direction: column;

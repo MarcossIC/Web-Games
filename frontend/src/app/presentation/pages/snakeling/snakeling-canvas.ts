@@ -1,5 +1,10 @@
 import { Board, Cell, unwrapBody } from './snake-motion';
 import { GOLDEN_APPLE_WARNING_MS } from '@app/data/services/snakeling/scoring';
+import {
+  OBSTACLE_LEAVING_MS,
+  OBSTACLE_WARNING_MS,
+  Obstacle,
+} from '@app/data/services/snakeling/obstacles';
 
 /** What the painter needs to draw one frame. Cells are 1-based. */
 export interface SnakeFrame {
@@ -14,6 +19,8 @@ export interface SnakeFrame {
   dead: boolean;
   /** True when the edges are walls (Classic); false when they are portals. */
   walls: boolean;
+  /** Hard mode: the rocks on the board, see-through or solid. */
+  obstacles: readonly Obstacle[];
   /** Clock for the idle animations, in milliseconds. */
   time: number;
 }
@@ -40,6 +47,14 @@ const SHADOW = 'rgba(46, 78, 0, 0.38)';
 /** Classic mode: the edges are a wall of dark stone. */
 const WALL = '#2a3410';
 const WALL_MORTAR = '#6f8a2a';
+/** Hard mode: the rocks, darker stone than the walls with a lit top. */
+const ROCK = '#3b3f4a';
+const ROCK_LIGHT = '#6b7182';
+const ROCK_DARK = '#1c1e25';
+/** The warning a rock gives before it turns solid. */
+const ROCK_WARNING = '#ff4a3d';
+/** A solid rock about to sink blinks this fast. */
+const ROCK_BLINK_MS = 150;
 
 // The serpent wears the colors of the site: magenta at the head, violet
 // along the body, cyan at the tail.
@@ -153,6 +168,7 @@ export class SnakelingCanvas {
 
     if (frame.walls) this.drawWalls();
     else this.drawPortals(frame.time);
+    this.drawObstacles(frame.obstacles, frame.time);
     this.drawApple(frame.food, frame.time);
     if (frame.golden) this.drawGoldenApple(frame.golden, frame.time);
     this.drawSnake(frame);
@@ -266,6 +282,93 @@ export class SnakelingCanvas {
       context.fillRect(right - width, y, width, joint);
     }
     context.restore();
+  }
+
+  /**
+   * Hard mode. A rock that is about to rise is a faint ghost of itself
+   * with a red outline that pulses faster as it gets close: it can be
+   * crossed. A solid rock is a block of stone with a lit top and a shadow
+   * on the grass. In its last moments it blinks, then sinks.
+   */
+  private drawObstacles(obstacles: readonly Obstacle[], time: number): void {
+    const { context, cell } = this;
+    for (const rock of obstacles) {
+      const solid = rock.phase === 'solid';
+      if (
+        solid &&
+        rock.leftMs <= OBSTACLE_LEAVING_MS &&
+        Math.floor(time / ROCK_BLINK_MS) % 2 === 1
+      ) {
+        context.save();
+        context.globalAlpha = 0.35;
+        this.drawRockCells(rock, false);
+        context.restore();
+        continue;
+      }
+      if (solid) {
+        this.drawRockCells(rock, true);
+        continue;
+      }
+
+      // How far along the warning is, 0 to 1: the ghost firms up and the
+      // outline pulses faster as the rock gets close to turning solid.
+      const near = 1 - Math.max(0, rock.leftMs) / OBSTACLE_WARNING_MS;
+      const pulse = 0.5 + 0.5 * Math.sin(time / (180 - near * 120));
+      context.save();
+      context.globalAlpha = 0.18 + near * 0.22;
+      this.drawRockCells(rock, false);
+      context.globalAlpha = 0.45 + 0.5 * pulse;
+      context.strokeStyle = ROCK_WARNING;
+      context.lineWidth = Math.max(1, cell * 0.08);
+      context.setLineDash([cell * 0.18, cell * 0.12]);
+      context.lineDashOffset = -time / 40;
+      const inset = cell * 0.1;
+      for (const at of rock.cells) {
+        context.strokeRect(
+          (at.x - 1) * cell + inset,
+          (at.y - 1) * cell + inset,
+          cell - inset * 2,
+          cell - inset * 2
+        );
+      }
+      context.restore();
+    }
+  }
+
+  /** The stone blocks of a rock, one per cell. */
+  private drawRockCells(rock: Obstacle, shadow: boolean): void {
+    const { context, cell } = this;
+    const inset = cell * 0.06;
+    const size = cell - inset * 2;
+    const edge = size * 0.16;
+    if (shadow) {
+      context.fillStyle = SHADOW;
+      for (const at of rock.cells) {
+        context.fillRect(
+          (at.x - 1) * cell + inset,
+          (at.y - 1) * cell + inset + cell * 0.14,
+          size,
+          size
+        );
+      }
+    }
+    for (const at of rock.cells) {
+      const left = (at.x - 1) * cell + inset;
+      const top = (at.y - 1) * cell + inset;
+      context.fillStyle = ROCK_DARK;
+      context.fillRect(left - 1, top - 1, size + 2, size + 2);
+      context.fillStyle = ROCK;
+      context.fillRect(left, top, size, size);
+      context.fillStyle = ROCK_LIGHT;
+      context.fillRect(left, top, size, edge);
+      context.fillRect(left, top, edge, size);
+      context.fillStyle = ROCK_DARK;
+      context.fillRect(left, top + size - edge, size, edge);
+      context.fillRect(left + size - edge, top, edge, size);
+      // A crack, so it reads as stone and not as another plate.
+      context.fillRect(left + size * 0.45, top + size * 0.3, edge * 0.6, size * 0.3);
+      context.fillRect(left + size * 0.3, top + size * 0.55, size * 0.2, edge * 0.6);
+    }
   }
 
   /**

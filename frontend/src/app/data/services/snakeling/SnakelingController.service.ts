@@ -11,6 +11,12 @@ import {
   GOLDEN_APPLE_LIFE_MS,
 } from './scoring';
 import {
+  APPLES_PER_EXTRA_OBSTACLE,
+  OBSTACLES_AT_START,
+  ObstacleField,
+} from './obstacles';
+import {
+  hasObstacles,
   hasWalls,
   isTimed,
   SnakelingEnding,
@@ -43,6 +49,9 @@ export class SnakelingControllerService {
 
   /** Where the luck of the golden apple comes from; tests replace it. */
   public random: () => number = Math.random;
+
+  /** Hard mode: the rocks that rise and sink around the board. */
+  public readonly obstacles = new ObstacleField(() => this.random());
 
   private renderer!: Renderer2;
   private boardService = inject(BoardServiceService);
@@ -91,6 +100,12 @@ export class SnakelingControllerService {
         this.isGameOver = true;
         return;
       }
+      // A solid rock (Hard) stops the snake the same way.
+      if (this.nextStepHitsRock()) {
+        this._endedBy.set('rock');
+        this.isGameOver = true;
+        return;
+      }
       this.snakeService.removeSnake(this.boardDiv, this.renderer);
       this.snakeService.moveBody();
       this.snakeService.moveSnake();
@@ -136,7 +151,11 @@ export class SnakelingControllerService {
         //Actualiza la posicion de la comida hasta que sea en una celda vacia
         do {
           this.foodService.foodChangePosition();
-        } while (this.foodCollisionInSnakeBody() || this.foodOnGolden());
+        } while (
+          this.foodCollisionInSnakeBody() ||
+          this.foodOnGolden() ||
+          this.foodOnRock()
+        );
 
         // The new apple may bring a golden apple of its own.
         this.foodService.goldenSpent = false;
@@ -156,6 +175,45 @@ export class SnakelingControllerService {
     this.scoreService.tick(elapsedMs);
     this.tickGolden(elapsedMs);
     this.tickClock(elapsedMs);
+    this.tickObstacles(elapsedMs);
+  }
+
+  /**
+   * Hard mode: rocks turn solid, sink and rise again elsewhere. One more
+   * rock for every few apples eaten.
+   */
+  private tickObstacles(elapsedMs: number): void {
+    if (!hasObstacles(this._mode())) return;
+    const snake = this.snakeService;
+    const food = this.foodService;
+    const wanted =
+      OBSTACLES_AT_START +
+      Math.floor(this.scoreService.apples / APPLES_PER_EXTRA_OBSTACLE);
+    this.obstacles.tick(elapsedMs, wanted, {
+      columns: this.boardSize.WIDTH,
+      rows: this.boardSize.HEIGHT,
+      head: { x: snake.snakeX, y: snake.snakeY },
+      heading: { x: snake.speedSnakeX, y: snake.speedSnakeY },
+      taken: (x, y) =>
+        snake.verifyCollision(x, y) ||
+        (x === food.foodX && y === food.foodY) ||
+        (!!food.golden && food.golden.x === x && food.golden.y === y),
+    });
+  }
+
+  /** Whether the next step takes the head into a solid rock. */
+  private nextStepHitsRock(): boolean {
+    if (!hasObstacles(this._mode())) return false;
+    const snake = this.snakeService;
+    return this.obstacles.isSolidAt(
+      snake.snakeX + snake.speedSnakeX,
+      snake.snakeY + snake.speedSnakeY
+    );
+  }
+
+  /** Whether the apple was placed on a rock. */
+  private foodOnRock(): boolean {
+    return this.obstacles.isAt(this.foodService.foodX, this.foodService.foodY);
   }
 
   /**
@@ -195,6 +253,7 @@ export class SnakelingControllerService {
         const taken =
           snake.verifyCollision(x, y) ||
           (x === this.foodService.foodX && y === this.foodService.foodY) ||
+          this.obstacles.isAt(x, y) ||
           (x === ahead.x && y === ahead.y);
         if (!taken) free.push({ x, y });
       }
@@ -238,6 +297,8 @@ export class SnakelingControllerService {
     this.snakeService.resetSnake();
     this.foodService.resetGolden();
     this._lastBite = null;
+    if (hasObstacles(this._mode())) this.obstacles.reset();
+    else this.obstacles.clear();
 
     do {
       this.foodService.foodChangePosition();

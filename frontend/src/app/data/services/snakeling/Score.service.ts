@@ -16,6 +16,7 @@ const RECORD_FIELD: Record<SnakelingMode, keyof SnakelingRecords> = {
   portal: 'bestScore',
   classic: 'bestClassic',
   time: 'bestTimeAttack',
+  hard: 'bestHard',
 };
 
 @Injectable()

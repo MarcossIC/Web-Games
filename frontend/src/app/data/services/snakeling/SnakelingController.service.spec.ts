@@ -16,6 +16,12 @@ import {
   POINTS_PER_APPLE,
   comboWindowMs,
 } from './scoring';
+import {
+  OBSTACLE_HEAD_ROOM,
+  OBSTACLE_RESPAWN_MS,
+  OBSTACLE_SOLID_MS,
+  OBSTACLE_WARNING_MS,
+} from './obstacles';
 
 /** Only here to hand out a Renderer2, which comes with a component. */
 @Component({ standalone: true, template: '' })
@@ -75,7 +81,7 @@ describe('Service: SnakelingController', () => {
 
   it('always starts the snake in the middle of the board', () => {
     const height = TestBed.inject(BoardSizeService).HEIGHT;
-    for (const mode of ['classic', 'portal', 'time'] as const) {
+    for (const mode of ['classic', 'portal', 'time', 'hard'] as const) {
       controller.start(mode);
       // Three segments, head to the right, the middle one on the center column.
       expect(snake.body.map(([x]) => x)).toEqual([
@@ -119,6 +125,89 @@ describe('Service: SnakelingController', () => {
     expect(controller.started).toBeFalse();
     expect(controller.isPaused).toBeTrue();
     expect(controller.isGameOver).toBeFalse();
+  });
+
+  describe('Hard', () => {
+    it('ends the game when the snake runs into a wall, like Classic', () => {
+      controller.start('hard');
+      runTo(width);
+      controller.runGame();
+
+      expect(controller.isGameOver).toBeTrue();
+      expect(controller.endedBy).toBe('wall');
+    });
+
+    it('raises rocks see-through first, never near the head', () => {
+      controller.start('hard');
+      controller.tick(3000);
+
+      const rocks = controller.obstacles.obstacles;
+      expect(rocks.length).toBeGreaterThan(0);
+      expect(rocks.every((rock) => rock.phase === 'warning')).toBeTrue();
+      for (const rock of rocks) {
+        for (const cell of rock.cells) {
+          expect(snake.verifyCollision(cell.x, cell.y)).toBeFalse();
+          const near =
+            Math.abs(cell.x - snake.snakeX) <= OBSTACLE_HEAD_ROOM &&
+            Math.abs(cell.y - snake.snakeY) <= OBSTACLE_HEAD_ROOM;
+          expect(near).toBeFalse();
+        }
+      }
+    });
+
+    it('lets the snake cross a see-through rock', () => {
+      controller.start('hard');
+      const field = controller.obstacles as unknown as {
+        _obstacles: { cells: { x: number; y: number }[]; phase: string; leftMs: number }[];
+      };
+      field._obstacles = [
+        { cells: [{ x: snake.snakeX + 1, y: snake.snakeY }], phase: 'warning', leftMs: 1000 },
+      ];
+      food.foodX = 1;
+      food.foodY = snake.snakeY === 1 ? 2 : 1;
+      controller.runGame();
+
+      expect(controller.isGameOver).toBeFalse();
+    });
+
+    it('ends the game when the head runs into a solid rock', () => {
+      controller.start('hard');
+      const field = controller.obstacles as unknown as {
+        _obstacles: { cells: { x: number; y: number }[]; phase: string; leftMs: number }[];
+      };
+      const rockX = snake.snakeX + 1;
+      field._obstacles = [
+        { cells: [{ x: rockX, y: snake.snakeY }], phase: 'solid', leftMs: 5000 },
+      ];
+      controller.runGame();
+
+      expect(controller.isGameOver).toBeTrue();
+      expect(controller.endedBy).toBe('rock');
+      // It stops in front of the rock.
+      expect(snake.snakeX).toBe(rockX - 1);
+    });
+
+    it('turns rocks solid, then sinks them and raises new ones elsewhere', () => {
+      controller.start('hard');
+      controller.tick(3000);
+      const first = controller.obstacles.obstacles[0];
+      controller.tick(OBSTACLE_WARNING_MS);
+
+      expect(first.phase).toBe('solid');
+
+      controller.tick(OBSTACLE_SOLID_MS);
+
+      expect(controller.obstacles.obstacles).not.toContain(first);
+      controller.tick(OBSTACLE_RESPAWN_MS);
+      expect(controller.obstacles.obstacles.length).toBeGreaterThan(0);
+    });
+
+    it('has no rocks in the other modes', () => {
+      controller.start('classic');
+      controller.tick(10_000);
+
+      expect(controller.obstacles.obstacles.length).toBe(0);
+    });
   });
 
   describe('Time Attack', () => {

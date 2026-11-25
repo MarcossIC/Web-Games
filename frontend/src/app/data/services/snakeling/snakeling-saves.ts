@@ -11,12 +11,14 @@ export interface SnakelingRecords {
   bestClassic: number;
   /** Best score in Time Attack, one minute against the clock. */
   bestTimeAttack: number;
+  /** Best score in Hard mode, with walls and rocks. */
+  bestHard: number;
 }
 
 /**
  * What Snakeling keeps between visits.
  *
- * `bestClassic` and `bestTimeAttack` came later without a version bump on
+ * `bestClassic`, `bestTimeAttack` and `bestHard` came later without a version bump on
  * purpose: the shape only grew, a value saved without them reads them as
  * 0, and the records already saved are kept.
  *
@@ -27,6 +29,11 @@ export const snakelingRecords = defineEntry<SnakelingRecords>({
   game: 'snakeling',
   name: 'records',
   version: 2,
-  fallback: { bestScore: 0, bestClassic: 0, bestTimeAttack: 0 },
-  fields: { bestScore: count(), bestClassic: count(), bestTimeAttack: count() },
+  fallback: { bestScore: 0, bestClassic: 0, bestTimeAttack: 0, bestHard: 0 },
+  fields: {
+    bestScore: count(),
+    bestClassic: count(),
+    bestTimeAttack: count(),
+    bestHard: count(),
+  },
 });
