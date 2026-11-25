@@ -33,8 +33,447 @@
       href="https://fonts.googleapis.com/css2?family=Audiowide&family=Nunito:wght@300;400;500;600;700&family=Silkscreen:wght@400;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
+    <!--
+      Boot screen: shown from the first paint until Angular starts, so the
+      app opens on motion instead of a still frame. Inline and CSS only
+      because nothing else has loaded yet; main.ts takes it away
+      (shared/boot-screen.ts). Only transform and opacity animate: the
+      compositor runs those at the display's frame rate, without repainting.
+    -->
+    <style>
+      #gg-boot {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        overflow: hidden;
+        color: #ece9f7;
+        font-family: "Space Mono", ui-monospace, monospace;
+        background: radial-gradient(
+            ellipse at 50% 115%,
+            rgba(255, 46, 136, 0.3),
+            transparent 60%
+          ),
+          radial-gradient(circle at 50% 42%, #17112e 0%, #07060d 70%);
+        animation: gg-boot-on 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      #gg-boot::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image: repeating-linear-gradient(
+          0deg,
+          rgba(255, 255, 255, 0.04) 0 1px,
+          transparent 1px 3px
+        );
+      }
+      #gg-boot.is-done {
+        animation: gg-boot-off 0.5s cubic-bezier(0.5, 0, 0.9, 0.5) forwards;
+        pointer-events: none;
+      }
+
+      /* Two star layers drifting past at different speeds (parallax). Each
+         is twice the screen and repeats its tile, so the loop has no seam. */
+      .gg-boot__stars {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 200%;
+        height: 200%;
+        will-change: transform;
+        animation: gg-boot-stars var(--t) linear infinite;
+      }
+      .gg-boot__stars--far {
+        --tile: 260px;
+        --t: 9s;
+        opacity: 0.7;
+        background-image: radial-gradient(1px 1px at 60px 20px, #c9c4e3, transparent),
+          radial-gradient(1px 1px at 180px 160px, #fff, transparent),
+          radial-gradient(1px 1px at 10px 130px, #ff2e88, transparent),
+          radial-gradient(1px 1px at 230px 230px, #fff, transparent);
+        background-size: 260px 260px;
+      }
+      .gg-boot__stars--near {
+        --tile: 220px;
+        --t: 3.2s;
+        background-image: radial-gradient(1.5px 1.5px at 30px 40px, #fff, transparent),
+          radial-gradient(1.5px 1.5px at 150px 120px, #5ee6ff, transparent),
+          radial-gradient(1px 1px at 90px 190px, #fff, transparent),
+          radial-gradient(1.5px 1.5px at 200px 30px, #ffe14a, transparent);
+        background-size: 220px 220px;
+      }
+      @keyframes gg-boot-stars {
+        from {
+          transform: translate3d(0, 0, 0);
+        }
+        to {
+          transform: translate3d(calc(var(--tile) * -1), var(--tile), 0);
+        }
+      }
+
+      /* Everything below is anchored to a zero-size stage at the centre. */
+      .gg-boot__stage {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 0;
+        height: 0;
+      }
+
+      /* The warp: rings born at the centre that race outward and fade,
+         like flying into a wormhole. */
+      .gg-boot__ring {
+        position: absolute;
+        left: -18vmin;
+        top: -18vmin;
+        width: 36vmin;
+        height: 36vmin;
+        border-radius: 50%;
+        border: 1px solid var(--c);
+        opacity: 0;
+        will-change: transform, opacity;
+        animation: gg-boot-warp 2.4s cubic-bezier(0.55, 0, 1, 0.45) infinite;
+        animation-delay: calc(var(--i) * -0.4s);
+      }
+      @keyframes gg-boot-warp {
+        from {
+          transform: scale(0.04);
+          opacity: 0;
+        }
+        12% {
+          opacity: 0.9;
+        }
+        to {
+          transform: scale(2.6);
+          opacity: 0;
+        }
+      }
+
+      /* Two planets on tilted orbits that cross each other. The plane is
+         tilted with rotateX; the planet spins inside that plane. */
+      .gg-boot__orbit {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 0;
+        height: 0;
+        transform: rotateX(72deg);
+      }
+      .gg-boot__orbit--a {
+        --r: 17vmin;
+        --planet: #5ee6ff;
+      }
+      .gg-boot__orbit--b {
+        --r: 24vmin;
+        --planet: #ffe14a;
+        transform: rotateZ(60deg) rotateX(72deg);
+      }
+      .gg-boot__track {
+        position: absolute;
+        left: calc(var(--r) * -1);
+        top: calc(var(--r) * -1);
+        width: calc(var(--r) * 2);
+        height: calc(var(--r) * 2);
+        border-radius: 50%;
+        border: 1px solid rgba(236, 233, 247, 0.14);
+      }
+      .gg-boot__spin {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 0;
+        height: 0;
+        animation: gg-boot-spin 3s linear infinite;
+      }
+      .gg-boot__orbit--b .gg-boot__spin {
+        animation-duration: 4.6s;
+        animation-direction: reverse;
+      }
+      .gg-boot__planet {
+        position: absolute;
+        left: var(--r);
+        top: 0;
+        width: 10px;
+        height: 10px;
+        margin: -5px 0 0 -5px;
+        border-radius: 50%;
+        background: var(--planet);
+        box-shadow: 0 0 12px 3px var(--planet);
+      }
+      @keyframes gg-boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* The mark: "G" and "G" fly in from opposite sides, then the whole
+         mark floats, glitches now and then, and a scan line passes over it. */
+      .gg-boot__core {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate3d(-50%, -50%, 0);
+        animation: gg-boot-float 3.2s ease-in-out 1.2s infinite alternate;
+      }
+      .gg-boot__mark {
+        position: relative;
+        display: flex;
+        overflow: hidden;
+        padding: 0.1em 0.2em;
+        font-family: "Audiowide", system-ui, sans-serif;
+        font-size: clamp(4rem, 15vmin, 8rem);
+        line-height: 1.1;
+        letter-spacing: 0.04em;
+        color: #fff;
+        text-shadow: -3px 0 0 #5ee6ff, 2px 2px 0 #ff2e88, 4px 4px 0 #ff2e88,
+          6px 6px 0 #b3186a, 8px 8px 0 #5a1a8c;
+        animation: gg-boot-glitch 3.6s steps(1) 1.6s infinite;
+      }
+      .gg-boot__mark::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -100%;
+        height: 100%;
+        background: linear-gradient(
+          to bottom,
+          transparent 40%,
+          rgba(94, 230, 255, 0.5) 50%,
+          rgba(255, 46, 136, 0.28) 53%,
+          transparent 62%
+        );
+        animation: gg-boot-scan 2.4s ease-in-out 1.4s infinite;
+      }
+      .gg-boot__g {
+        display: inline-block;
+        animation-fill-mode: both;
+        animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+        animation-duration: 1s;
+      }
+      .gg-boot__g--l {
+        animation-name: gg-boot-in-l;
+        animation-delay: 0.15s;
+      }
+      .gg-boot__g--r {
+        animation-name: gg-boot-in-r;
+        animation-delay: 0.3s;
+      }
+      @keyframes gg-boot-in-l {
+        from {
+          opacity: 0;
+          transform: translate3d(-12vmin, 0, 0) rotate(-24deg) scale(0.6);
+        }
+      }
+      @keyframes gg-boot-in-r {
+        from {
+          opacity: 0;
+          transform: translate3d(12vmin, 0, 0) rotate(24deg) scale(0.6);
+        }
+      }
+      @keyframes gg-boot-float {
+        from {
+          transform: translate3d(-50%, -50%, 0);
+        }
+        to {
+          transform: translate3d(-50%, calc(-50% - 8px), 0);
+        }
+      }
+      @keyframes gg-boot-scan {
+        from {
+          transform: translate3d(0, 50%, 0);
+          opacity: 0;
+        }
+        12% {
+          opacity: 1;
+        }
+        88% {
+          opacity: 1;
+        }
+        to {
+          transform: translate3d(0, 150%, 0);
+          opacity: 0;
+        }
+      }
+      /* A CRT hiccup now and then: the mark jumps a few pixels. */
+      @keyframes gg-boot-glitch {
+        0%,
+        100% {
+          transform: none;
+        }
+        92% {
+          transform: translate3d(-3px, 0, 0) skewX(-8deg);
+        }
+        95% {
+          transform: translate3d(3px, 0, 0);
+        }
+      }
+
+      /* Viewfinder brackets in the corners. */
+      .gg-boot__corner {
+        position: absolute;
+        width: 28px;
+        height: 28px;
+        border: 2px solid #5ee6ff;
+        opacity: 0;
+        animation: gg-boot-hud 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+      }
+      .gg-boot__corner--tl {
+        top: 20px;
+        left: 20px;
+        border-right: 0;
+        border-bottom: 0;
+      }
+      .gg-boot__corner--tr {
+        top: 20px;
+        right: 20px;
+        border-left: 0;
+        border-bottom: 0;
+      }
+      .gg-boot__corner--bl {
+        bottom: 20px;
+        left: 20px;
+        border-right: 0;
+        border-top: 0;
+      }
+      .gg-boot__corner--br {
+        bottom: 20px;
+        right: 20px;
+        border-left: 0;
+        border-top: 0;
+      }
+      @keyframes gg-boot-hud {
+        from {
+          opacity: 0;
+          transform: scale(1.5);
+        }
+        to {
+          opacity: 0.7;
+        }
+      }
+
+      .gg-boot__status {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 14vh;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6em;
+        font-family: "Silkscreen", ui-monospace, monospace;
+        font-size: 0.85rem;
+        letter-spacing: 0.3em;
+        color: #c9c4e3;
+        animation: gg-boot-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+      }
+      .gg-boot__caret {
+        color: #ff2e88;
+        animation: gg-boot-blink 1s steps(1) infinite;
+      }
+      .gg-boot__dots::after {
+        content: "";
+        display: inline-block;
+        width: 1.2em;
+        text-align: left;
+        animation: gg-boot-dots 1.2s steps(1) infinite;
+      }
+      @keyframes gg-boot-dots {
+        0% {
+          content: "";
+        }
+        25% {
+          content: ".";
+        }
+        50% {
+          content: "..";
+        }
+        75%,
+        100% {
+          content: "...";
+        }
+      }
+      @keyframes gg-boot-blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      @keyframes gg-boot-on {
+        from {
+          opacity: 0;
+          transform: scaleY(0.02);
+        }
+        60% {
+          opacity: 1;
+        }
+      }
+      @keyframes gg-boot-off {
+        to {
+          opacity: 0;
+          transform: scale(2.2);
+        }
+      }
+      @keyframes gg-boot-rise {
+        from {
+          opacity: 0;
+          transform: translateY(18px);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #gg-boot,
+        #gg-boot *,
+        #gg-boot *::before,
+        #gg-boot *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+        }
+        #gg-boot.is-done {
+          animation: gg-boot-fade 0.3s ease-out forwards !important;
+        }
+        @keyframes gg-boot-fade {
+          to {
+            opacity: 0;
+          }
+        }
+      }
+    </style>
   </head>
   <body>
+    <div id="gg-boot" role="status" aria-live="polite" aria-label="Loading Game Galaxy">
+      <div class="gg-boot__stars gg-boot__stars--far" aria-hidden="true"></div>
+      <div class="gg-boot__stars gg-boot__stars--near" aria-hidden="true"></div>
+      <span class="gg-boot__corner gg-boot__corner--tl" aria-hidden="true"></span>
+      <span class="gg-boot__corner gg-boot__corner--tr" aria-hidden="true"></span>
+      <span class="gg-boot__corner gg-boot__corner--bl" aria-hidden="true"></span>
+      <span class="gg-boot__corner gg-boot__corner--br" aria-hidden="true"></span>
+      <div class="gg-boot__stage" aria-hidden="true">
+        <span class="gg-boot__ring" style="--i: 0; --c: #5ee6ff"></span>
+        <span class="gg-boot__ring" style="--i: 1; --c: #ff2e88"></span>
+        <span class="gg-boot__ring" style="--i: 2; --c: #5ee6ff"></span>
+        <span class="gg-boot__ring" style="--i: 3; --c: #ff2e88"></span>
+        <span class="gg-boot__ring" style="--i: 4; --c: #5ee6ff"></span>
+        <span class="gg-boot__ring" style="--i: 5; --c: #ff2e88"></span>
+        <div class="gg-boot__orbit gg-boot__orbit--a">
+          <span class="gg-boot__track"></span>
+          <span class="gg-boot__spin"><span class="gg-boot__planet"></span></span>
+        </div>
+        <div class="gg-boot__orbit gg-boot__orbit--b">
+          <span class="gg-boot__track"></span>
+          <span class="gg-boot__spin"><span class="gg-boot__planet"></span></span>
+        </div>
+        <div class="gg-boot__core">
+          <div class="gg-boot__mark">
+            <span class="gg-boot__g gg-boot__g--l">G</span><span class="gg-boot__g gg-boot__g--r">G</span>
+          </div>
+        </div>
+      </div>
+      <p class="gg-boot__status">
+        <span class="gg-boot__caret" aria-hidden="true">&gt;</span>ENTERING THE GALAXY<span class="gg-boot__dots" aria-hidden="true"></span>
+      </p>
+    </div>
     <app-root></app-root>
   </body>
 </html>
