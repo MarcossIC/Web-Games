@@ -1,0 +1,48 @@
+<div class="modal-scrim cleared-scrim">
+  <div
+    class="modal modal-bg sheet cleared-sheet"
+    trapFocus
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="ringout-result-title"
+  >
+    <h2 id="ringout-result-title" class="modal-title-with-bar">
+      {{ lastLevel() ? "All Free!" : "Level " + result()?.level + " Clear" }}
+    </h2>
+
+    @if (lastLevel()) {
+    <p class="cause">Every level is cleared. Play them again to beat your times.</p>
+    }
+
+    <dl class="results">
+      <div class="result-row">
+        <dt>Time</dt>
+        <dd>{{ time() }}</dd>
+      </div>
+      <div class="result-row is-best">
+        <dt>Best</dt>
+        <dd>{{ best() }}</dd>
+      </div>
+      @if (gain()) {
+      <p class="record">New record, {{ gain() }} faster!</p>
+      } @else if (result()?.unlocked && !lastLevel()) {
+      <p class="record is-open">Level {{ (result()?.level ?? 0) + 1 }} is open</p>
+      }
+    </dl>
+
+    <div class="sheet-actions">
+      @if (lastLevel()) {
+      <button #first class="abstract-button play-button" type="button" (click)="levels()">Levels</button>
+      } @else {
+      <button #first class="abstract-button play-button" type="button" (click)="next()">Next level</button>
+      }
+    </div>
+    <div class="sheet-actions">
+      <button class="abstract-button exit-button" type="button" (click)="retry()">Play again</button>
+      @if (!lastLevel()) {
+      <button class="abstract-button exit-button" type="button" (click)="levels()">Levels</button>
+      }
+      <button class="abstract-button exit-button" type="button" (click)="close()">Exit</button>
+    </div>
+  </div>
+</div>

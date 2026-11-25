@@ -1,0 +1,126 @@
+<div class="modal-scrim">
+  <div
+    class="modal modal-bg sheet ringout-sheet"
+    trapFocus
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="ringout-dialog-title"
+  >
+    @if (view() === "help") {
+    <h2 id="ringout-dialog-title" class="modal-title-with-bar">How to play</h2>
+
+    <ul class="rules">
+      <li>
+        <span class="bullet bullet-ring" aria-hidden="true"></span>
+        <span>
+          Free every ring. <b>Tap</b> a ring for a quarter turn, or
+          <b>drag</b> it around to turn it either way.
+        </span>
+      </li>
+      <li>
+        <span class="bullet bullet-clip" aria-hidden="true"></span>
+        <span>
+          A clip lets go when the opening of the ring it holds slides past it.
+          A ring left on its own breaks.
+        </span>
+      </li>
+      <li>
+        <span class="bullet bullet-lock" aria-hidden="true"></span>
+        <span>A ring that holds a clip cannot turn: free the ring it holds first.</span>
+      </li>
+      <li>
+        <span class="bullet bullet-rod" aria-hidden="true"></span>
+        <span>
+          <b>Tap</b> a rod to slide it out of its clamp, the way its arrow
+          points. Rods and rings get in each other's way.
+        </span>
+      </li>
+      <li>
+        <span class="bullet bullet-time" aria-hidden="true"></span>
+        <span>
+          The clock runs while you play. Clear a level to open the next, and
+          play it again to beat your time.
+        </span>
+      </li>
+    </ul>
+
+    <dl class="keys key-legend">
+      <div class="key-row">
+        <dt>Start again</dt>
+        <dd><kbd>R</kbd></dd>
+      </div>
+      <div class="key-row">
+        <dt>Hint</dt>
+        <dd><kbd>H</kbd></dd>
+      </div>
+      <div class="key-row">
+        <dt>Pause</dt>
+        <dd>
+          <kbd>P</kbd>
+          <span class="or">or</span>
+          <kbd>Esc</kbd>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="sheet-actions">
+      <button data-autofocus class="abstract-button play-button" type="button" (click)="showMenu()">
+        &larr; Back
+      </button>
+    </div>
+    } @else if (controller.phase() === "paused") {
+    <h2 id="ringout-dialog-title" class="modal-title-with-bar">Paused</h2>
+
+    <p class="status">
+      Level {{ controller.level() }} &middot; the clock is stopped
+    </p>
+
+    <nav class="menu" aria-label="Pause menu">
+      <button data-autofocus class="abstract-button menu-button menu-play" type="button" (click)="resume()">
+        Resume
+      </button>
+      <button class="abstract-button menu-button" type="button" (click)="retry()">Start again</button>
+      <button class="abstract-button menu-button" type="button" (click)="levels()">Levels</button>
+      <div class="menu-row">
+        <button class="abstract-button menu-button" type="button" (click)="showHelp()">How to play</button>
+        <button class="abstract-button menu-button menu-exit" type="button" (click)="close()">Exit</button>
+      </div>
+    </nav>
+    } @else {
+    <h2 id="ringout-dialog-title" class="modal-title-with-bar">Ring Out</h2>
+
+    <p class="status">
+      Cleared <strong>{{ controller.progress().cleared }}</strong> of {{ numbers.length }}
+    </p>
+
+    <nav class="level-grid" aria-label="Levels">
+      @for (n of numbers; track n) {
+      <button
+        class="level"
+        type="button"
+        [class.is-done]="controller.bestTimeOf(n) !== null"
+        [class.is-next]="n === controller.nextToPlay()"
+        [disabled]="!controller.isUnlocked(n)"
+        [attr.data-autofocus]="n === controller.nextToPlay() ? '' : null"
+        [attr.aria-label]="label(n)"
+        (click)="play(n)"
+      >
+        <span class="level-num">{{ n }}</span>
+        @if (controller.isUnlocked(n)) {
+        <span class="level-time">{{ time(n) || "new" }}</span>
+        } @else {
+        <svg class="level-lock" viewBox="0 0 10 10" aria-hidden="true" shape-rendering="crispEdges">
+          <path fill="currentColor" d="M3 1h4v1h1v3h1v5H1V5h1V2h1zM3 2v3h4V2zM4 6v2h2V6z" />
+        </svg>
+        }
+      </button>
+      }
+    </nav>
+
+    <div class="menu-row">
+      <button class="abstract-button menu-button" type="button" (click)="showHelp()">How to play</button>
+      <button class="abstract-button menu-button menu-exit" type="button" (click)="close()">Exit</button>
+    </div>
+    }
+  </div>
+</div>

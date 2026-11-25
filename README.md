@@ -5,7 +5,7 @@ You can enjoy the site at: [Game Galaxy](https://game-galaxy.netlify.app)
 ## :sparkles: Introduction
 It is a website that provides a space to play classic games on the Web in a simple and fast way.
 ### Games
-Right now the site has three games available:
+Right now the site has these games available:
 <ul>
   <li>
     Tic Tac Toe
@@ -21,6 +21,15 @@ Right now the site has three games available:
   </li>
   <li>
     Chess
+  </li>
+  <li>
+    Retro Runner
+  </li>
+  <li>
+    Nova Breaker
+  </li>
+  <li>
+    Ring Out
   </li>
 </ul>
 

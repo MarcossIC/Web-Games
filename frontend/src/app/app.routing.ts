@@ -114,6 +114,14 @@ const routes: Routes = [
     providers: [],
   },
   {
+    path: 'ringout',
+    title: 'Game Galaxy - Ring Out',
+    loadComponent: () => import('@app-pages/ringout/ringout.component'),
+    // Provided by the page itself: importing the controller here would pull
+    // the engine and its levels into the initial bundle.
+    providers: [],
+  },
+  {
     path: '**',
     title: 'GG - Not found',
     loadComponent: () => import('@app-pages/notfound/notfound.component'),

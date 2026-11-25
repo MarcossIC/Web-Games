@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Game Galaxy** — an Angular 22 web arcade with 7 games: Tetris, Snake (Snakeling), Tic-Tac-Toe, Memorama, Chess, Retro Runner, and Nova Breaker. Uses standalone components (no NgModules), SSR via Express, and deploys to Netlify.
+**Game Galaxy** — an Angular 22 web arcade with 8 games: Tetris, Snake (Snakeling), Tic-Tac-Toe, Memorama, Chess, Retro Runner, Nova Breaker and Ring Out. Uses standalone components (no NgModules), SSR via Express, and deploys to Netlify.
 
 ## Commands
 
@@ -52,7 +52,7 @@ Constants and static assets live under `src/assets/constants/` and `src/assets/i
 Everything a player controls a game with (keys, the pointer, touch pads and swipes, buttons drawn on a canvas, vibration) goes through `data/input/` (`@app-input`). Games ask for actions (`left`, `jump`, `pause`…) and never read a key or a device themselves:
 
 - Each game declares its actions and keys in `data/services/<game>/<game>-controls.ts` as `KeyBinding`s, matched by `keys` (`KeyboardEvent.key`), `codes` (the place on the keyboard) or `keyCodes` (the layout's letter, what Phaser's Keys use). Keep the one the game already used. Filters are per binding: `ignoreCase`, `ignoreRepeat`, `ignoreModifiers` (Ctrl, Cmd, Alt). `bindKeys` turns the table into a function; `otherwise` gives an action to keys with no binding (Tetris: any key settles a resting piece).
-- The core is plain TypeScript: `key-bindings`, `action-source` (`ActionSource`, `anyDown`: an action is down if any source holds it — the place to add a stick on screen, a gamepad or the tilt of the phone), `zones` (`heldZones`, touch pads read from scratch every frame), `tap` (`TapTracker`, buttons that act on release), `swipe`, `drag` (`DragTracker`, a finger dragged over a board in steps of a cell, axis kept per stroke, plus taps), `hold` (`HoldToConfirm`), `repeat` (`isFreshPress`), `device`, `pointer-lock` and `haptics` (`vibrate`, a no-op where the device cannot). It never imports a game, Angular or Phaser.
+- The core is plain TypeScript: `key-bindings`, `action-source` (`ActionSource`, `anyDown`: an action is down if any source holds it — the place to add a stick on screen, a gamepad or the tilt of the phone), `zones` (`heldZones`, touch pads read from scratch every frame), `tap` (`TapTracker`, buttons that act on release), `swipe`, `drag` (`DragTracker`, a finger dragged over a board in steps of a cell, axis kept per stroke, plus taps), `turn` (`TurnTracker`, a pointer turning something round a center, the angle unwrapped, plus taps), `hold` (`HoldToConfirm`), `repeat` (`isFreshPress`), `device`, `pointer-lock` and `haptics` (`vibrate`, a no-op where the device cannot). It never imports a game, Angular or Phaser.
 - Angular pages use `keyActions(bindings, { on, throttleMs?, otherwise? })` in an injection context: it listens on the document in the browser, nothing on the server, and stops with the component. `listenSwipes(element, onDirection)` and `listenDrags(element, { step, onStep, onTap })` are plain DOM, for code outside the zone. Tetris plays on a touch screen with `listenDrags` over its play area (`TETRIS_DRAGS`: drag sideways moves, drag down drops a row, tap rotates) and a mouse click on the board rotates; it has no buttons on screen.
 - Phaser scenes import `@app-input/phaser-input`: `heldKeys(keyboard, bindings)` (Phaser Keys from `keyCodes`, read every frame; `onPress` hands each press its event) and `keyPresses(keyboard, bindings, onDown, onUp?)`. It only imports Phaser's types.
 - Picking with the pointer (a card, a cell, a chess square) stays a `(click)` in the template, and Nova Breaker's analog paddle (`InputState`) and its HUD buttons (`hudPress` in `InputController`, tied to the paddle's pointer and the mouse lock) stay in the game: those are the game's own, not a device's.
@@ -83,6 +83,15 @@ Chess opens on a menu (`welcome-chess-modal`, the same shape as Snakeling's): **
 - Measure before keeping a change to the engine: nominal depth says little (the selective search reaches depth 9 with a thirtieth of the positions the first version needed, and loses to it at equal depth), so compare versions by playing them against each other at equal time, a hundred games or more. Changes that looked right and measured nothing were left out.
 - The engine's rules and the game's are two implementations: `chess-engine-agreement.spec.ts` plays random games through both and fails where they allow different moves. Run it after touching either.
 
+### Ring Out: rings, clips and rods
+
+A puzzle of levels: open rings held together by clips, and rods in metal clamps. A ring turns round its center; a clip lets go when the opening of the ring it is closed around slides past it; a ring left holding and held by nothing breaks; a rod slides out of its clamp unless something is in its way. Levels open one after the other and the best time of each is kept.
+
+- The rules are plain TypeScript in `data/services/ringout/engine/` (`Board`), like Nova Breaker's: no Angular, no canvas. Pieces collide as discs sampled along them (`blobs`): a turning ring only checks what lies in its opening (`turnRange`), what lies beside its tube it slides past. A ring that holds a clip cannot turn. Nothing is ever put back, so a level that can be cleared stays clearable after any move: there are no dead ends.
+- `levels.ts` holds the levels, each with a solution. `levels.spec.ts` plays every solution through the rules, checks the drawing with `levelProblems` (no overlaps, clips on tubes, every ring in a clip) and clears every level by following the hints (`solver.ts`, which the Hint button uses). A level that does not pass does not ship. `place` and `combine` build the later levels from earlier ones, turned, mirrored and moved.
+- The page (`pages/ringout/`) draws on a canvas (`RingOutPainter`, glossy tubes with the site's hard shadow) and plays the moves in `RingOutTable`: tap a ring for a quarter turn, drag it to turn either way (`TurnTracker` in `@app-input`), tap a rod to slide it. A level wider than the screen is tall is drawn a quarter turn round on a phone.
+- `RingOutController` owns the level, its clock (stopped while paused or the tab is hidden) and the progress saved in `ringout-saves.ts`. The page provides it, not the route, so the engine loads with the page.
+
 ### Key Patterns
 
 - **Standalone components only** — every component uses `standalone: true` with explicit imports.
@@ -101,6 +110,7 @@ Chess opens on a menu (`welcome-chess-modal`, the same shape as Snakeling's): **
 | Retro Runner | Phaser 4 engine |
 | Nova Breaker | Phaser 4 rendering a pure TS engine (`data/services/breaker/engine/`) |
 | Chess | Angular templates + SVG piece components |
+| Ring Out | Canvas 2D drawing a pure TS engine (`data/services/ringout/engine/`) |
 | Snake, Memorama, Tic-Tac-Toe | DOM-based with CSS |
 
 ### Adding a New Game

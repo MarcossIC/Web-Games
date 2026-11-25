@@ -1,0 +1,193 @@
+/* The page is exactly one screen: the board is fitted to what is left of
+   it, so it never needs scrolling. */
+:host {
+  --game-bar-height: 4rem;
+
+  display: block;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.play {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  max-width: 64rem;
+  height: calc(100dvh - var(--game-bar-height));
+  margin-inline: auto;
+  padding: 0.25rem 1.25rem 1.25rem;
+}
+
+.readouts {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 40rem;
+  font-family: var(--gg-font-pixel);
+  animation: gg-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+}
+
+.readout {
+  display: flex;
+  align-items: baseline;
+  gap: 0.625rem;
+}
+
+.readout-time {
+  margin-inline: auto;
+}
+
+.readout dt {
+  font-size: 0.875rem;
+  letter-spacing: 1px;
+  color: var(--gg-muted);
+}
+
+.readout dd {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.readout .of {
+  font-size: 0.875rem;
+  color: var(--gg-muted);
+}
+
+.readout-time dd {
+  min-width: 5.5ch;
+  color: var(--gg-cyan);
+}
+
+.readout-end dd {
+  color: var(--gg-yellow);
+}
+
+/* Takes whatever height is left; `min-height: 0` lets it shrink below
+   the size of its content, which a flex item does not do by default. */
+.stage {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  border: 2px solid var(--gg-line);
+  background:
+    radial-gradient(circle at 50% 45%, rgba(94, 230, 255, 0.06), transparent 65%),
+    radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1.5px) 0 0 / 22px 22px,
+    rgba(16, 14, 28, 0.55);
+  box-shadow: 8px 8px 0 0 rgba(255, 46, 136, 0.55);
+  animation: gg-emerge 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s backwards;
+}
+
+/* The canvas takes pointers itself: no scrolling, zooming or text picking
+   under a finger turning a ring. */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: block;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.tip {
+  min-height: 1.4em;
+  margin: 0;
+  max-width: 40rem;
+  font-family: var(--gg-font-mono);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--gg-soft);
+}
+
+.tip.is-empty {
+  visibility: hidden;
+}
+
+.tools {
+  display: flex;
+  gap: 0.875rem;
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.125rem;
+  background: var(--gg-panel);
+  border: 2px solid var(--gg-line);
+  color: var(--gg-text);
+  font-family: var(--gg-font-pixel);
+  font-size: 0.875rem;
+  letter-spacing: 1px;
+  transition: border-color 0.15s linear, color 0.15s linear;
+}
+
+.tool svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.tool:hover:not(:disabled) {
+  border-color: var(--gg-cyan);
+  color: var(--gg-cyan);
+}
+
+.tool-hint:hover:not(:disabled) {
+  border-color: var(--gg-yellow);
+  color: var(--gg-yellow);
+}
+
+.tool:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+.tool:focus-visible {
+  outline: 3px solid var(--gg-yellow);
+  outline-offset: 3px;
+}
+
+.tool:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@media screen and (max-width: 600px) {
+  .play {
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem 0.75rem;
+  }
+
+  .stage {
+    box-shadow: 5px 5px 0 0 rgba(255, 46, 136, 0.55);
+  }
+
+  .readout {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .readout-time {
+    align-items: center;
+  }
+
+  .readout-end {
+    align-items: flex-end;
+  }
+
+  .readout dd {
+    font-size: 1.125rem;
+  }
+
+  .tip {
+    font-size: 0.8125rem;
+  }
+}

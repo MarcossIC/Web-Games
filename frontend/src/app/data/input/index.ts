@@ -10,4 +10,5 @@ export { isFreshPress } from './repeat';
 export { type Direction, SWIPE_MIN_PX, type SwipePointer, SwipeTracker, swipeDirection } from './swipe';
 export { idleStickPush, type StickFinger, type StickPush, stickPush } from './stick';
 export { TapTracker } from './tap';
+export { type TurnOptions, type TurnPoint, TurnTracker } from './turn';
 export { contains, type Finger, heldZones, type Rect, type Zone } from './zones';

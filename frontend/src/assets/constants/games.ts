@@ -130,4 +130,20 @@ export const GAMES: iGAMES[] = [
     EMBLEM:
       'MM.OO.YY........CC.GG.PP...................W..............OOOO..',
   },
+  {
+    ID: 'RINGOUT-GAME',
+    IMG: 'assets/images/ringout/frontpage.svg',
+    NAME: 'Ring Out',
+    ALT: 'Ring Out front page image',
+    PATH: '/ringout',
+    priority: true,
+    NUM: '08',
+    COLOR: '#2ed6c4',
+    TYPE: 'Puzzle',
+    PLAYERS: '1 player',
+    CONTROLS: 'Mouse or touch',
+    DESC: 'Turn the rings to slide them out of their clips, and beat your time on every level.',
+    EMBLEM:
+      '..OOOO...O....O.O....CCCO...C...O...C...O....CCC.O....O...OOOO..',
+  },
 ];

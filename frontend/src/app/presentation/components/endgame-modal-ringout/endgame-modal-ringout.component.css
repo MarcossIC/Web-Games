@@ -1,0 +1,58 @@
+/* The dialog frame and the result lines come from modal.css. */
+
+/* The last ring breaks first: the dialog waits for its shards to fly. */
+.modal-scrim.cleared-scrim {
+  animation-delay: 0.7s;
+}
+
+.modal.sheet.cleared-sheet {
+  width: min(100%, 26rem);
+  animation-delay: 0.75s;
+}
+
+.cause {
+  margin: -0.5rem 0 0;
+  text-align: center;
+  font-family: var(--gg-font-mono);
+  font-size: 0.9375rem;
+  color: var(--gg-soft);
+}
+
+.record {
+  margin: 0;
+  padding-block-start: 0.5rem;
+  border-top: 2px dashed var(--gg-line);
+  text-align: center;
+  font-family: var(--gg-font-pixel);
+  font-size: 0.875rem;
+  letter-spacing: 1px;
+  color: var(--gg-magenta);
+  animation: record-in 0.5s steps(2, jump-none) 1.1s 3 backwards;
+}
+
+.record.is-open {
+  color: var(--gg-cyan);
+  animation: none;
+}
+
+@keyframes record-in {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* The main way on alone on its row, the others under it. */
+.sheet-actions + .sheet-actions {
+  margin-block-start: -0.5rem;
+}
+
+.sheet-actions + .sheet-actions .abstract-button {
+  white-space: nowrap;
+  font-size: 0.9375rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .record {
+    animation: none;
+  }
+}

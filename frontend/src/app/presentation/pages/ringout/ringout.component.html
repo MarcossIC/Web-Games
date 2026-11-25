@@ -1,0 +1,62 @@
+<section class="shared-container">
+  <app-game-bar title="Ring Out" (pause)="pause()" />
+
+  <main class="play">
+    <dl class="readouts">
+      <div class="readout">
+        <dt>Level</dt>
+        <dd>{{ controller.level() }}<span class="of">/{{ total }}</span></dd>
+      </div>
+      <div class="readout readout-time">
+        <dt>Time</dt>
+        <dd>{{ time() }}</dd>
+      </div>
+      <div class="readout readout-end">
+        <dt>Best</dt>
+        <dd>{{ best() }}</dd>
+      </div>
+    </dl>
+
+    <!-- The stage is the room the board may use; the canvas fills it and
+         the board is fitted inside from the component. -->
+    <div #stage class="stage">
+      <canvas
+        #screen
+        class="screen"
+        role="img"
+        [attr.aria-label]="'Ring Out, level ' + controller.level()"
+      ></canvas>
+    </div>
+
+    <p class="tip" [class.is-empty]="!controller.tip()">{{ controller.tip() }}</p>
+
+    <div class="tools">
+      <button class="tool" type="button" [disabled]="!playing()" (click)="retry()">
+        <svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
+          <path
+            fill="currentColor"
+            d="M5 2h6v2H5zM3 4h2v2H3zM11 4h2v1h1v2h-1v1h-2V6h-1V4h1zM2 6h2v4H2zM3 10h2v2H3zM5 12h6v2H5zM11 10h2v2h-2z"
+          />
+          <path fill="currentColor" d="M12 2h2v4h-4V4h2z" />
+        </svg>
+        Retry
+      </button>
+      <button class="tool tool-hint" type="button" [disabled]="!playing()" (click)="hint()">
+        <svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
+          <path
+            fill="currentColor"
+            d="M6 1h4v1h2v2h1v4h-1v2h-1v2H5v-2H4V8H3V4h1V2h2zM6 13h4v1H6zM7 14h2v1H7z"
+          />
+          <path fill="var(--gg-ink)" d="M7 4h2v1H7zM6 5h1v2H6z" />
+        </svg>
+        Hint
+      </button>
+    </div>
+  </main>
+</section>
+
+@switch (controller.phase()) {
+  @case ('menu') { <welcome-ringout-modal /> }
+  @case ('paused') { <welcome-ringout-modal /> }
+  @case ('cleared') { <endgame-modal-ringout /> }
+}
